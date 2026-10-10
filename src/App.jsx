@@ -1,68 +1,7 @@
+```jsx
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import "./App.css";
-
-const demoSeries = [
-  {
-    id: "demo-1",
-    title: "Contrato de Amor",
-    category: "Romance",
-    description:
-      "Um acordo inesperado aproxima duas pessoas que juraram nunca se apaixonar.",
-    image:
-      "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=700&q=80",
-    episodes: 12,
-  },
-  {
-    id: "demo-2",
-    title: "Segredo da Meia-Noite",
-    category: "Suspense",
-    description:
-      "Um segredo escondido ameaça mudar tudo quando a meia-noite chega.",
-    image:
-      "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=700&q=80",
-    episodes: 10,
-  },
-  {
-    id: "demo-3",
-    title: "A Vingança da Herdeira",
-    category: "Vingança",
-    description:
-      "Depois de perder tudo, ela retorna determinada a recuperar o que é seu.",
-    image:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=700&q=80",
-    episodes: 16,
-  },
-  {
-    id: "demo-4",
-    title: "O Bilionário Secreto",
-    category: "Bilionários",
-    description:
-      "Ela não imaginava que o homem simples que conheceu escondia uma fortuna.",
-    image:
-      "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=700&q=80",
-    episodes: 14,
-  },
-  {
-    id: "demo-5",
-    title: "Casamento por Acaso",
-    category: "Casamento",
-    description:
-      "Um casamento inesperado transforma a vida de duas pessoas completamente diferentes.",
-    image:
-      "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=700&q=80",
-    episodes: 12,
-  },
-  {
-    id: "demo-6",
-    title: "Entre Dois Corações",
-    category: "Romance",
-    description:
-      "Dois corações precisam escolher entre o amor, o passado e um novo começo.",
-    image: "/entre-dois-coracoes.png",
-    episodes: 10,
-  },
-];
 
 const categories = [
   "Todas",
@@ -101,6 +40,9 @@ export default function App() {
     let active = true;
 
     async function loadSeries() {
+      setLoading(true);
+      setDbError("");
+
       const { data, error } = await supabase
         .from("series")
         .select("*")
@@ -187,17 +129,8 @@ export default function App() {
     };
   }, [selected]);
 
-  const catalog = [
-    ...dbSeries,
-    ...demoSeries.filter(
-      (demo) =>
-        !dbSeries.some(
-          (item) =>
-            item.title.trim().toLowerCase() ===
-            demo.title.trim().toLowerCase()
-        )
-    ),
-  ];
+  // O catálogo contém somente séries cadastradas no Supabase.
+  const catalog = dbSeries;
 
   const filtered = catalog.filter((item) => {
     const matchesCategory =
@@ -215,10 +148,8 @@ export default function App() {
     );
   });
 
-  const featured =
-    catalog.find(
-      (item) => item.title === "Segredo da Meia-Noite"
-    ) || catalog[0];
+  // A primeira série cadastrada fica em destaque.
+  const featured = catalog[0] || null;
 
   function openSeries(item) {
     setSelected(item);
@@ -251,22 +182,7 @@ export default function App() {
     setPlaying(episode);
   }
 
-  const demoEpisodes =
-    selected && !selected.dbId
-      ? Array.from(
-          { length: selected.episodes || 0 },
-          (_, index) => ({
-            id: `demo-episode-${index + 1}`,
-            episode_number: index + 1,
-            title: `Episódio ${index + 1}`,
-            video_url: "",
-          })
-        )
-      : [];
-
-  const visibleEpisodes = selected?.dbId
-    ? episodes
-    : demoEpisodes;
+  const visibleEpisodes = selected?.dbId ? episodes : [];
 
   function playNextEpisode() {
     if (!playing) return;
@@ -586,9 +502,7 @@ export default function App() {
           min-width: 0;
           overflow-wrap: anywhere;
         }
-        .dv-episode small {
-          flex-shrink: 0;
-        }
+        .dv-episode small { flex-shrink: 0; }
         @media(max-width:760px) {
           .dv-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
           .dv-hero { min-height: 260px; padding: 22px; }
@@ -890,7 +804,7 @@ export default function App() {
                 <p className="dv-message">
                   {showFavorites
                     ? "Você ainda não adicionou séries aos favoritos."
-                    : "Nenhuma série encontrada."}
+                    : "Nenhuma série encontrada. Cadastre uma série publicada no Supabase para ela aparecer aqui."}
                 </p>
               )}
             </section>
@@ -942,3 +856,4 @@ export default function App() {
     </div>
   );
 }
+```
