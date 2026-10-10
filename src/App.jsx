@@ -1,0 +1,903 @@
+﻿import { useState, useEffect } from "react";
+import { supabase } from "./supabase";
+import "./App.css";
+
+const demoSeries = [
+  {
+    id: "demo-1",
+    title: "Contrato de Amor",
+    category: "Romance",
+    description:
+      "Um acordo inesperado aproxima duas pessoas que juraram nunca se apaixonar.",
+    image:
+      "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=700&q=80",
+    episodes: 12,
+  },
+  {
+    id: "demo-2",
+    title: "Segredo da Meia-Noite",
+    category: "Suspense",
+    description:
+      "Um segredo escondido ameaça mudar tudo quando a meia-noite chega.",
+    image:
+      "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=700&q=80",
+    episodes: 10,
+  },
+  {
+    id: "demo-3",
+    title: "A Vingança da Herdeira",
+    category: "Vingança",
+    description:
+      "Depois de perder tudo, ela retorna determinada a recuperar o que é seu.",
+    image:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=700&q=80",
+    episodes: 16,
+  },
+  {
+    id: "demo-4",
+    title: "O Bilionário Secreto",
+    category: "Bilionários",
+    description:
+      "Ela não imaginava que o homem simples que conheceu escondia uma fortuna.",
+    image:
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=700&q=80",
+    episodes: 14,
+  },
+  {
+    id: "demo-5",
+    title: "Casamento por Acaso",
+    category: "Casamento",
+    description:
+      "Um casamento inesperado transforma a vida de duas pessoas completamente diferentes.",
+    image:
+      "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=700&q=80",
+    episodes: 12,
+  },
+  {
+    id: "demo-6",
+    title: "Entre Dois Corações",
+    category: "Romance",
+    description:
+      "Dois corações precisam escolher entre o amor, o passado e um novo começo.",
+    image: "/entre-dois-coracoes.png",
+    episodes: 10,
+  },
+];
+
+const categories = [
+  "Todas",
+  "Romance",
+  "Vingança",
+  "Suspense",
+  "Bilionários",
+  "Casamento",
+];
+
+function getSavedFavorites() {
+  try {
+    return JSON.parse(
+      localStorage.getItem("dramovix-favorites") || "[]"
+    );
+  } catch {
+    return [];
+  }
+}
+
+export default function App() {
+  const [dbSeries, setDbSeries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dbError, setDbError] = useState("");
+  const [category, setCategory] = useState("Todas");
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState(null);
+  const [episodes, setEpisodes] = useState([]);
+  const [episodesLoading, setEpisodesLoading] = useState(false);
+  const [episodesError, setEpisodesError] = useState("");
+  const [playing, setPlaying] = useState(null);
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [favorites, setFavorites] = useState(getSavedFavorites);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadSeries() {
+      const { data, error } = await supabase
+        .from("series")
+        .select("*")
+        .eq("published", true);
+
+      if (!active) return;
+
+      if (error) {
+        console.error("Erro ao carregar séries:", error);
+        setDbError(error.message);
+        setLoading(false);
+        return;
+      }
+
+      setDbSeries(
+        (data || []).map((item) => ({
+          id: `db-${item.id}`,
+          dbId: item.id,
+          title: item.title,
+          category: item.genre || "Romance",
+          description: item.description || "",
+          image: item.cover_url || "",
+          episodes: 0,
+        }))
+      );
+
+      setLoading(false);
+    }
+
+    loadSeries();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "dramovix-favorites",
+        JSON.stringify(favorites)
+      );
+    } catch (error) {
+      console.warn("Não foi possível salvar favoritos.", error);
+    }
+  }, [favorites]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadEpisodes() {
+      setEpisodes([]);
+      setEpisodesError("");
+
+      if (!selected?.dbId) {
+        setEpisodesLoading(false);
+        return;
+      }
+
+      setEpisodesLoading(true);
+
+      const { data, error } = await supabase
+        .from("episodes")
+        .select("*")
+        .eq("series_id", selected.dbId)
+        .order("episode_number", { ascending: true });
+
+      if (!active) return;
+
+      if (error) {
+        console.error("Erro ao carregar episódios:", error);
+        setEpisodesError(error.message);
+      } else {
+        setEpisodes(data || []);
+      }
+
+      setEpisodesLoading(false);
+    }
+
+    loadEpisodes();
+
+    return () => {
+      active = false;
+    };
+  }, [selected]);
+
+  const catalog = [
+    ...dbSeries,
+    ...demoSeries.filter(
+      (demo) =>
+        !dbSeries.some(
+          (item) =>
+            item.title.trim().toLowerCase() ===
+            demo.title.trim().toLowerCase()
+        )
+    ),
+  ];
+
+  const filtered = catalog.filter((item) => {
+    const matchesCategory =
+      category === "Todas" || item.category === category;
+
+    const matchesSearch = item.title
+      .toLowerCase()
+      .includes(search.trim().toLowerCase());
+
+    const matchesFavorites =
+      !showFavorites || favorites.includes(String(item.id));
+
+    return (
+      matchesCategory && matchesSearch && matchesFavorites
+    );
+  });
+
+  const featured =
+    catalog.find(
+      (item) => item.title === "Segredo da Meia-Noite"
+    ) || catalog[0];
+
+  function openSeries(item) {
+    setSelected(item);
+    setPlaying(null);
+    setEpisodes([]);
+  }
+
+  function closeDetails() {
+    setSelected(null);
+    setPlaying(null);
+    setEpisodes([]);
+  }
+
+  function toggleFavorite(item) {
+    const id = String(item.id);
+
+    setFavorites((current) =>
+      current.includes(id)
+        ? current.filter((favoriteId) => favoriteId !== id)
+        : [...current, id]
+    );
+  }
+
+  function playEpisode(episode) {
+    setPlaying(episode);
+  }
+
+  const demoEpisodes = selected && !selected.dbId
+    ? Array.from(
+        { length: selected.episodes || 0 },
+        (_, index) => ({
+          id: `demo-episode-${index + 1}`,
+          episode_number: index + 1,
+          title: `Episódio ${index + 1}`,
+          video_url: "",
+        })
+      )
+    : [];
+
+  const visibleEpisodes = selected?.dbId
+    ? episodes
+    : demoEpisodes;
+
+  return (
+    <div className="dv-app">
+      <style>{`
+        .dv-app {
+          min-height: 100vh;
+          background: #10091b;
+          color: #fff;
+          font-family: Inter, Arial, sans-serif;
+        }
+        .dv-app * { box-sizing: border-box; }
+        .dv-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 18px 5%;
+          background: #170d25;
+          border-bottom: 1px solid #30203e;
+          flex-wrap: wrap;
+        }
+        .dv-logo {
+          color: #c084fc;
+          font-size: 28px;
+          font-weight: 900;
+          letter-spacing: 2px;
+          cursor: pointer;
+        }
+        .dv-header-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        .dv-search {
+          width: min(320px, 100%);
+          padding: 12px 16px;
+          border: 1px solid #49345c;
+          border-radius: 24px;
+          background: #241532;
+          color: white;
+          outline: none;
+        }
+        .dv-main {
+          width: 90%;
+          max-width: 1400px;
+          margin: auto;
+        }
+        .dv-hero {
+          min-height: 310px;
+          margin: 28px 0 36px;
+          padding: 34px;
+          display: flex;
+          align-items: end;
+          border-radius: 22px;
+          overflow: hidden;
+          position: relative;
+          background: linear-gradient(90deg,#241132,#3b1850);
+          isolation: isolate;
+        }
+        .dv-hero-image {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          opacity: .38;
+          z-index: -2;
+        }
+        .dv-hero:after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          z-index: -1;
+          background: linear-gradient(90deg,#170d25 0%,rgba(23,13,37,.75) 48%,transparent 100%);
+        }
+        .dv-hero-content { max-width: 600px; }
+        .dv-eyebrow {
+          color: #d8b4fe;
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 2px;
+        }
+        .dv-hero h1 { font-size: clamp(28px,4vw,44px); margin: 12px 0; }
+        .dv-hero p { color: #e3d8ec; line-height: 1.6; }
+        .dv-button {
+          cursor: pointer;
+          border: 0;
+          border-radius: 24px;
+          padding: 11px 17px;
+          background: #9333ea;
+          color: white;
+          font-weight: 700;
+        }
+        .dv-button:hover { background: #a855f7; }
+        .dv-button.secondary {
+          background: #30203e;
+          border: 1px solid #624477;
+        }
+        .dv-button.active { background: #6d28d9; }
+        .dv-section-title { font-size: 24px; margin: 0 0 8px; }
+        .dv-subtitle { color: #b9a8c8; margin: 0 0 22px; }
+        .dv-categories {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin: 20px 0 28px;
+        }
+        .dv-category {
+          padding: 9px 16px;
+          border-radius: 20px;
+          background: #241532;
+          color: #e9d5ff;
+          border: 1px solid #49345c;
+          cursor: pointer;
+        }
+        .dv-category.active {
+          background: #7e22ce;
+          border-color: #a855f7;
+        }
+        .dv-grid {
+          display: grid;
+          grid-template-columns: repeat(3,minmax(0,1fr));
+          gap: 22px;
+          padding-bottom: 48px;
+        }
+        .dv-card {
+          min-width: 0;
+          position: relative;
+          background: #190f25;
+          border: 1px solid #30203e;
+          border-radius: 15px;
+          overflow: hidden;
+        }
+        .dv-card-click {
+          display: block;
+          width: 100%;
+          padding: 0;
+          text-align: left;
+          color: inherit;
+          background: none;
+          border: 0;
+          cursor: pointer;
+        }
+        .dv-cover {
+          width: 100%;
+          aspect-ratio: 3/4;
+          object-fit: cover;
+          display: block;
+          background: #2b1a39;
+          transition: transform .2s;
+        }
+        .dv-card:hover .dv-cover { transform: scale(1.02); }
+        .dv-card-content { padding: 13px; }
+        .dv-card h3 { margin: 7px 0 6px; font-size: 16px; }
+        .dv-tag {
+          color: #c084fc;
+          font-size: 11px;
+          font-weight: 800;
+          text-transform: uppercase;
+        }
+        .dv-description {
+          color: #c5b7d0;
+          font-size: 13px;
+          line-height: 1.5;
+        }
+        .dv-card-actions {
+          display: flex;
+          gap: 8px;
+          padding: 0 13px 14px;
+        }
+        .dv-card-actions .dv-button {
+          flex: 1;
+          padding: 9px 10px;
+        }
+        .dv-heart {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          z-index: 2;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          border: 1px solid #ffffff55;
+          background: #170d25dd;
+          color: white;
+          font-size: 22px;
+          cursor: pointer;
+        }
+        .dv-heart.saved { color: #fb7185; }
+        .dv-message { padding: 20px 0; color: #c5b7d0; }
+        .dv-error { color: #fca5a5; font-size: 13px; overflow-wrap: anywhere; }
+        .dv-footer {
+          padding: 28px 5%;
+          text-align: center;
+          color: #8f7d9f;
+          border-top: 1px solid #30203e;
+        }
+        .dv-detail {
+          margin: 30px 0 50px;
+          display: grid;
+          grid-template-columns: minmax(180px,300px) minmax(0,1fr);
+          gap: 28px;
+        }
+        .dv-detail-cover { width: 100%; border-radius: 16px; }
+        .dv-detail h1 { margin: 8px 0; }
+        .dv-detail-actions {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin: 18px 0;
+        }
+        .dv-episode {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          width: 100%;
+          text-align: left;
+          margin: 8px 0;
+          padding: 14px;
+          background: #241532;
+          color: white;
+          border: 1px solid #49345c;
+          border-radius: 10px;
+          cursor: pointer;
+        }
+        .dv-episode:hover { border-color: #a855f7; }
+        .dv-episode small { color: #c5b7d0; }
+        .dv-player {
+          position: fixed;
+          inset: 0;
+          z-index: 10;
+          background: rgba(8,4,14,.96);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          padding: 24px;
+          text-align: center;
+          overflow: auto;
+        }
+        .dv-player-box {
+          width: min(380px, 100%);
+          background: #000;
+          border: 1px solid #49345c;
+          border-radius: 16px;
+          overflow: hidden;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 0;
+        }
+        .dv-video {
+          display: block;
+          width: 100%;
+          max-height: 80vh;
+          aspect-ratio: 9 / 16;
+          object-fit: contain; /* Impede que o vídeo estique e distorça */
+          background: #000;
+          border-radius: 10px;
+        }
+
+        /* Garante que o vídeo mantenha a proporção correta mesmo em tela cheia */
+        .dv-video:-webkit-full-screen {
+          object-fit: contain;
+          width: 100%;
+          height: 100%;
+        }
+        .dv-video:fullscreen {
+          object-fit: contain;
+          width: 100%;
+          height: 100%;
+        }
+
+        .dv-player-box p { color: #d8cce2; line-height: 1.6; padding: 20px; }
+        .dv-detail,
+        .dv-detail > div {
+          min-width: 0;
+          max-width: 100%;
+        }
+        .dv-detail h1 {
+          line-height: 1.25;
+          overflow-wrap: anywhere;
+          word-break: normal;
+        }
+        .dv-detail h2 {
+          line-height: 1.3;
+          margin: 22px 0 12px;
+        }
+        .dv-episode {
+          box-sizing: border-box;
+          min-width: 0;
+        }
+        .dv-episode span {
+          min-width: 0;
+          overflow-wrap: anywhere;
+        }
+        .dv-episode small {
+          flex-shrink: 0;
+        }
+
+        @media(max-width:760px) {
+          .dv-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+          .dv-hero { min-height: 260px; padding: 22px; }
+          .dv-detail { grid-template-columns: 1fr; }
+          .dv-detail-cover { max-width: 260px; }
+          .dv-header { align-items: flex-start; }
+          .dv-search { width: 100%; }
+        }
+        @media(max-width:420px) {
+          .dv-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+          .dv-header { padding: 16px 5%; }
+          .dv-logo { font-size: 23px; }
+          .dv-card-actions { flex-direction: column; }
+        }
+      `}</style>
+
+      <header className="dv-header">
+        <div
+          className="dv-logo"
+          onClick={() => {
+            closeDetails();
+            setShowFavorites(false);
+          }}
+        >
+          DRAMOVIX
+        </div>
+
+        <div className="dv-header-actions">
+          <input
+            className="dv-search"
+            type="search"
+            placeholder="Buscar minissérie..."
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setSelected(null);
+            }}
+          />
+
+          <button
+            className={`dv-button ${showFavorites ? "active" : "secondary"}`}
+            onClick={() => {
+              setShowFavorites((value) => !value);
+              setSelected(null);
+            }}
+          >
+            ♥ Favoritos ({favorites.length})
+          </button>
+        </div>
+      </header>
+
+      <main className="dv-main">
+        {selected ? (
+          <section className="dv-detail">
+            <div>
+              {selected.image ? (
+                <img
+                  className="dv-detail-cover"
+                  src={selected.image}
+                  alt={selected.title}
+                />
+              ) : (
+                <div className="dv-player-box">Capa indisponível</div>
+              )}
+            </div>
+
+            <div>
+              <button
+                className="dv-button secondary"
+                onClick={closeDetails}
+              >
+                ← Voltar ao catálogo
+              </button>
+
+              <p className="dv-eyebrow" style={{ marginTop: 20 }}>
+                {selected.category}
+              </p>
+
+              <h1>{selected.title}</h1>
+              <p className="dv-description">{selected.description}</p>
+
+              <div className="dv-detail-actions">
+                <button
+                  className="dv-button"
+                  onClick={() => {
+                    if (visibleEpisodes.length > 0) {
+                      playEpisode(visibleEpisodes[0]);
+                    } else {
+                      alert("Esta série ainda não tem episódios cadastrados.");
+                    }
+                  }}
+                >
+                  ▶ Assistir
+                </button>
+
+                <button
+                  className={`dv-button ${
+                    favorites.includes(String(selected.id))
+                      ? "active"
+                      : "secondary"
+                  }`}
+                  onClick={() => toggleFavorite(selected)}
+                >
+                  {favorites.includes(String(selected.id))
+                    ? "♥ Remover dos favoritos"
+                    : "♡ Adicionar aos favoritos"}
+                </button>
+              </div>
+
+              <h2>Episódios</h2>
+
+              {episodesLoading && (
+                <p className="dv-message">Carregando episódios...</p>
+              )}
+
+              {episodesError && (
+                <p className="dv-error">
+                  Não foi possível carregar os episódios: {episodesError}
+                </p>
+              )}
+
+              {!episodesLoading &&
+                !episodesError &&
+                visibleEpisodes.length === 0 && (
+                  <p className="dv-message">
+                    Ainda não há episódios cadastrados para esta série.
+                    Adicione-os à tabela episodes do Supabase.
+                  </p>
+                )}
+
+              {visibleEpisodes.map((episode) => (
+                <button
+                  className="dv-episode"
+                  key={episode.id}
+                  onClick={() => playEpisode(episode)}
+                >
+                  <span>
+                    ▶ Episódio {episode.episode_number}
+                    {episode.title ? ` — ${episode.title}` : ""}
+                  </span>
+                  <small>
+                    {episode.video_url
+                      ? "Assistir"
+                      : "Vídeo não conectado"}
+                  </small>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : (
+          <>
+            {!showFavorites && featured && (
+              <section className="dv-hero">
+                {featured.image && (
+                  <img
+                    className="dv-hero-image"
+                    src={featured.image}
+                    alt=""
+                  />
+                )}
+
+                <div className="dv-hero-content">
+                  <span className="dv-eyebrow">ESCOLHA SEU CLIMA</span>
+                  <h1>{featured.title}</h1>
+                  <p>{featured.description}</p>
+                  <button
+                    className="dv-button"
+                    onClick={() => openSeries(featured)}
+                  >
+                    ▶ Ver detalhes
+                  </button>
+                </div>
+              </section>
+            )}
+
+            <section>
+              <h2 className="dv-section-title">
+                {showFavorites ? "Seus favoritos" : "Categorias"}
+              </h2>
+
+              {!showFavorites && (
+                <div className="dv-categories">
+                  {categories.map((item) => (
+                    <button
+                      key={item}
+                      className={`dv-category ${
+                        category === item ? "active" : ""
+                      }`}
+                      onClick={() => setCategory(item)}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {!showFavorites && (
+                <h2 className="dv-section-title">
+                  Sempre tem uma nova história
+                </h2>
+              )}
+
+              <p className="dv-subtitle">
+                {filtered.length}{" "}
+                {filtered.length === 1 ? "história" : "histórias"}
+              </p>
+
+              {loading && (
+                <p className="dv-message">Carregando catálogo...</p>
+              )}
+
+              {dbError && (
+                <p className="dv-error">
+                  Não foi possível carregar as séries do banco de dados:{" "}
+                  {dbError}
+                </p>
+              )}
+
+              <div className="dv-grid">
+                {filtered.map((item) => {
+                  const isFavorite = favorites.includes(String(item.id));
+
+                  return (
+                    <article className="dv-card" key={item.id}>
+                      <button
+                        className={`dv-heart ${isFavorite ? "saved" : ""}`}
+                        aria-label={
+                          isFavorite
+                            ? "Remover dos favoritos"
+                            : "Adicionar aos favoritos"
+                        }
+                        title="Favoritos"
+                        onClick={() => toggleFavorite(item)}
+                      >
+                        {isFavorite ? "♥" : "♡"}
+                      </button>
+
+                      <button
+                        className="dv-card-click"
+                        onClick={() => openSeries(item)}
+                      >
+                        {item.image ? (
+                          <img
+                            className="dv-cover"
+                            src={item.image}
+                            alt={item.title}
+                            loading="lazy"
+                            onError={(event) => {
+                              event.currentTarget.style.visibility = "hidden";
+                            }}
+                          />
+                        ) : (
+                          <div className="dv-cover" />
+                        )}
+
+                        <div className="dv-card-content">
+                          <span className="dv-tag">{item.category}</span>
+                          <h3>{item.title}</h3>
+                          <p className="dv-description">
+                            {item.description}
+                          </p>
+                        </div>
+                      </button>
+
+                      <div className="dv-card-actions">
+                        <button
+                          className="dv-button"
+                          onClick={() => openSeries(item)}
+                        >
+                          ▶ Ver série
+                        </button>
+
+                        <button
+                          className="dv-button secondary"
+                          onClick={() => toggleFavorite(item)}
+                        >
+                          {isFavorite ? "♥ Favoritado" : "♡ Favoritar"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              {!loading && filtered.length === 0 && (
+                <p className="dv-message">
+                  {showFavorites
+                    ? "Você ainda não adicionou séries aos favoritos."
+                    : "Nenhuma série encontrada."}
+                </p>
+              )}
+            </section>
+          </>
+        )}
+      </main>
+
+      <footer className="dv-footer">
+        DRAMOVIX · Suas histórias, do seu jeito.
+      </footer>
+
+      {playing && selected && (
+        <div className="dv-player">
+          <button
+            className="dv-button secondary"
+            onClick={() => setPlaying(null)}
+          >
+            ✕ Fechar episódio
+          </button>
+
+          <h2>
+            {selected.title} — Episódio {playing.episode_number}
+          </h2>
+
+          <div className="dv-player-box">
+            {playing.video_url ? (
+              <video
+                className="dv-video"
+                controls
+                playsInline
+                src={playing.video_url}
+              >
+                Seu navegador não conseguiu abrir este vídeo.
+              </video>
+            ) : (
+              <p>
+                Este episódio ainda não tem um endereço de vídeo cadastrado.
+                <br />
+                Adicione um link de vídeo na coluna video_url da tabela
+                episodes do Supabase.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
