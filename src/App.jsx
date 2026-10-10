@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import "./App.css";
 
@@ -243,24 +243,53 @@ export default function App() {
   }
 
   function playEpisode(episode) {
+    if (!episode?.video_url) {
+      alert("Este episódio ainda não tem um vídeo cadastrado.");
+      return;
+    }
+
     setPlaying(episode);
   }
 
-  const demoEpisodes = selected && !selected.dbId
-    ? Array.from(
-        { length: selected.episodes || 0 },
-        (_, index) => ({
-          id: `demo-episode-${index + 1}`,
-          episode_number: index + 1,
-          title: `Episódio ${index + 1}`,
-          video_url: "",
-        })
-      )
-    : [];
+  const demoEpisodes =
+    selected && !selected.dbId
+      ? Array.from(
+          { length: selected.episodes || 0 },
+          (_, index) => ({
+            id: `demo-episode-${index + 1}`,
+            episode_number: index + 1,
+            title: `Episódio ${index + 1}`,
+            video_url: "",
+          })
+        )
+      : [];
 
   const visibleEpisodes = selected?.dbId
     ? episodes
     : demoEpisodes;
+
+  function playNextEpisode() {
+    if (!playing) return;
+
+    const currentIndex = visibleEpisodes.findIndex(
+      (episode) => String(episode.id) === String(playing.id)
+    );
+
+    if (currentIndex < 0) {
+      setPlaying(null);
+      return;
+    }
+
+    const nextEpisode = visibleEpisodes
+      .slice(currentIndex + 1)
+      .find((episode) => Boolean(episode.video_url));
+
+    if (nextEpisode) {
+      setPlaying(nextEpisode);
+    } else {
+      setPlaying(null);
+    }
+  }
 
   return (
     <div className="dv-app">
@@ -520,12 +549,10 @@ export default function App() {
           width: 100%;
           max-height: 80vh;
           aspect-ratio: 9 / 16;
-          object-fit: contain; /* Impede que o vídeo estique e distorça */
+          object-fit: contain;
           background: #000;
           border-radius: 10px;
         }
-
-        /* Garante que o vídeo mantenha a proporção correta mesmo em tela cheia */
         .dv-video:-webkit-full-screen {
           object-fit: contain;
           width: 100%;
@@ -536,7 +563,6 @@ export default function App() {
           width: 100%;
           height: 100%;
         }
-
         .dv-player-box p { color: #d8cce2; line-height: 1.6; padding: 20px; }
         .dv-detail,
         .dv-detail > div {
@@ -563,7 +589,6 @@ export default function App() {
         .dv-episode small {
           flex-shrink: 0;
         }
-
         @media(max-width:760px) {
           .dv-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
           .dv-hero { min-height: 260px; padding: 22px; }
@@ -600,6 +625,7 @@ export default function App() {
             onChange={(event) => {
               setSearch(event.target.value);
               setSelected(null);
+              setPlaying(null);
             }}
           />
 
@@ -608,6 +634,7 @@ export default function App() {
             onClick={() => {
               setShowFavorites((value) => !value);
               setSelected(null);
+              setPlaying(null);
             }}
           >
             ♥ Favoritos ({favorites.length})
@@ -649,10 +676,21 @@ export default function App() {
                 <button
                   className="dv-button"
                   onClick={() => {
-                    if (visibleEpisodes.length > 0) {
-                      playEpisode(visibleEpisodes[0]);
+                    if (episodesLoading) {
+                      alert("Aguarde: os episódios ainda estão carregando.");
+                      return;
+                    }
+
+                    const firstPlayable = visibleEpisodes.find(
+                      (episode) => Boolean(episode.video_url)
+                    );
+
+                    if (firstPlayable) {
+                      playEpisode(firstPlayable);
                     } else {
-                      alert("Esta série ainda não tem episódios cadastrados.");
+                      alert(
+                        "Esta série ainda não tem episódios com vídeos cadastrados."
+                      );
                     }
                   }}
                 >
@@ -880,10 +918,13 @@ export default function App() {
           <div className="dv-player-box">
             {playing.video_url ? (
               <video
+                key={playing.id}
                 className="dv-video"
                 controls
                 playsInline
+                autoPlay
                 src={playing.video_url}
+                onEnded={playNextEpisode}
               >
                 Seu navegador não conseguiu abrir este vídeo.
               </video>
