@@ -39,7 +39,7 @@ export default function App() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [favorites, setFavorites] = useState(getSavedFavorites);
 
-  // Carregar Séries (mantido exatamente como estava)
+  // Carregar Séries
   useEffect(() => {
     let active = true;
 
@@ -183,7 +183,6 @@ export default function App() {
     };
   }, [selected, currentTab]);
 
-  // Selecionar catálogo ativo de acordo com a aba escolhida
   const catalog =
     currentTab === "movies"
       ? dbMovies
@@ -909,10 +908,25 @@ export default function App() {
                 controls
                 playsInline
                 autoPlay
-                src={playing.video_url}
-                onEnded={playNextEpisode}
+                ref={(el) => {
+                  if (!el) return;
+                  const videoUrl = playing.video_url;
+                  
+                  if (videoUrl.includes('.m3u8')) {
+                    if (window.Hls && window.Hls.isSupported()) {
+                      const hls = new window.Hls();
+                      hls.loadSource(videoUrl);
+                      hls.attachMedia(el);
+                      window.currentHls = hls;
+                    } else if (el.canPlayType('application/vnd.apple.mpegurl')) {
+                      el.src = videoUrl;
+                    }
+                  } else {
+                    el.src = videoUrl;
+                  }
+                }}
               >
-                Seu navegador não conseguiu abrir este vídeo.
+                Seu navegador não conseguiu abrir este stream.
               </video>
             ) : (
               <p>Este vídeo não possui link de reprodução cadastrado.</p>
