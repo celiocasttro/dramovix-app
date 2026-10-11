@@ -121,14 +121,13 @@ function isHlsUrl(url = "") {
   return /\.m3u8(?:$|[?#])/i.test(url);
 }
 
-// Identifica os links de vídeo e de incorporação do UFOLOAD.
+// UFOLOAD: reconhece links de vídeo e de incorporação.
 function isUfoLoadUrl(url = "") {
   return /^https?:\/\/(?:www\.)?ufoload\.com\/(?:e|v)\/[a-zA-Z0-9_-]+(?:[/?#].*)?$/i.test(
     String(url).trim()
   );
 }
 
-// Converte o endereço /v/ do UFOLOAD para o player incorporado /e/.
 function getUfoLoadEmbedUrl(url = "") {
   const match = String(url)
     .trim()
@@ -136,9 +135,44 @@ function getUfoLoadEmbedUrl(url = "") {
       /^https?:\/\/(?:www\.)?ufoload\.com\/(?:e|v)\/([a-zA-Z0-9_-]+)/i
     );
 
-  if (!match) return "";
+  return match ? `https://ufoload.com/e/${match[1]}` : "";
+}
 
-  return `https://ufoload.com/e/${match[1]}`;
+// INTERNET ARCHIVE: reconhece links /details/ e /embed/.
+function isInternetArchiveUrl(url = "") {
+  return /^https?:\/\/(?:www\.)?archive\.org\/(?:details|embed)\/[a-zA-Z0-9._-]+(?:[/?#].*)?$/i.test(
+    String(url).trim()
+  );
+}
+
+// Converte a página do arquivo para o player incorporado.
+function getInternetArchiveEmbedUrl(url = "") {
+  const match = String(url)
+    .trim()
+    .match(
+      /^https?:\/\/(?:www\.)?archive\.org\/(?:details|embed)\/([a-zA-Z0-9._-]+)/i
+    );
+
+  return match
+    ? `https://archive.org/embed/${match[1]}`
+    : "";
+}
+
+// Identifica serviços que precisam de iframe em vez de vídeo direto.
+function isEmbeddedVideoUrl(url = "") {
+  return isUfoLoadUrl(url) || isInternetArchiveUrl(url);
+}
+
+function getEmbeddedVideoUrl(url = "") {
+  if (isUfoLoadUrl(url)) {
+    return getUfoLoadEmbedUrl(url);
+  }
+
+  if (isInternetArchiveUrl(url)) {
+    return getInternetArchiveEmbedUrl(url);
+  }
+
+  return "";
 }
 
 function normalizeEpisodeTitle(episode, index) {
@@ -174,7 +208,9 @@ export default function App() {
 
   const [favorites, setFavorites] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("dramovix-favorites") || "[]");
+      return JSON.parse(
+        localStorage.getItem("dramovix-favorites") || "[]"
+      );
     } catch {
       return [];
     }
@@ -188,7 +224,7 @@ export default function App() {
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerError, setPlayerError] = useState("");
 
-  // Carrega os dados do Supabase.
+  // Carrega o catálogo do Supabase.
   useEffect(() => {
     let cancelled = false;
 
@@ -198,9 +234,10 @@ export default function App() {
 
       const [seriesResult, moviesResult, channelsResult] =
         await Promise.all([
-          supabase.from("series").select("*").order("created_at", {
-            ascending: false,
-          }),
+          supabase
+            .from("series")
+            .select("*")
+            .order("created_at", { ascending: false }),
           supabase.from("movies").select("*"),
           supabase.from("channels").select("*"),
         ]);
@@ -238,6 +275,7 @@ export default function App() {
           "Não foi possível carregar os filmes:",
           getErrorDetails(moviesResult.error)
         );
+
         setMovies([]);
       } else {
         setMovies(
@@ -262,6 +300,7 @@ export default function App() {
           "Não foi possível carregar os canais do Supabase:",
           getErrorDetails(channelsResult.error)
         );
+
         setDbChannels([]);
       } else {
         setDbChannels(
@@ -326,6 +365,7 @@ export default function App() {
           "Erro ao carregar episódios:",
           getErrorDetails(episodeError)
         );
+
         setEpisodes([]);
       } else {
         setEpisodes(data || []);
@@ -385,38 +425,31 @@ export default function App() {
   }, [channelSource]);
 
   function openPlayer(item, type = "movie") {
-    const videoUrl =
+    const videoUrl = String(
       item.video_url ||
-      item.stream_url ||
-      item.url ||
-      item.video ||
-      "";
+        item.stream_url ||
+        item.url ||
+        item.video ||
+        ""
+    ).trim();
 
     setPlayerError("");
     mediaRecoveryRef.current = false;
-
-    if (!videoUrl) {
-      setPlayerOpen(true);
-      setCurrentVideo({
-        ...item,
-        url: "",
-        type,
-        name: item.name || item.title || "Dramovix",
-      });
-      setPlayerError(
-        "Este conteúdo ainda não possui um endereço de vídeo cadastrado."
-      );
-      return;
-    }
 
     setCurrentVideo({
       ...item,
       url: videoUrl,
       type,
-      name: item.name || item.title || "Dramovix",
+      name: item.name || item.title || "DRAMOVIX",
     });
 
     setPlayerOpen(true);
+
+    if (!videoUrl) {
+      setPlayerError(
+        "Este conteúdo ainda não possui um endereço de vídeo cadastrado."
+      );
+    }
   }
 
   function openEpisode(episode, index) {
@@ -429,7 +462,11 @@ export default function App() {
         ...episode,
         title: normalizeEpisodeTitle(episode, index),
         name: normalizeEpisodeTitle(episode, index),
-        video_url: episode.video_url || episode.stream_url || episode.url,
+        video_url:
+          episode.video_url ||
+          episode.stream_url ||
+          episode.url ||
+          "",
       },
       "episode"
     );
@@ -442,7 +479,8 @@ export default function App() {
     }
 
     const currentIndex = episodes.findIndex(
-      (episode) => String(episode.id) === String(selectedEpisode.id)
+      (episode) =>
+        String(episode.id) === String(selectedEpisode.id)
     );
 
     if (currentIndex < 0) {
@@ -453,7 +491,9 @@ export default function App() {
     const nextEpisode = episodes[currentIndex + 1];
 
     if (!nextEpisode) {
-      setPlayerError("Você chegou ao último episódio desta minissérie.");
+      setPlayerError(
+        "Você chegou ao último episódio desta minissérie."
+      );
       return;
     }
 
@@ -461,11 +501,12 @@ export default function App() {
     setPlayerError("");
     mediaRecoveryRef.current = false;
 
-    const nextUrl =
+    const nextUrl = String(
       nextEpisode.video_url ||
-      nextEpisode.stream_url ||
-      nextEpisode.url ||
-      "";
+        nextEpisode.stream_url ||
+        nextEpisode.url ||
+        ""
+    ).trim();
 
     setCurrentVideo({
       ...nextEpisode,
@@ -473,6 +514,12 @@ export default function App() {
       type: "episode",
       name: normalizeEpisodeTitle(nextEpisode, currentIndex + 1),
     });
+
+    if (!nextUrl) {
+      setPlayerError(
+        "Este episódio ainda não possui um endereço de vídeo cadastrado."
+      );
+    }
   }
 
   function closePlayer() {
@@ -488,14 +535,14 @@ export default function App() {
     }
   }
 
-  // Reproduz vídeos MP4 e HLS no elemento de vídeo.
-  // Os vídeos do UFOLOAD são carregados no iframe abaixo.
+  // Reproduz MP4 e HLS diretamente.
+  // Internet Archive e UFOLOAD usam iframe.
   useEffect(() => {
     if (
       !playerOpen ||
       !currentVideo?.url ||
       !videoRef.current ||
-      isUfoLoadUrl(currentVideo.url)
+      isEmbeddedVideoUrl(currentVideo.url)
     ) {
       return undefined;
     }
@@ -521,7 +568,10 @@ export default function App() {
         playPromise.catch((err) => {
           if (cancelled) return;
 
-          console.warn("A reprodução automática não iniciou:", err);
+          console.warn(
+            "A reprodução automática não iniciou:",
+            err
+          );
 
           if (err.name === "NotAllowedError") {
             showPlaybackError(
@@ -576,6 +626,7 @@ export default function App() {
                 hls.recoverMediaError();
               } catch (err) {
                 console.error("Falha ao recuperar mídia:", err);
+
                 showPlaybackError(
                   "O vídeo apresentou um erro de mídia e não pôde ser recuperado."
                 );
@@ -584,6 +635,7 @@ export default function App() {
               showPlaybackError(
                 "Não foi possível recuperar a reprodução deste vídeo."
               );
+
               hls.destroy();
             }
 
@@ -592,7 +644,7 @@ export default function App() {
 
           if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
             showPlaybackError(
-              "Não foi possível carregar o vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução dentro do DRAMOVIX (CORS)."
+              "Não foi possível carregar o vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução dentro do DRAMOVIX."
             );
 
             hls.destroy();
@@ -614,8 +666,9 @@ export default function App() {
             hlsRef.current = null;
           }
         });
-      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        // Safari/iPhone pode reproduzir HLS nativamente.
+      } else if (
+        video.canPlayType("application/vnd.apple.mpegurl")
+      ) {
         video.src = url;
         video.load();
         tryPlay();
@@ -666,7 +719,9 @@ export default function App() {
       );
 
       if (alreadyFavorite) {
-        return previous.filter((favorite) => favorite.key !== key);
+        return previous.filter(
+          (favorite) => favorite.key !== key
+        );
       }
 
       return [
@@ -716,23 +771,25 @@ export default function App() {
     });
   }, [dbChannels, playlistChannels]);
 
-  const seriesCategories = useMemo(() => {
-    return [
+  const seriesCategories = useMemo(
+    () => [
       "Todas",
       ...new Set(
         series.map((item) => item.category).filter(Boolean)
       ),
-    ];
-  }, [series]);
+    ],
+    [series]
+  );
 
-  const channelCategories = useMemo(() => {
-    return [
+  const channelCategories = useMemo(
+    () => [
       "Todas",
       ...new Set(
         allChannels.map((item) => item.category).filter(Boolean)
       ),
-    ];
-  }, [allChannels]);
+    ],
+    [allChannels]
+  );
 
   const filteredSeries = useMemo(() => {
     const query = normalizeText(search);
@@ -754,13 +811,12 @@ export default function App() {
   const filteredMovies = useMemo(() => {
     const query = normalizeText(search);
 
-    return movies.filter((item) => {
-      return (
+    return movies.filter(
+      (item) =>
         !query ||
         normalizeText(item.title).includes(query) ||
         normalizeText(item.description || "").includes(query)
-      );
-    });
+    );
   }, [movies, search]);
 
   const filteredChannels = useMemo(() => {
@@ -810,15 +866,21 @@ export default function App() {
               event.currentTarget.src = DEFAULT_SERIES_COVER;
             }}
           />
+
           <span className="dv-card-play">▶</span>
         </button>
 
         <div className="dv-card-info">
-          <span className="dv-card-category">{item.category}</span>
+          <span className="dv-card-category">
+            {item.category}
+          </span>
 
           <h3>{item.title}</h3>
 
-          <p>{item.description || "Uma nova história espera por você."}</p>
+          <p>
+            {item.description ||
+              "Uma nova história espera por você."}
+          </p>
 
           <div className="dv-card-actions">
             <button
@@ -865,13 +927,16 @@ export default function App() {
               event.currentTarget.src = DEFAULT_MOVIE_COVER;
             }}
           />
+
           <span className="dv-card-play">▶</span>
         </button>
 
         <div className="dv-card-info">
           <h3>{item.title}</h3>
 
-          <p>{item.description || "Assista no DRAMOVIX."}</p>
+          <p>
+            {item.description || "Assista no DRAMOVIX."}
+          </p>
 
           <div className="dv-card-actions">
             <button
@@ -1410,7 +1475,7 @@ export default function App() {
           align-items: center;
           justify-content: center;
           padding: 16px;
-          background: rgba(0, 0, 0, .91);
+          background: rgba(0, 0, 0, .96);
           backdrop-filter: blur(12px);
         }
 
@@ -1429,6 +1494,7 @@ export default function App() {
 
         .dv-player-modal.dv-player-vertical .dv-player-panel {
           width: min(100%, 420px);
+          max-height: 96dvh;
         }
 
         .dv-player-header {
@@ -1469,11 +1535,15 @@ export default function App() {
           justify-content: center;
         }
 
+        /* Episódios: moldura vertical 9:16. */
         .dv-player-vertical .dv-video-wrap {
           aspect-ratio: 9 / 16;
-          max-height: calc(94dvh - 100px);
           width: 100%;
+          max-height: calc(96dvh - 100px);
           margin: 0 auto;
+          flex: 0 0 auto;
+          border-radius: 10px;
+          background: #000;
         }
 
         .dv-video {
@@ -1483,6 +1553,18 @@ export default function App() {
           background: #000;
           object-fit: contain;
           border: 0;
+        }
+
+        /* O iframe ocupa toda a moldura vertical. */
+        .dv-video-wrap iframe.dv-video {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          min-width: 0;
+          min-height: 0;
+          border: 0;
+          background: #000;
         }
 
         .dv-player-error {
@@ -1602,10 +1684,13 @@ export default function App() {
 
           .dv-player-modal.dv-player-vertical .dv-player-panel {
             width: min(100%, 420px);
+            max-height: 98dvh;
           }
 
           .dv-player-vertical .dv-video-wrap {
-            max-height: calc(94dvh - 85px);
+            width: 100%;
+            aspect-ratio: 9 / 16;
+            max-height: calc(98dvh - 95px);
           }
         }
 
@@ -1810,6 +1895,7 @@ export default function App() {
                               <h3>
                                 {normalizeEpisodeTitle(episode, index)}
                               </h3>
+
                               <p>
                                 Episódio{" "}
                                 {episode.episode_number ?? index + 1}
@@ -1916,7 +2002,9 @@ export default function App() {
               {channelCategories.map((item) => (
                 <button
                   key={item}
-                  className={channelCategory === item ? "active" : ""}
+                  className={
+                    channelCategory === item ? "active" : ""
+                  }
                   onClick={() => setChannelCategory(item)}
                 >
                   {item}
@@ -2021,7 +2109,9 @@ export default function App() {
           <div className="dv-player-panel">
             <div className="dv-player-header">
               <h2>
-                {currentVideo?.name || currentVideo?.title || "DRAMOVIX"}
+                {currentVideo?.name ||
+                  currentVideo?.title ||
+                  "DRAMOVIX"}
               </h2>
 
               <button
@@ -2035,16 +2125,23 @@ export default function App() {
 
             {currentVideo?.url ? (
               <div className="dv-video-wrap">
-                {isUfoLoadUrl(currentVideo.url) ? (
+                {isEmbeddedVideoUrl(currentVideo.url) ? (
                   <iframe
-                    key={getUfoLoadEmbedUrl(currentVideo.url)}
-                    src={getUfoLoadEmbedUrl(currentVideo.url)}
+                    key={getEmbeddedVideoUrl(currentVideo.url)}
+                    src={getEmbeddedVideoUrl(currentVideo.url)}
                     title={
                       currentVideo?.name ||
                       currentVideo?.title ||
                       "Vídeo DRAMOVIX"
                     }
                     className="dv-video"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "block",
+                      border: 0,
+                      background: "#000",
+                    }}
                     allow="autoplay; fullscreen; picture-in-picture"
                     allowFullScreen
                     loading="eager"
@@ -2076,7 +2173,8 @@ export default function App() {
               </div>
             ) : (
               <div className="dv-empty">
-                Este conteúdo não possui um link de vídeo cadastrado.
+                Este conteúdo ainda não possui um link de vídeo
+                cadastrado.
               </div>
             )}
 
