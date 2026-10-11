@@ -46,7 +46,7 @@ button {
 }
 
 button:disabled {
-  opacity: .4;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
@@ -54,37 +54,39 @@ img {
   max-width: 100%;
 }
 
+/* FUNDO PRINCIPAL */
+
 .dv-app {
-  min-height: 100vh;
-  padding-bottom: 30px;
+  min-height: 100vh !important;
+  padding-bottom: 30px !important;
   overflow-x: clip;
   background:
     radial-gradient(ellipse at 50% -15%, #35134d55, transparent 45%),
-    var(--bg);
-  color: #fff;
-  font-family: 'DM Sans', sans-serif;
+    var(--bg) !important;
+  color: #fff !important;
+  font-family: 'DM Sans', sans-serif !important;
 }
 
 .dv-app button {
   transition:
-    background .2s ease,
-    border-color .2s ease,
-    color .2s ease,
-    transform .2s ease;
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 /* CABEÇALHO */
 
 .dv-header {
-  position: sticky;
-  top: 0;
+  position: sticky !important;
+  top: 0 !important;
   z-index: 8;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 22px;
   padding: 17px 5%;
-  background: #0b0811ed;
+  background: rgba(11, 8, 17, 0.96) !important;
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -93,9 +95,9 @@ img {
 .dv-logo {
   flex-shrink: 0;
   color: white;
-  font-family: Outfit, sans-serif;
-  font-size: 29px;
-  font-weight: 800;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 30px !important;
+  font-weight: 800 !important;
   letter-spacing: -1.5px;
   cursor: pointer;
 }
@@ -142,11 +144,11 @@ img {
   min-height: 42px;
   padding: 11px 18px;
   border: 1px solid transparent;
-  border-radius: 9px;
-  background: linear-gradient(110deg, #9333ea, #b832d8);
-  color: white;
+  border-radius: 9px !important;
+  background: linear-gradient(110deg, #9333ea, #b832d8) !important;
+  color: white !important;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 700 !important;
 }
 
 .dv-button:hover {
@@ -155,19 +157,19 @@ img {
 }
 
 .dv-button.secondary {
-  background: #ffffff0b;
+  background: #ffffff0b !important;
   border-color: #ffffff1c;
-  color: #f2eafa;
+  color: #f2eafa !important;
 }
 
 .dv-button.secondary:hover {
-  background: #ffffff15;
+  background: #ffffff15 !important;
 }
 
 .dv-button.active {
-  background: #65249a;
+  background: #65249a !important;
   border-color: #a855f7;
-  color: white;
+  color: white !important;
 }
 
 /* CONTEÚDO */
@@ -180,10 +182,10 @@ img {
 
 .dv-section-title {
   margin: 0 0 10px;
-  font-family: Outfit, sans-serif;
+  font-family: 'Outfit', sans-serif !important;
   font-size: clamp(21px, 3vw, 28px);
-  font-weight: 700;
-  letter-spacing: -.5px;
+  font-weight: 700 !important;
+  letter-spacing: -0.5px;
 }
 
 .dv-subtitle {
@@ -207,14 +209,14 @@ img {
   isolation: isolate;
   display: flex;
   align-items: flex-end;
-  min-height: 400px;
-  margin: 26px 0 43px;
-  padding: clamp(25px, 5vw, 55px);
+  min-height: 400px !important;
+  margin: 26px 0 43px !important;
+  padding: clamp(25px, 5vw, 55px) !important;
   overflow: hidden;
-  border: 1px solid #ffffff12;
-  border-radius: 20px;
+  border: 1px solid #ffffff20 !important;
+  border-radius: 20px !important;
   background: linear-gradient(120deg, #281237, #140c20);
-  box-shadow: 0 18px 55px #00000035;
+  box-shadow: 0 18px 55px #00000055 !important;
 }
 
 .dv-hero-image {
@@ -225,7 +227,7 @@ img {
   height: 100%;
   object-fit: cover;
   object-position: center 35%;
-  opacity: .68;
+  opacity: 0.68;
 }
 
 .dv-hero::after {
@@ -233,7 +235,12 @@ img {
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(90deg, #10091bf5 0%, #10091bce 38%, #10091b35 100%),
+    linear-gradient(
+      90deg,
+      #10091bf5 0%,
+      #10091bce 38%,
+      #10091b35 100%
+    ),
     linear-gradient(0deg, #10091b85, transparent 65%);
   content: "";
 }
@@ -245,9 +252,9 @@ img {
 
 .dv-hero h1 {
   margin: 13px 0;
-  font-family: Outfit, sans-serif;
-  font-size: clamp(32px, 5vw, 54px);
-  font-weight: 800;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: clamp(32px, 5vw, 54px) !important;
+  font-weight: 800 !important;
   line-height: 1.08;
   letter-spacing: -1.3px;
 }
@@ -291,18 +298,18 @@ img {
 }
 
 .dv-category.active {
-  border-color: var(--purple);
-  background: linear-gradient(110deg, #792bc0, #982bd0);
-  color: white;
+  border-color: var(--purple) !important;
+  background: linear-gradient(110deg, #792bc0, #982bd0) !important;
+  color: white !important;
   box-shadow: 0 5px 18px #9333ea30;
 }
 
 /* CATÁLOGO */
 
 .dv-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 25px 18px;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 25px 18px !important;
   padding-bottom: 50px;
 }
 
@@ -310,15 +317,19 @@ img {
   position: relative;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #ffffff0c;
-  border-radius: 13px;
-  background: #15101e;
-  transition: border-color .25s, transform .25s, box-shadow .25s;
+  border: 1px solid #ffffff18 !important;
+  border-radius: 13px !important;
+  background: #15101e !important;
+  box-shadow: 0 8px 24px #00000020;
+  transition:
+    border-color 0.25s,
+    transform 0.25s,
+    box-shadow 0.25s;
 }
 
 .dv-card:hover {
   transform: translateY(-4px);
-  border-color: #a855f755;
+  border-color: #a855f755 !important;
   box-shadow: 0 12px 35px #00000038;
 }
 
@@ -334,11 +345,11 @@ img {
 
 .dv-cover {
   display: block;
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  object-fit: cover;
+  width: 100% !important;
+  aspect-ratio: 3 / 4 !important;
+  object-fit: cover !important;
   background: #25182f;
-  transition: transform .35s;
+  transition: transform 0.35s;
 }
 
 .dv-card:hover .dv-cover {
@@ -359,9 +370,9 @@ img {
 
 .dv-card h3 {
   margin: 7px 0;
-  font-family: Outfit, sans-serif;
-  font-size: 16px;
-  font-weight: 700;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
@@ -443,7 +454,7 @@ img {
 
 .dv-detail h1 {
   margin: 12px 0;
-  font-family: Outfit, sans-serif;
+  font-family: 'Outfit', sans-serif !important;
   font-size: clamp(27px, 4vw, 40px);
   line-height: 1.2;
   overflow-wrap: anywhere;
@@ -451,7 +462,7 @@ img {
 
 .dv-detail h2 {
   margin: 26px 0 13px;
-  font-family: Outfit, sans-serif;
+  font-family: 'Outfit', sans-serif !important;
   font-size: 22px;
 }
 
@@ -510,7 +521,7 @@ img {
   overflow-wrap: anywhere;
 }
 
-/* PLAYER — MANTÉM O FORMATO VERTICAL DOS EPISÓDIOS */
+/* PLAYER VERTICAL */
 
 .dv-player {
   position: fixed;
@@ -531,7 +542,7 @@ img {
 .dv-player h2 {
   max-width: 700px;
   margin: 0;
-  font-family: Outfit, sans-serif;
+  font-family: 'Outfit', sans-serif !important;
   font-size: 18px;
   line-height: 1.4;
 }
@@ -552,7 +563,7 @@ img {
   display: block;
   width: 100%;
   max-height: 76vh;
-  aspect-ratio: 9 / 16;
+  aspect-ratio: 9 / 16 !important;
   object-fit: contain;
   border-radius: 10px;
   background: #000;
@@ -584,13 +595,15 @@ img {
   text-align: center;
 }
 
-/* TABLETS */
+/* TELAS GRANDES */
 
 @media (min-width: 1200px) {
   .dv-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   }
 }
+
+/* TABLETS */
 
 @media (max-width: 900px) {
   .dv-header {
@@ -604,12 +617,12 @@ img {
   }
 
   .dv-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px 13px;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px 13px !important;
   }
 
   .dv-hero {
-    min-height: 340px;
+    min-height: 340px !important;
   }
 }
 
@@ -617,19 +630,19 @@ img {
 
 @media (max-width: 600px) {
   .dv-app {
-    padding-bottom: 20px;
+    padding-bottom: 20px !important;
   }
 
   .dv-header {
-    position: relative;
+    position: relative !important;
     align-items: center;
     flex-wrap: wrap;
     gap: 13px;
-    padding: 15px 5%;
+    padding: 15px 5% !important;
   }
 
   .dv-logo {
-    font-size: 25px;
+    font-size: 25px !important;
   }
 
   .dv-header-actions {
@@ -638,7 +651,7 @@ img {
 
   .dv-search {
     order: 3;
-    width: 100%;
+    width: 100% !important;
     padding: 12px 15px;
   }
 
@@ -654,10 +667,10 @@ img {
   }
 
   .dv-hero {
-    min-height: 330px;
-    margin: 16px 0 32px;
-    padding: 23px;
-    border-radius: 15px;
+    min-height: 330px !important;
+    margin: 16px 0 32px !important;
+    padding: 23px !important;
+    border-radius: 15px !important;
   }
 
   .dv-hero-image {
@@ -666,12 +679,17 @@ img {
 
   .dv-hero::after {
     background:
-      linear-gradient(0deg, #10091bf5 0%, #10091bb8 50%, #10091b35 100%);
+      linear-gradient(
+        0deg,
+        #10091bf5 0%,
+        #10091bb8 50%,
+        #10091b35 100%
+      );
   }
 
   .dv-hero h1 {
-    font-size: 34px;
-    letter-spacing: -.7px;
+    font-size: 34px !important;
+    letter-spacing: -0.7px;
   }
 
   .dv-hero p {
@@ -680,7 +698,7 @@ img {
   }
 
   .dv-section-title {
-    font-size: 22px;
+    font-size: 22px !important;
   }
 
   .dv-categories {
@@ -694,12 +712,12 @@ img {
   }
 
   .dv-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 17px 11px;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 17px 11px !important;
   }
 
   .dv-card {
-    border-radius: 10px;
+    border-radius: 10px !important;
   }
 
   .dv-card-content {
@@ -707,7 +725,7 @@ img {
   }
 
   .dv-card h3 {
-    font-size: 14px;
+    font-size: 14px !important;
   }
 
   .dv-description {
@@ -751,7 +769,7 @@ img {
   }
 
   .dv-detail h1 {
-    font-size: 30px;
+    font-size: 30px !important;
   }
 
   .dv-detail-actions {
@@ -799,7 +817,7 @@ img {
 
 @media (max-width: 360px) {
   .dv-logo {
-    font-size: 22px;
+    font-size: 22px !important;
   }
 
   .dv-header-actions > .dv-button {
@@ -808,7 +826,7 @@ img {
   }
 
   .dv-grid {
-    gap: 14px 8px;
+    gap: 14px 8px !important;
   }
 
   .dv-card-content {
@@ -816,16 +834,18 @@ img {
   }
 
   .dv-card h3 {
-    font-size: 13px;
+    font-size: 13px !important;
   }
 }
+
+/* ACESSIBILIDADE */
 
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     scroll-behavior: auto !important;
-    transition-duration: .01ms !important;
-    animation-duration: .01ms !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }
