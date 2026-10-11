@@ -22,35 +22,46 @@ const PLAYLISTS = {
   },
 };
 
-const DEMO_SERIES = [
-  {
-    id: "demo-1",
-    title: "Contrato de Amor",
-    category: "Romance",
-    description:
-      "Um acordo inesperado aproxima duas pessoas que juraram nunca se apaixonar.",
-    image:
-      "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    id: "demo-2",
-    title: "Segredo da Meia-Noite",
-    category: "Suspense",
-    description:
-      "Uma descoberta inesperada transforma a vida de uma jovem para sempre.",
-    image:
-      "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    id: "demo-3",
-    title: "Entre Dois Corações",
-    category: "Drama",
-    description:
-      "Entre escolhas difíceis e sentimentos inesperados, o amor terá a última palavra.",
-    image:
-      "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=900&q=80",
-  },
-];
+const DEFAULT_SERIES_COVER =
+  "https://placehold.co/600x800/171721/ffffff?text=Dramovix";
+
+const DEFAULT_MOVIE_COVER =
+  "https://placehold.co/600x800/171721/ffffff?text=Filme";
+
+const DEFAULT_CHANNEL_LOGO =
+  "https://placehold.co/100x100/171721/ffffff?text=TV";
+
+function normalizeText(value = "") {
+  return String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function getSeriesCover(series) {
+  const title = normalizeText(series?.title || "");
+
+  if (
+    title.includes("sireno") ||
+    title.includes("cortejar")
+  ) {
+    return "/Ensinei%20um%20Sireno%20a%20Cortejar%E2%80%A6%20e%20Agora%20Sou%20Sua.jpg";
+  }
+
+  if (
+    title.includes("baba do herdeiro") ||
+    title.includes("herdeiro virou marido")
+  ) {
+    return "/baba-do-herdeiro.png";
+  }
+
+  return (
+    series?.image ||
+    series?.poster_url ||
+    DEFAULT_SERIES_COVER
+  );
+}
 
 function parseM3U(text) {
   const lines = text.split(/\r?\n/);
@@ -100,10 +111,13 @@ function parseM3U(text) {
 }
 
 function normalizeEpisodeTitle(episode, index) {
-  const number = episode.episode_number || index + 1;
+  const number =
+    episode.episode_number ||
+    episode.episode ||
+    index + 1;
 
-  const title = (episode.title || "")
-    .replace(/^epis[oó]dio\s*\d+\s*[-:.]?\s*/i, "")
+  const title = String(episode.title || "")
+    .replace(/^epis[oó]dio\s*\d+\s*[-:.–—]?\s*/i, "")
     .trim();
 
   return {
@@ -136,7 +150,9 @@ export default function App() {
 
   const [favorites, setFavorites] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("dramovix-favorites") || "[]");
+      return JSON.parse(
+        localStorage.getItem("dramovix-favorites") || "[]"
+      );
     } catch {
       return [];
     }
@@ -150,7 +166,7 @@ export default function App() {
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerError, setPlayerError] = useState("");
 
-  // Carrega o catálogo do Supabase.
+  // Carrega somente os conteúdos cadastrados no Supabase.
   useEffect(() => {
     let cancelled = false;
 
@@ -161,8 +177,8 @@ export default function App() {
       try {
         const [
           { data: seriesData, error: seriesError },
-          { data: moviesData },
-          { data: channelsData },
+          { data: moviesData, error: moviesError },
+          { data: channelsData, error: channelsError },
         ] = await Promise.all([
           supabase.from("series").select("*"),
           supabase.from("movies").select("*"),
@@ -171,15 +187,23 @@ export default function App() {
 
         if (cancelled) return;
 
-        if (seriesError) {
-          throw seriesError;
+        if (seriesError) throw seriesError;
+
+        setSeries(seriesData || []);
+
+        if (moviesError) {
+          console.warn(
+            "Não foi possível carregar os filmes:",
+            moviesError
+          );
         }
 
-        setSeries(
-          seriesData?.length
-            ? seriesData
-            : DEMO_SERIES
-        );
+        if (channelsError) {
+          console.warn(
+            "Não foi possível carregar os canais do Supabase:",
+            channelsError
+          );
+        }
 
         setMovies(moviesData || []);
 
@@ -202,14 +226,17 @@ export default function App() {
 
         console.error("Erro ao carregar catálogo:", err);
 
-        setSeries(DEMO_SERIES);
+        setSeries([]);
         setMovies([]);
         setDbChannels([]);
+
         setError(
-          "Não foi possível carregar todo o catálogo do Supabase. Verifique sua conexão e as tabelas."
+          "Não foi possível carregar o catálogo do Supabase. Verifique a conexão e as tabelas."
         );
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
@@ -222,10 +249,14 @@ export default function App() {
 
   // Salva os favoritos no navegador.
   useEffect(() => {
-    localStorage.setItem(
-      "dramovix-favorites",
-      JSON.stringify(favorites)
-    );
+    try {
+      localStorage.setItem(
+        "dramovix-favorites",
+        JSON.stringify(favorites)
+      );
+    } catch (err) {
+      console.warn("Não foi possível salvar os favoritos:", err);
+    }
   }, [favorites]);
 
   // Carrega os episódios da minissérie selecionada.
@@ -235,14 +266,11 @@ export default function App() {
     async function loadEpisodes() {
       if (!selectedSeries) {
         setEpisodes([]);
+        setEpisodesLoading(false);
         return;
       }
 
-      if (String(selectedSeries.id).startsWith("demo-")) {
-        setEpisodes([]);
-        return;
-      }
-
+      setEpisodes([]);
       setEpisodesLoading(true);
 
       try {
@@ -280,19 +308,23 @@ export default function App() {
   // Importa a playlist selecionada.
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
 
     async function loadPlaylist() {
       const playlist = PLAYLISTS[channelSource];
 
       if (!playlist) {
         setPlaylistChannels([]);
+        setPlaylistLoading(false);
         return;
       }
 
       setPlaylistLoading(true);
 
       try {
-        const response = await fetch(playlist.url);
+        const response = await fetch(playlist.url, {
+          signal: controller.signal,
+        });
 
         if (!response.ok) {
           throw new Error(
@@ -315,7 +347,9 @@ export default function App() {
           );
         }
       } catch (err) {
-        console.error("Erro ao importar playlist:", err);
+        if (err.name !== "AbortError") {
+          console.error("Erro ao importar playlist:", err);
+        }
 
         if (!cancelled) {
           setPlaylistChannels([]);
@@ -331,6 +365,7 @@ export default function App() {
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [channelSource]);
 
@@ -342,25 +377,29 @@ export default function App() {
       item.url ||
       "";
 
+    setPlayerError("");
+
     if (!videoUrl) {
+      setCurrentVideo({
+        ...item,
+        type,
+        name: item.name || item.title || "Dramovix",
+        url: "",
+      });
+
       setPlayerError(
         "Este conteúdo ainda não possui um link de vídeo cadastrado."
       );
-      setCurrentVideo(item);
+
       setPlayerOpen(true);
       return;
     }
-
-    setPlayerError("");
 
     setCurrentVideo({
       ...item,
       url: videoUrl,
       type,
-      name:
-        item.name ||
-        item.title ||
-        "Dramovix",
+      name: item.name || item.title || "Dramovix",
     });
 
     setPlayerOpen(true);
@@ -369,6 +408,7 @@ export default function App() {
   function closePlayer() {
     setPlayerOpen(false);
     setCurrentVideo(null);
+    setSelectedEpisode(null);
     setPlayerError("");
   }
 
@@ -417,7 +457,7 @@ export default function App() {
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal && !cancelled) {
           setPlayerError(
-            "Não foi possível reproduzir este canal ou vídeo. Tente outro link."
+            "Não foi possível reproduzir este canal ou vídeo. Verifique o link ou tente outro conteúdo."
           );
         }
       });
@@ -426,11 +466,9 @@ export default function App() {
       video.canPlayType("application/vnd.apple.mpegurl")
     ) {
       video.src = url;
-
       video.play().catch(() => {});
     } else {
       video.src = url;
-
       video.play().catch(() => {});
     }
 
@@ -464,6 +502,7 @@ export default function App() {
   function goHome() {
     setSection("Início");
     setSelectedSeries(null);
+    setSelectedEpisode(null);
     setCategory("Todas");
     setSearch("");
   }
@@ -995,11 +1034,13 @@ export default function App() {
       padding: 18px;
       background: rgba(0,0,0,.88);
       backdrop-filter: blur(8px);
+      overflow-y: auto;
     }
 
     .dv-player-modal {
       width: min(100%, 900px);
-      overflow: hidden;
+      max-height: 94dvh;
+      overflow: auto;
       background: #101018;
       border: 1px solid #3b3044;
       border-radius: 17px;
@@ -1016,9 +1057,11 @@ export default function App() {
     .dv-player-top h3 {
       margin: 0;
       font-size: 15px;
+      overflow-wrap: anywhere;
     }
 
     .dv-player-close {
+      flex: 0 0 38px;
       width: 38px;
       height: 38px;
       color: white;
@@ -1029,6 +1072,7 @@ export default function App() {
     }
 
     .dv-video-wrap {
+      width: 100%;
       background: black;
       aspect-ratio: 16 / 9;
     }
@@ -1038,6 +1082,30 @@ export default function App() {
       height: 100%;
       display: block;
       background: black;
+      object-fit: contain;
+    }
+
+    /* Player vertical exclusivo para episódios. */
+    .dv-player-modal.dv-player-vertical {
+      width: min(92vw, 420px);
+      max-height: 94dvh;
+      overflow-y: auto;
+    }
+
+    .dv-player-vertical .dv-player-top {
+      padding: 10px 12px;
+    }
+
+    .dv-player-vertical .dv-video-wrap {
+      width: 100%;
+      aspect-ratio: 9 / 16;
+      max-height: calc(94dvh - 75px);
+      overflow: hidden;
+    }
+
+    .dv-player-vertical .dv-video {
+      width: 100%;
+      height: 100%;
       object-fit: contain;
     }
 
@@ -1118,6 +1186,20 @@ export default function App() {
       .dv-channel-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+
+      .dv-player-overlay {
+        padding: 10px;
+      }
+
+      .dv-player-modal.dv-player-vertical {
+        width: min(92vw, 420px);
+        max-height: 94dvh;
+        border-radius: 13px;
+      }
+
+      .dv-player-vertical .dv-video-wrap {
+        max-height: calc(94dvh - 70px);
+      }
     }
   `;
 
@@ -1144,6 +1226,7 @@ export default function App() {
               onClick={() => {
                 setSection(item);
                 setSelectedSeries(null);
+                setSelectedEpisode(null);
                 setCategory("Todas");
               }}
             >
@@ -1162,9 +1245,7 @@ export default function App() {
       </header>
 
       <main className="dv-main">
-        {error && (
-          <div className="dv-notice">{error}</div>
-        )}
+        {error && <div className="dv-notice">{error}</div>}
 
         {selectedSeries ? (
           <>
@@ -1172,6 +1253,7 @@ export default function App() {
               className="dv-secondary dv-back"
               onClick={() => {
                 setSelectedSeries(null);
+                setSelectedEpisode(null);
                 setEpisodes([]);
               }}
             >
@@ -1181,12 +1263,12 @@ export default function App() {
             <section className="dv-detail">
               <img
                 className="dv-detail-poster"
-                src={
-                  selectedSeries.image ||
-                  selectedSeries.poster_url ||
-                  "https://placehold.co/600x800/171721/ffffff?text=Dramovix"
-                }
-                alt={selectedSeries.title}
+                src={getSeriesCover(selectedSeries)}
+                alt={selectedSeries.title || "Minissérie"}
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = DEFAULT_SERIES_COVER;
+                }}
               />
 
               <div>
@@ -1203,9 +1285,7 @@ export default function App() {
 
                 <div className="dv-card-actions">
                   <button
-                    onClick={() =>
-                      toggleFavorite(selectedSeries)
-                    }
+                    onClick={() => toggleFavorite(selectedSeries)}
                   >
                     {isFavorite(selectedSeries)
                       ? "♥ Remover dos favoritos"
@@ -1235,10 +1315,7 @@ export default function App() {
                         number,
                         title,
                         displayTitle,
-                      } = normalizeEpisodeTitle(
-                        episode,
-                        index
-                      );
+                      } = normalizeEpisodeTitle(episode, index);
 
                       return (
                         <button
@@ -1254,7 +1331,8 @@ export default function App() {
                                 url:
                                   episode.video_url ||
                                   episode.stream_url ||
-                                  episode.url,
+                                  episode.url ||
+                                  "",
                               },
                               "episode"
                             );
@@ -1372,7 +1450,9 @@ export default function App() {
                         alt=""
                         loading="lazy"
                         onError={(event) => {
-                          event.currentTarget.style.display = "none";
+                          event.currentTarget.onerror = null;
+                          event.currentTarget.src =
+                            DEFAULT_CHANNEL_LOGO;
                         }}
                       />
                     ) : (
@@ -1416,10 +1496,15 @@ export default function App() {
                         src={
                           movie.image ||
                           movie.poster_url ||
-                          "https://placehold.co/600x800/171721/ffffff?text=Filme"
+                          DEFAULT_MOVIE_COVER
                         }
-                        alt={movie.title}
+                        alt={movie.title || "Filme"}
                         loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.onerror = null;
+                          event.currentTarget.src =
+                            DEFAULT_MOVIE_COVER;
+                        }}
                       />
                     </div>
 
@@ -1429,9 +1514,7 @@ export default function App() {
 
                       <div className="dv-card-actions">
                         <button
-                          onClick={() =>
-                            openPlayer(movie, "movie")
-                          }
+                          onClick={() => openPlayer(movie, "movie")}
                         >
                           ▶ Assistir
                         </button>
@@ -1513,7 +1596,9 @@ export default function App() {
               </div>
             ) : filteredSeries.length === 0 ? (
               <div className="dv-empty">
-                Nenhuma minissérie encontrada.
+                {section === "Favoritos"
+                  ? "Você ainda não adicionou minisséries aos favoritos."
+                  : "Nenhuma minissérie encontrada no catálogo."}
               </div>
             ) : (
               <div className="dv-grid">
@@ -1528,22 +1613,21 @@ export default function App() {
                       style={{ cursor: "pointer" }}
                     >
                       <img
-                        src={
-                          item.image ||
-                          item.poster_url ||
-                          "https://placehold.co/600x800/171721/ffffff?text=Dramovix"
-                        }
-                        alt={item.title}
+                        src={getSeriesCover(item)}
+                        alt={item.title || "Minissérie"}
                         loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.onerror = null;
+                          event.currentTarget.src =
+                            DEFAULT_SERIES_COVER;
+                        }}
                       />
                     </div>
 
                     <div className="dv-card-body">
                       <h3>{item.title}</h3>
 
-                      <p>
-                        {item.category || "Minissérie"}
-                      </p>
+                      <p>{item.category || "Minissérie"}</p>
 
                       <div className="dv-card-actions">
                         <button
@@ -1595,10 +1679,15 @@ export default function App() {
                             src={
                               movie.image ||
                               movie.poster_url ||
-                              "https://placehold.co/600x800/171721/ffffff?text=Filme"
+                              DEFAULT_MOVIE_COVER
                             }
-                            alt={movie.title}
+                            alt={movie.title || "Filme"}
                             loading="lazy"
+                            onError={(event) => {
+                              event.currentTarget.onerror = null;
+                              event.currentTarget.src =
+                                DEFAULT_MOVIE_COVER;
+                            }}
                           />
                         </div>
 
@@ -1638,7 +1727,13 @@ export default function App() {
             }
           }}
         >
-          <div className="dv-player-modal">
+          <div
+            className={`dv-player-modal ${
+              currentVideo?.type === "episode"
+                ? "dv-player-vertical"
+                : ""
+            }`}
+          >
             <div className="dv-player-top">
               <h3>
                 {currentVideo?.name ||
