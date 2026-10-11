@@ -121,6 +121,26 @@ function isHlsUrl(url = "") {
   return /\.m3u8(?:$|[?#])/i.test(url);
 }
 
+// Identifica os links de vídeo e de incorporação do UFOLOAD.
+function isUfoLoadUrl(url = "") {
+  return /^https?:\/\/(?:www\.)?ufoload\.com\/(?:e|v)\/[a-zA-Z0-9_-]+(?:[/?#].*)?$/i.test(
+    String(url).trim()
+  );
+}
+
+// Converte o endereço /v/ do UFOLOAD para o player incorporado /e/.
+function getUfoLoadEmbedUrl(url = "") {
+  const match = String(url)
+    .trim()
+    .match(
+      /^https?:\/\/(?:www\.)?ufoload\.com\/(?:e|v)\/([a-zA-Z0-9_-]+)/i
+    );
+
+  if (!match) return "";
+
+  return `https://ufoload.com/e/${match[1]}`;
+}
+
 function normalizeEpisodeTitle(episode, index) {
   return (
     episode.title ||
@@ -468,9 +488,15 @@ export default function App() {
     }
   }
 
-  // Reproduz vídeos MP4 e HLS.
+  // Reproduz vídeos MP4 e HLS no elemento de vídeo.
+  // Os vídeos do UFOLOAD são carregados no iframe abaixo.
   useEffect(() => {
-    if (!playerOpen || !currentVideo?.url || !videoRef.current) {
+    if (
+      !playerOpen ||
+      !currentVideo?.url ||
+      !videoRef.current ||
+      isUfoLoadUrl(currentVideo.url)
+    ) {
       return undefined;
     }
 
@@ -569,7 +595,6 @@ export default function App() {
               "Não foi possível carregar o vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução dentro do DRAMOVIX (CORS)."
             );
 
-            // Não reinicia indefinidamente: isso não resolve erros CORS.
             hls.destroy();
 
             if (hlsRef.current === hls) {
@@ -1192,6 +1217,11 @@ export default function App() {
           background: #aa4ce1;
         }
 
+        .dv-primary-button:disabled {
+          opacity: .45;
+          cursor: not-allowed;
+        }
+
         .dv-favorite-button {
           flex-shrink: 0;
           border: 1px solid #383446;
@@ -1230,6 +1260,10 @@ export default function App() {
           object-fit: cover;
           border-radius: 16px;
           border: 1px solid #343041;
+        }
+
+        .dv-detail-content {
+          min-width: 0;
         }
 
         .dv-detail-content h1 {
@@ -1424,6 +1458,7 @@ export default function App() {
         }
 
         .dv-video-wrap {
+          position: relative;
           width: 100%;
           aspect-ratio: 16 / 9;
           background: #000;
@@ -1447,6 +1482,7 @@ export default function App() {
           display: block;
           background: #000;
           object-fit: contain;
+          border: 0;
         }
 
         .dv-player-error {
@@ -1999,27 +2035,44 @@ export default function App() {
 
             {currentVideo?.url ? (
               <div className="dv-video-wrap">
-                <video
-                  key={currentVideo.url}
-                  ref={videoRef}
-                  className="dv-video"
-                  controls
-                  playsInline
-                  autoPlay
-                  preload="metadata"
-                  onEnded={() => {
-                    if (currentVideo?.type === "episode") {
-                      playNextEpisode();
+                {isUfoLoadUrl(currentVideo.url) ? (
+                  <iframe
+                    key={getUfoLoadEmbedUrl(currentVideo.url)}
+                    src={getUfoLoadEmbedUrl(currentVideo.url)}
+                    title={
+                      currentVideo?.name ||
+                      currentVideo?.title ||
+                      "Vídeo DRAMOVIX"
                     }
-                  }}
-                  onError={() => {
-                    if (!isHlsUrl(currentVideo?.url || "")) {
-                      setPlayerError(
-                        "Não foi possível reproduzir este vídeo. Verifique se o link está correto e acessível."
-                      );
-                    }
-                  }}
-                />
+                    className="dv-video"
+                    allow="autoplay; fullscreen; picture-in-picture"
+                    allowFullScreen
+                    loading="eager"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                  />
+                ) : (
+                  <video
+                    key={currentVideo.url}
+                    ref={videoRef}
+                    className="dv-video"
+                    controls
+                    playsInline
+                    autoPlay
+                    preload="metadata"
+                    onEnded={() => {
+                      if (currentVideo?.type === "episode") {
+                        playNextEpisode();
+                      }
+                    }}
+                    onError={() => {
+                      if (!isHlsUrl(currentVideo?.url || "")) {
+                        setPlayerError(
+                          "Não foi possível reproduzir este vídeo. Verifique se o link está correto e acessível."
+                        );
+                      }
+                    }}
+                  />
+                )}
               </div>
             ) : (
               <div className="dv-empty">
