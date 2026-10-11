@@ -364,5 +364,4 @@ export default function App() {
   function toggleFavorite(item) {
     const id = String(item.id);
     setFavorites((current) =>
-      current.includes(id)
-        ? current.filter((favoriteId) => favoriteId !== id)
+      current.includes(id
