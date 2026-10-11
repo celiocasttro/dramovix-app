@@ -42,10 +42,7 @@ function normalizeText(value = "") {
 function getSeriesCover(series) {
   const title = normalizeText(series?.title || "");
 
-  if (
-    title.includes("sireno") ||
-    title.includes("cortejar")
-  ) {
+  if (title.includes("sireno") || title.includes("cortejar")) {
     return "/Ensinei%20um%20Sireno%20a%20Cortejar%E2%80%A6%20e%20Agora%20Sou%20Sua.jpg";
   }
 
@@ -166,7 +163,7 @@ export default function App() {
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerError, setPlayerError] = useState("");
 
-  // Carrega somente os conteúdos cadastrados no Supabase.
+  // Carrega os conteúdos cadastrados no Supabase.
   useEffect(() => {
     let cancelled = false;
 
@@ -369,31 +366,16 @@ export default function App() {
     };
   }, [channelSource]);
 
-  // Abre o player de vídeo.
+  // Abre o player.
   function openPlayer(item, type = "movie") {
-    const videoUrl =
+    const videoUrl = String(
       item.video_url ||
       item.stream_url ||
       item.url ||
-      "";
+      ""
+    ).trim();
 
     setPlayerError("");
-
-    if (!videoUrl) {
-      setCurrentVideo({
-        ...item,
-        type,
-        name: item.name || item.title || "Dramovix",
-        url: "",
-      });
-
-      setPlayerError(
-        "Este conteúdo ainda não possui um link de vídeo cadastrado."
-      );
-
-      setPlayerOpen(true);
-      return;
-    }
 
     setCurrentVideo({
       ...item,
@@ -403,6 +385,12 @@ export default function App() {
     });
 
     setPlayerOpen(true);
+
+    if (!videoUrl) {
+      setPlayerError(
+        "Este conteúdo ainda não possui um link de vídeo cadastrado."
+      );
+    }
   }
 
   function closePlayer() {
@@ -412,74 +400,185 @@ export default function App() {
     setPlayerError("");
   }
 
-  // Configura o vídeo e o suporte a HLS.
+  // PLAYER CORRIGIDO: suporta MP4, HLS e URLs com parâmetros.
   useEffect(() => {
     const video = videoRef.current;
 
     if (!playerOpen || !currentVideo || !video) return;
 
-    const url =
+    const url = String(
       currentVideo.video_url ||
       currentVideo.stream_url ||
-      currentVideo.url;
-
-    if (!url) {
-      setPlayerError(
-        "Nenhum link de vídeo foi informado para este conteúdo."
-      );
-      return;
-    }
+      currentVideo.url ||
+      ""
+    ).trim();
 
     let hls = null;
     let cancelled = false;
 
-    setPlayerError("");
+    const showError = (message) => {
+      if (!cancelled) {
+        setPlayerError(message);
+      }
+    };
 
+    const handleVideoError = () => {
+      if (cancelled) return;
+
+      const code = video.error?.code;
+
+      const messages = {
+        1: "A reprodução foi interrompida.",
+        2: "Erro de conexão ao carregar o vídeo. Verifique o link.",
+        3: "O navegador não consegue decodificar este vídeo.",
+        4: "Formato incompatível ou link que não fornece um vídeo diretamente.",
+      };
+
+      showError(
+        messages[code] ||
+          "Não foi possível reproduzir o vídeo. Verifique o endereço."
+      );
+    };
+
+    const handleVideoLoaded = () => {
+      if (!cancelled) {
+        setPlayerError("");
+      }
+    };
+
+    const handleCanPlay = () => {
+      if (cancelled) return;
+
+      setPlayerError("");
+
+      video.play().catch((err) => {
+        if (cancelled) return;
+
+        if (err?.name === "NotAllowedError") {
+          showError(
+            "Toque no botão Play do vídeo para iniciar a reprodução."
+          );
+        } else if (err?.name !== "AbortError") {
+          console.warn("Reprodução automática não iniciada:", err);
+        }
+      });
+    };
+
+    // Limpa o vídeo anterior antes de carregar o novo.
     video.pause();
     video.removeAttribute("src");
     video.load();
 
-    if (
-      /\.m3u8($|\?)/i.test(url) &&
-      Hls.isSupported()
-    ) {
-      hls = new Hls();
+    if (!url) {
+      setPlayerError(
+        "Este episódio não possui um link de vídeo cadastrado."
+      );
 
-      hls.loadSource(url);
-      hls.attachMedia(video);
+      return () => {
+        cancelled = true;
+      };
+    }
 
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        if (!cancelled) {
-          video.play().catch(() => {});
-        }
+    setPlayerError("");
+
+    video.addEventListener("error", handleVideoError);
+    video.addEventListener("loadeddata", handleVideoLoaded);
+    video.addEventListener("canplay", handleCanPlay);
+
+    // Identifica links HLS mesmo quando possuem parâmetros na URL.
+    let isHls = false;
+
+    try {
+      const parsedUrl = new URL(url, window.location.href);
+
+      isHls =
+        /\.m3u8$/i.test(parsedUrl.pathname) ||
+        /[?&](format|type)=m3u8(?:&|$)/i.test(
+          parsedUrl.search
+        );
+    } catch {
+      isHls = /\.m3u8(?:$|[?#])/i.test(url);
+    }
+
+    if (isHls && Hls.isSupported()) {
+      hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: false,
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (data.fatal && !cancelled) {
-          setPlayerError(
-            "Não foi possível reproduzir este canal ou vídeo. Verifique o link ou tente outro conteúdo."
+        if (cancelled || !data.fatal) return;
+
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          showError(
+            "Falha de rede ao carregar o vídeo. Verifique o link e se o servidor permite reprodução externa."
           );
+
+          hls.startLoad();
+        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          showError(
+            "Problema ao decodificar o vídeo. Tentando recuperar a reprodução..."
+          );
+
+          hls.recoverMediaError();
+        } else {
+          showError(
+            "Não foi possível reproduzir este vídeo HLS. Verifique o endereço."
+          );
+
+          hls.destroy();
+          hls = null;
         }
       });
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        if (cancelled) return;
+
+        video.play().catch((err) => {
+          if (
+            !cancelled &&
+            err?.name === "NotAllowedError"
+          ) {
+            showError(
+              "Toque no botão Play do vídeo para iniciar a reprodução."
+            );
+          }
+        });
+      });
+
+      hls.loadSource(url);
+      hls.attachMedia(video);
     } else if (
-      /\.m3u8($|\?)/i.test(url) &&
+      isHls &&
       video.canPlayType("application/vnd.apple.mpegurl")
     ) {
+      // Reprodução HLS nativa, quando disponível no navegador.
       video.src = url;
-      video.play().catch(() => {});
+      video.load();
+    } else if (isHls) {
+      showError(
+        "Este navegador não oferece suporte à reprodução HLS deste endereço."
+      );
     } else {
+      // Links diretos, como MP4, WebM e outros formatos compatíveis.
       video.src = url;
-      video.play().catch(() => {});
+      video.load();
     }
 
     return () => {
       cancelled = true;
 
+      video.pause();
+
+      video.removeEventListener("error", handleVideoError);
+      video.removeEventListener("loadeddata", handleVideoLoaded);
+      video.removeEventListener("canplay", handleCanPlay);
+
       if (hls) {
         hls.destroy();
+        hls = null;
       }
 
-      video.pause();
       video.removeAttribute("src");
       video.load();
     };
@@ -578,10 +677,7 @@ export default function App() {
 
       return (
         text.includes(search.toLowerCase()) &&
-        (
-          section !== "Favoritos" ||
-          isFavorite(item)
-        )
+        (section !== "Favoritos" || isFavorite(item))
       );
     });
   }, [movies, search, section, favorites]);
@@ -1085,7 +1181,7 @@ export default function App() {
       object-fit: contain;
     }
 
-    /* Player vertical exclusivo para episódios. */
+    /* Player vertical para episódios. */
     .dv-player-modal.dv-player-vertical {
       width: min(92vw, 420px);
       max-height: 94dvh;
@@ -1113,6 +1209,7 @@ export default function App() {
       padding: 15px;
       color: #ffb9c2;
       font-size: 13px;
+      line-height: 1.5;
     }
 
     .dv-footer {
@@ -1502,8 +1599,7 @@ export default function App() {
                         loading="lazy"
                         onError={(event) => {
                           event.currentTarget.onerror = null;
-                          event.currentTarget.src =
-                            DEFAULT_MOVIE_COVER;
+                          event.currentTarget.src = DEFAULT_MOVIE_COVER;
                         }}
                       />
                     </div>
@@ -1618,8 +1714,7 @@ export default function App() {
                         loading="lazy"
                         onError={(event) => {
                           event.currentTarget.onerror = null;
-                          event.currentTarget.src =
-                            DEFAULT_SERIES_COVER;
+                          event.currentTarget.src = DEFAULT_SERIES_COVER;
                         }}
                       />
                     </div>
@@ -1685,8 +1780,7 @@ export default function App() {
                             loading="lazy"
                             onError={(event) => {
                               event.currentTarget.onerror = null;
-                              event.currentTarget.src =
-                                DEFAULT_MOVIE_COVER;
+                              event.currentTarget.src = DEFAULT_MOVIE_COVER;
                             }}
                           />
                         </div>
@@ -1752,6 +1846,7 @@ export default function App() {
 
             <div className="dv-video-wrap">
               <video
+                key={currentVideo?.url || "empty-video"}
                 ref={videoRef}
                 className="dv-video"
                 controls
