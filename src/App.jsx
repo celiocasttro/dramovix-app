@@ -358,33 +358,230 @@ export default function App() {
 
   const visibleEpisodes = selected?.dbId ? episodes : [];
 
-  function playNextEpisode() {
-    if (!playing) return;
-    const currentIndex = visibleEpisodes.findIndex(
-      (episode) => String(episode.id) === String(playing.id)
-    );
-
-    if (currentIndex < 0) {
-      setPlaying(null);
-      return;
-    }
-
-    const nextEpisode = visibleEpisodes
-      .slice(currentIndex + 1)
-      .find((episode) => Boolean(episode.video_url));
-
-    if (nextEpisode) {
-      setPlaying(nextEpisode);
-    } else {
-      setPlaying(null);
-    }
-  }
-
   return (
-    <div className="dv-app" style={{ minHeight: "100vh", background: "#10091b", color: "#fff", fontFamily: "Inter, Arial, sans-serif" }}>
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", padding: "18px 5%", background: "#170d25", borderBottom: "1px solid #30203e", flexWrap: "wrap" }}>
+    <div className="dv-app">
+      <style>{`
+        .dv-app {
+          min-height: 100vh;
+          background: #10091b;
+          color: #fff;
+          font-family: Inter, Arial, sans-serif;
+        }
+        .dv-app * { box-sizing: border-box; }
+        .dv-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 18px 5%;
+          background: #170d25;
+          border-bottom: 1px solid #30203e;
+          flex-wrap: wrap;
+        }
+        .dv-logo {
+          color: #c084fc;
+          font-size: 28px;
+          font-weight: 900;
+          letter-spacing: 2px;
+          cursor: pointer;
+        }
+        .dv-nav-tabs {
+          display: flex;
+          gap: 8px;
+        }
+        .dv-nav-tab {
+          background: #241532;
+          border: 1px solid #49345c;
+          color: #d8b4fe;
+          padding: 8px 14px;
+          border-radius: 16px;
+          cursor: pointer;
+          font-weight: 600;
+        }
+        .dv-nav-tab.active {
+          background: #9333ea;
+          color: #fff;
+          border-color: #a855f7;
+        }
+        .dv-header-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        .dv-search {
+          width: min(260px, 100%);
+          padding: 10px 14px;
+          border: 1px solid #49345c;
+          border-radius: 24px;
+          background: #241532;
+          color: white;
+          outline: none;
+        }
+        .dv-main {
+          width: 90%;
+          max-width: 1400px;
+          margin: auto;
+        }
+        .dv-section-title { font-size: 24px; margin: 0 0 8px; }
+        .dv-subtitle { color: #b9a8c8; margin: 0 0 22px; }
+        .dv-categories {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin: 20px 0 28px;
+        }
+        .dv-category {
+          padding: 8px 14px;
+          border-radius: 20px;
+          background: #241532;
+          color: #e9d5ff;
+          border: 1px solid #49345c;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 600;
+        }
+        .dv-category.active {
+          background: #7e22ce;
+          border-color: #a855f7;
+        }
+        .dv-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 18px;
+          padding-bottom: 48px;
+        }
+        .dv-card {
+          min-width: 0;
+          position: relative;
+          background: #190f25;
+          border: 1px solid #30203e;
+          border-radius: 15px;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+        .dv-card-click {
+          display: block;
+          width: 100%;
+          padding: 0;
+          text-align: left;
+          color: inherit;
+          background: none;
+          border: 0;
+          cursor: pointer;
+          flex: 1;
+        }
+        .dv-cover {
+          width: 100%;
+          aspect-ratio: 3/4;
+          object-fit: cover;
+          display: block;
+          background: #2b1a39;
+        }
+        .dv-card-content { padding: 12px; }
+        .dv-card h3 { margin: 6px 0 4px; font-size: 15px; }
+        .dv-tag {
+          color: #c084fc;
+          font-size: 10px;
+          font-weight: 800;
+          text-transform: uppercase;
+        }
+        .dv-description {
+          color: #c5b7d0;
+          font-size: 12px;
+          line-height: 1.4;
+        }
+        .dv-card-actions {
+          padding: 0 12px 14px;
+        }
+        .dv-card-actions .dv-button {
+          width: 100%;
+          padding: 10px;
+        }
+        .dv-heart {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          z-index: 2;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          border: 1px solid #ffffff55;
+          background: #170d25dd;
+          color: white;
+          font-size: 20px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .dv-heart.saved { color: #fb7185; }
+        .dv-message { padding: 20px 0; color: #c5b7d0; }
+        .dv-button {
+          cursor: pointer;
+          border: 0;
+          border-radius: 24px;
+          padding: 11px 17px;
+          background: #9333ea;
+          color: white;
+          font-weight: 700;
+        }
+        .dv-button:hover { background: #a855f7; }
+        .dv-button.secondary {
+          background: #30203e;
+          border: 1px solid #624477;
+        }
+        .dv-footer {
+          padding: 28px 5%;
+          text-align: center;
+          color: #8f7d9f;
+          border-top: 1px solid #30203e;
+        }
+        .dv-player {
+          position: fixed;
+          inset: 0;
+          z-index: 10;
+          background: rgba(8,4,14,.96);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          padding: 24px;
+          text-align: center;
+          overflow: auto;
+        }
+        .dv-player-box {
+          width: min(380px, 100%);
+          background: #000;
+          border: 1px solid #49345c;
+          border-radius: 16px;
+          overflow: hidden;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 0;
+        }
+        .dv-video {
+          display: block;
+          width: 100%;
+          max-height: 80vh;
+          aspect-ratio: 9 / 16;
+          object-fit: contain;
+          background: #000;
+          border-radius: 10px;
+        }
+        @media(max-width: 760px) {
+          .dv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+          .dv-header { align-items: flex-start; }
+          .dv-search { width: 100%; }
+        }
+      `}</style>
+
+      <header className="dv-header">
         <div
-          style={{ color: "#c084fc", fontSize: "28px", fontWeight: "900", letterSpacing: "2px", cursor: "pointer" }}
+          className="dv-logo"
           onClick={() => {
             closeDetails();
             setShowFavorites(false);
@@ -393,9 +590,9 @@ export default function App() {
           DRAMOVIX
         </div>
 
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div className="dv-nav-tabs">
           <button
-            style={{ background: currentTab === "series" ? "#9333ea" : "#241532", border: "1px solid #49345c", color: currentTab === "series" ? "#fff" : "#d8b4fe", padding: "8px 14px", borderRadius: "16px", cursor: "pointer", fontWeight: "600" }}
+            className={`dv-nav-tab ${currentTab === "series" ? "active" : ""}`}
             onClick={() => {
               setCurrentTab("series");
               closeDetails();
@@ -405,7 +602,7 @@ export default function App() {
             🎬 Minisséries
           </button>
           <button
-            style={{ background: currentTab === "movies" ? "#9333ea" : "#241532", border: "1px solid #49345c", color: currentTab === "movies" ? "#fff" : "#d8b4fe", padding: "8px 14px", borderRadius: "16px", cursor: "pointer", fontWeight: "600" }}
+            className={`dv-nav-tab ${currentTab === "movies" ? "active" : ""}`}
             onClick={() => {
               setCurrentTab("movies");
               closeDetails();
@@ -415,7 +612,7 @@ export default function App() {
             🍿 Filmes
           </button>
           <button
-            style={{ background: currentTab === "channels" ? "#9333ea" : "#241532", border: "1px solid #49345c", color: currentTab === "channels" ? "#fff" : "#d8b4fe", padding: "8px 14px", borderRadius: "16px", cursor: "pointer", fontWeight: "600" }}
+            className={`dv-nav-tab ${currentTab === "channels" ? "active" : ""}`}
             onClick={() => {
               setCurrentTab("channels");
               closeDetails();
@@ -426,11 +623,11 @@ export default function App() {
           </button>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+        <div className="dv-header-actions">
           <input
-            style={{ width: "min(260px, 100%)", padding: "10px 14px", border: "1px solid #49345c", borderRadius: "24px", background: "#241532", color: "white", outline: "none" }}
+            className="dv-search"
             type="search"
-            placeholder="Buscar..."
+            placeholder="Pesquisar..."
             value={search}
             onChange={(event) => {
               setSearch(event.target.value);
@@ -440,7 +637,8 @@ export default function App() {
           />
 
           <button
-            style={{ cursor: "pointer", border: 0, borderRadius: "24px", padding: "11px 17px", background: showFavorites ? "#6d28d9" : "#30203e", color: "white", fontWeight: "700" }}
+            className={`dv-button ${showFavorites ? "" : "secondary"}`}
+            style={{ background: showFavorites ? "#6d28d9" : "#30203e" }}
             onClick={() => {
               setShowFavorites((value) => !value);
               setSelected(null);
@@ -452,7 +650,7 @@ export default function App() {
         </div>
       </header>
 
-      <main style={{ width: "90%", maxWidth: "1400px", margin: "auto" }}>
+      <main className="dv-main">
         {selected ? (
           <section style={{ margin: "30px 0 50px", display: "grid", gridTemplateColumns: "minmax(180px,300px) minmax(0,1fr)", gap: "28px" }}>
             <div>
@@ -469,7 +667,7 @@ export default function App() {
 
             <div>
               <button
-                style={{ cursor: "pointer", border: "1px solid #624477", borderRadius: "24px", padding: "11px 17px", background: "#30203e", color: "white", fontWeight: "700" }}
+                className="dv-button secondary"
                 onClick={closeDetails}
               >
                 ← Voltar ao catálogo
@@ -484,10 +682,10 @@ export default function App() {
 
               <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", margin: "18px 0" }}>
                 <button
-                  style={{ cursor: "pointer", border: 0, borderRadius: "24px", padding: "11px 17px", background: "#9333ea", color: "white", fontWeight: "700" }}
+                  className="dv-button"
                   onClick={() => {
                     if (episodesLoading) {
-                      alert("Aguarde: os episódios ainda estão carregando.");
+                      alert("Aguarde: os episódios ainda estão a carregar.");
                       return;
                     }
 
@@ -508,7 +706,8 @@ export default function App() {
                 </button>
 
                 <button
-                  style={{ cursor: "pointer", border: 0, borderRadius: "24px", padding: "11px 17px", background: favorites.includes(String(selected.id)) ? "#6d28d9" : "#30203e", color: "white", fontWeight: "700" }}
+                  className="dv-button secondary"
+                  style={{ background: favorites.includes(String(selected.id)) ? "#6d28d9" : "#30203e" }}
                   onClick={() => toggleFavorite(selected)}
                 >
                   {favorites.includes(String(selected.id))
@@ -520,7 +719,7 @@ export default function App() {
               <h2>Episódios</h2>
 
               {episodesLoading && (
-                <p style={{ color: "#c5b7d0", padding: "20px 0" }}>Carregando episódios...</p>
+                <p className="dv-message">A carregar episódios...</p>
               )}
 
               {episodesError && (
@@ -532,7 +731,7 @@ export default function App() {
               {!episodesLoading &&
                 !episodesError &&
                 visibleEpisodes.length === 0 && (
-                  <p style={{ color: "#c5b7d0", padding: "20px 0" }}>
+                  <p className="dv-message">
                     Ainda não há episódios cadastrados para esta série.
                   </p>
                 )}
@@ -560,12 +759,12 @@ export default function App() {
           <section>
             {currentTab === "series" && !showFavorites && (
               <>
-                <h2 style={{ fontSize: "24px", margin: "24px 0 8px" }}>Categorias</h2>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", margin: "20px 0 28px" }}>
+                <h2 className="dv-section-title" style={{ marginTop: 24 }}>Categorias</h2>
+                <div className="dv-categories">
                   {seriesCategories.map((item) => (
                     <button
                       key={item}
-                      style={{ padding: "9px 16px", borderRadius: "20px", background: seriesCategory === item ? "#7e22ce" : "#241532", color: "#e9d5ff", border: "1px solid #49345c", cursor: "pointer", fontSize: "13px" }}
+                      className={`dv-category ${seriesCategory === item ? "active" : ""}`}
                       onClick={() => setSeriesCategory(item)}
                     >
                       {item}
@@ -577,12 +776,12 @@ export default function App() {
 
             {currentTab === "channels" && !showFavorites && (
               <>
-                <h2 style={{ fontSize: "24px", margin: "24px 0 8px" }}>Categorias de Canais</h2>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", margin: "20px 0 28px" }}>
+                <h2 className="dv-section-title" style={{ marginTop: 24 }}>Categorias de Canais</h2>
+                <div className="dv-categories">
                   {availableChannelCategories.map((item) => (
                     <button
                       key={item}
-                      style={{ padding: "9px 16px", borderRadius: "20px", background: channelCategory === item ? "#7e22ce" : "#241532", color: "#e9d5ff", border: "1px solid #49345c", cursor: "pointer", fontSize: "13px" }}
+                      className={`dv-category ${channelCategory === item ? "active" : ""}`}
                       onClick={() => setChannelCategory(item)}
                     >
                       {item}
@@ -592,9 +791,9 @@ export default function App() {
               </>
             )}
 
-            <h2 style={{ fontSize: "24px", margin: "24px 0 8px" }}>
+            <h2 className="dv-section-title" style={{ marginTop: 24 }}>
               {showFavorites
-                ? "Seus favoritos"
+                ? "Os seus favoritos"
                 : currentTab === "series"
                 ? "Minisséries disponíveis"
                 : currentTab === "movies"
@@ -602,19 +801,19 @@ export default function App() {
                 : "Canais ao vivo por categoria"}
             </h2>
 
-            <p style={{ color: "#b9a8c8", margin: "0 0 22px" }}>
-              {filtered.length} {filtered.length === 1 ? "item" : "itens"} encontrados
-              {loadingIptv && currentTab === "channels" && " (Carregando e traduzindo categorias...)"}
+            <p className="dv-subtitle">
+              {filtered.length} {filtered.length === 1 ? "item encontrado" : "itens encontrados"}
+              {loadingIptv && currentTab === "channels" && " (A carregar categorias...)"}
             </p>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: "22px", paddingBottom: "48px" }}>
+            <div className="dv-grid">
               {filtered.map((item) => {
                 const isFavorite = favorites.includes(String(item.id));
 
                 return (
-                  <article style={{ minWidth: 0, position: "relative", background: "#190f25", border: "1px solid #30203e", borderRadius: "15px", overflow: "hidden" }} key={item.id}>
+                  <article className="dv-card" key={item.id}>
                     <button
-                      style={{ position: "absolute", top: "10px", right: "10px", zIndex: 2, width: "40px", height: "40px", borderRadius: "50%", border: "1px solid #ffffff55", background: "#170d25dd", color: isFavorite ? "#fb7185" : "white", fontSize: "22px", cursor: "pointer" }}
+                      className={`dv-heart ${isFavorite ? "saved" : ""}`}
                       aria-label="Favorito"
                       onClick={() => toggleFavorite(item)}
                     >
@@ -622,12 +821,12 @@ export default function App() {
                     </button>
 
                     <button
-                      style={{ display: "block", width: "100%", padding: 0, textAlign: "left", color: "inherit", background: "none", border: 0, cursor: "pointer" }}
+                      className="dv-card-click"
                       onClick={() => openItem(item)}
                     >
                       {item.image ? (
                         <img
-                          style={{ width: "100%", aspectRatio: "3/4", objectFit: "cover", display: "block", background: "#2b1a39" }}
+                          className="dv-cover"
                           src={item.image}
                           alt={item.title}
                           loading="lazy"
@@ -636,21 +835,21 @@ export default function App() {
                           }}
                         />
                       ) : (
-                        <div style={{ width: "100%", aspectRatio: "3/4", background: "#2b1a39" }} />
+                        <div className="dv-cover" />
                       )}
 
-                      <div style={{ padding: "13px" }}>
-                        <span style={{ color: "#c084fc", fontSize: "11px", fontWeight: "800", textTransform: "uppercase" }}>{item.category}</span>
-                        <h3 style={{ margin: "7px 0 6px", fontSize: "16px" }}>{item.title}</h3>
-                        <p style={{ color: "#c5b7d0", fontSize: "13px", lineHeight: "1.5" }}>
+                      <div className="dv-card-content">
+                        <span className="dv-tag">{item.category}</span>
+                        <h3>{item.title}</h3>
+                        <p className="dv-description">
                           {item.description}
                         </p>
                       </div>
                     </button>
 
-                    <div style={{ display: "flex", gap: "8px", padding: "0 13px 14px" }}>
+                    <div className="dv-card-actions">
                       <button
-                        style={{ cursor: "pointer", border: 0, borderRadius: "24px", padding: "9px 10px", background: "#9333ea", color: "white", fontWeight: "700", flex: 1 }}
+                        className="dv-button"
                         onClick={() => openItem(item)}
                       >
                         ▶ {currentTab === "series" ? "Ver série" : "Assistir"}
@@ -662,7 +861,7 @@ export default function App() {
             </div>
 
             {!loading && filtered.length === 0 && (
-              <p style={{ color: "#c5b7d0", padding: "20px 0" }}>
+              <p className="dv-message">
                 Nenhum conteúdo encontrado nesta categoria.
               </p>
             )}
@@ -670,26 +869,26 @@ export default function App() {
         )}
       </main>
 
-      <footer style={{ padding: "28px 5%", textAlign: "center", color: "#8f7d9f", borderTop: "1px solid #30203e" }}>
-        DRAMOVIX · Suas histórias, do seu jeito.
+      <footer className="dv-footer">
+        DRAMOVIX · As suas histórias, à sua maneira.
       </footer>
 
       {playing && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 10, background: "rgba(8,4,14,.96)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", padding: "24px", textAlign: "center", overflow: "auto" }}>
+        <div className="dv-player">
           <button
-            style={{ cursor: "pointer", border: "1px solid #624477", borderRadius: "24px", padding: "11px 17px", background: "#30203e", color: "white", fontWeight: "700" }}
+            className="dv-button secondary"
             onClick={() => setPlaying(null)}
           >
-            ✕ Fechar player
+            ✕ Fechar leitor
           </button>
 
           <h2>{playing.title}</h2>
 
-          <div style={{ width: "min(380px, 100%)", background: "#000", border: "1px solid #49345c", borderRadius: "16px", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center", padding: 0 }}>
+          <div className="dv-player-box">
             {playing.video_url ? (
               <video
                 key={playing.id || playing.video_url}
-                style={{ display: "block", width: "100%", maxHeight: "80vh", aspectRatio: "9 / 16", objectFit: "contain", background: "#000", borderRadius: "10px" }}
+                className="dv-video"
                 controls
                 playsInline
                 autoPlay
@@ -711,10 +910,10 @@ export default function App() {
                   }
                 }}
               >
-                Seu navegador não conseguiu abrir este stream.
+                O seu browser não conseguiu abrir este stream.
               </video>
             ) : (
-              <p style={{ color: "#d8cce2", lineHeight: "1.6", padding: "20px" }}>Este vídeo não possui link de reprodução cadastrado.</p>
+              <p className="dv-message">Este vídeo não possui link de reprodução cadastrado.</p>
             )}
           </div>
         </div>
