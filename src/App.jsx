@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import "./App.css";
 
-const categories = [
+const seriesCategories = [
   "Todas",
   "Romance",
   "Vingança",
@@ -44,7 +44,8 @@ export default function App() {
   
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState("");
-  const [category, setCategory] = useState("Todas");
+  const [seriesCategory, setSeriesCategory] = useState("Todas");
+  const [channelCategory, setChannelCategory] = useState("Todas");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
   const [episodes, setEpisodes] = useState([]);
@@ -123,7 +124,7 @@ export default function App() {
     loadMovies();
   }, []);
 
-  // Carregar Canais do Supabase + Listas IPTV do GitHub
+  // Carregar Canais do Supabase + Listas IPTV do GitHub com Categorias
   useEffect(() => {
     async function loadAllChannels() {
       // 1. Carrega do Supabase
@@ -137,7 +138,7 @@ export default function App() {
         customChannels = data.map((item) => ({
           id: `channel-${item.id}`,
           title: item.name || item.title,
-          category: "Ao Vivo (Personalizado)",
+          category: item.category || "Personalizado",
           description: item.description || "Canal de TV ao vivo",
           image: item.logo_url || "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=500&auto=format&fit=crop&q=60",
           video_url: item.stream_url || item.video_url || "",
@@ -146,7 +147,7 @@ export default function App() {
 
       setDbChannels(customChannels);
 
-      // 2. Carrega as listas IPTV em paralelo
+      // 2. Carrega as listas IPTV e extrai categorias reais (group-title)
       setLoadingIptv(true);
       try {
         const allParsed = [];
@@ -159,6 +160,7 @@ export default function App() {
             const lines = text.split("\n");
             let currentTitle = "";
             let currentLogo = "";
+            let currentGroup = "Geral";
 
             for (let i = 0; i < lines.length; i++) {
               const line = lines[i].trim();
@@ -167,8 +169,13 @@ export default function App() {
                 const parts = line.split(",");
                 currentTitle = parts[parts.length - 1] || "Canal IPTV";
 
+                // Extrai o logotipo se houver
                 const logoMatch = line.match(/tvg-logo="([^"]*)"/);
                 currentLogo = logoMatch ? logoMatch[1] : "";
+
+                // Extrai a categoria oficial do iptv-org (group-title)
+                const groupMatch = line.match(/group-title="([^"]*)"/);
+                currentGroup = groupMatch ? groupMatch[1] : "Geral";
               } else if (line && !line.startsWith("#")) {
                 const streamUrl = line;
                 
@@ -177,7 +184,7 @@ export default function App() {
                   allParsed.push({
                     id: `iptv-${allParsed.length}`,
                     title: currentTitle.trim(),
-                    category: "IPTV Brasil / Regional",
+                    category: currentGroup,
                     description: "Transmissão ao vivo via iptv-org",
                     image: currentLogo || "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=500&auto=format&fit=crop&q=60",
                     video_url: streamUrl,
@@ -185,6 +192,7 @@ export default function App() {
                 }
                 currentTitle = "";
                 currentLogo = "";
+                currentGroup = "Geral";
               }
             }
           } catch (subErr) {
@@ -255,6 +263,12 @@ export default function App() {
 
   const allChannelsList = [...dbChannels, ...iptvChannels];
 
+  // Extrai lista única de categorias disponíveis nos canais carregados
+  const availableChannelCategories = [
+    "Todas",
+    ...new Set(allChannelsList.map((item) => item.category))
+  ];
+
   const catalog =
     currentTab === "movies"
       ? dbMovies
@@ -263,8 +277,12 @@ export default function App() {
       : dbSeries;
 
   const filtered = catalog.filter((item) => {
-    const matchesCategory =
-      currentTab !== "series" || category === "Todas" || item.category === category;
+    let matchesCategory = true;
+    if (currentTab === "series") {
+      matchesCategory = seriesCategory === "Todas" || item.category === seriesCategory;
+    } else if (currentTab === "channels") {
+      matchesCategory = channelCategory === "Todas" || item.category === channelCategory;
+    }
 
     const matchesSearch = item.title
       .toLowerCase()
@@ -402,6 +420,25 @@ export default function App() {
         }
         .dv-section-title { font-size: 24px; margin: 0 0 8px; }
         .dv-subtitle { color: #b9a8c8; margin: 0 0 22px; }
+        .dv-categories {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin: 20px 0 28px;
+        }
+        .dv-category {
+          padding: 9px 16px;
+          border-radius: 20px;
+          background: #241532;
+          color: #e9d5ff;
+          border: 1px solid #49345c;
+          cursor: pointer;
+          font-size: 13px;
+        }
+        .dv-category.active {
+          background: #7e22ce;
+          border-color: #a855f7;
+        }
         .dv-grid {
           display: grid;
           grid-template-columns: repeat(3,minmax(0,1fr));
@@ -612,6 +649,46 @@ export default function App() {
           </section>
         ) : (
           <section>
+            {/* Categorias de Minisséries */}
+            {currentTab === "series" && !showFavorites && (
+              <>
+                <h2 className="dv-section-title">Categorias</h2>
+                <div className="dv-categories">
+                  {seriesCategories.map((item) => (
+                    <button
+                      key={item}
+                      className={`dv-category ${
+                        seriesCategory === item ? "active" : ""
+                      }`}
+                      onClick={() => setSeriesCategory(item)}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Categorias de Canais (Extraídas automaticamente da lista IPTV) */}
+            {currentTab === "channels" && !showFavorites && (
+              <>
+                <h2 className="dv-section-title">Categorias de Canais</h2>
+                <div className="dv-categories">
+                  {availableChannelCategories.map((item) => (
+                    <button
+                      key={item}
+                      className={`dv-category ${
+                        channelCategory === item ? "active" : ""
+                      }`}
+                      onClick={() => setChannelCategory(item)}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
             <h2 className="dv-section-title" style={{ marginTop: 24 }}>
               {showFavorites
                 ? "Seus favoritos"
@@ -619,12 +696,12 @@ export default function App() {
                 ? "Minisséries disponíveis"
                 : currentTab === "movies"
                 ? "Filmes disponíveis"
-                : "Canais ao vivo (Regionais e Nacionais)"}
+                : "Canais ao vivo organizados"}
             </h2>
 
             <p className="dv-subtitle">
               {filtered.length} {filtered.length === 1 ? "item" : "itens"} encontrados
-              {loadingIptv && currentTab === "channels" && " (Carregando listas do Brasil...)"}
+              {loadingIptv && currentTab === "channels" && " (Organizando categorias...)"}
             </p>
 
             <div className="dv-grid">
@@ -683,7 +760,7 @@ export default function App() {
 
             {!loading && filtered.length === 0 && (
               <p className="dv-message">
-                Nenhum conteúdo encontrado nesta seção.
+                Nenhum conteúdo encontrado nesta categoria.
               </p>
             )}
           </section>
