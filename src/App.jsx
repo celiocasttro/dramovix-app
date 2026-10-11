@@ -22,7 +22,11 @@ function getSavedFavorites() {
 }
 
 export default function App() {
+  const [currentTab, setCurrentTab] = useState("series"); // "series" | "movies" | "channels"
   const [dbSeries, setDbSeries] = useState([]);
+  const [dbMovies, setDbMovies] = useState([]);
+  const [dbChannels, setDbChannels] = useState([]);
+  
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState("");
   const [category, setCategory] = useState("Todas");
@@ -35,6 +39,7 @@ export default function App() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [favorites, setFavorites] = useState(getSavedFavorites);
 
+  // Carregar Séries (mantido exatamente como estava)
   useEffect(() => {
     let active = true;
 
@@ -61,7 +66,7 @@ export default function App() {
           id: `db-${item.id}`,
           dbId: item.id,
           title: item.title,
-          category: item.genre || "Romance",
+          category: item.genre || item.category || "Romance",
           description: item.description || "",
           image: item.cover_url || "",
           episodes: 0,
@@ -76,6 +81,56 @@ export default function App() {
     return () => {
       active = false;
     };
+  }, []);
+
+  // Carregar Filmes (Opcional - tabela 'movies' no Supabase)
+  useEffect(() => {
+    async function loadMovies() {
+      const { data } = await supabase
+        .from("movies")
+        .select("*")
+        .eq("published", true);
+
+      if (data) {
+        setDbMovies(
+          data.map((item) => ({
+            id: `movie-${item.id}`,
+            dbId: item.id,
+            title: item.title,
+            category: item.category || "Filmes",
+            description: item.description || "",
+            image: item.cover_url || "",
+            video_url: item.video_url || "",
+          }))
+        );
+      }
+    }
+    loadMovies();
+  }, []);
+
+  // Carregar Canais (Opcional - tabela 'channels' no Supabase)
+  useEffect(() => {
+    async function loadChannels() {
+      const { data } = await supabase
+        .from("channels")
+        .select("*")
+        .eq("published", true);
+
+      if (data) {
+        setDbChannels(
+          data.map((item) => ({
+            id: `channel-${item.id}`,
+            dbId: item.id,
+            title: item.name || item.title,
+            category: "Ao Vivo",
+            description: item.description || "Canal de TV ao vivo",
+            image: item.logo_url || item.cover_url || "",
+            video_url: item.stream_url || item.video_url || "",
+          }))
+        );
+      }
+    }
+    loadChannels();
   }, []);
 
   useEffect(() => {
@@ -96,7 +151,7 @@ export default function App() {
       setEpisodes([]);
       setEpisodesError("");
 
-      if (!selected?.dbId) {
+      if (!selected?.dbId || currentTab !== "series") {
         setEpisodesLoading(false);
         return;
       }
@@ -126,13 +181,19 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [selected]);
+  }, [selected, currentTab]);
 
-  const catalog = dbSeries;
+  // Selecionar catálogo ativo de acordo com a aba escolhida
+  const catalog =
+    currentTab === "movies"
+      ? dbMovies
+      : currentTab === "channels"
+      ? dbChannels
+      : dbSeries;
 
   const filtered = catalog.filter((item) => {
     const matchesCategory =
-      category === "Todas" || item.category === category;
+      currentTab !== "series" || category === "Todas" || item.category === category;
 
     const matchesSearch = item.title
       .toLowerCase()
@@ -141,17 +202,19 @@ export default function App() {
     const matchesFavorites =
       !showFavorites || favorites.includes(String(item.id));
 
-    return (
-      matchesCategory && matchesSearch && matchesFavorites
-    );
+    return matchesCategory && matchesSearch && matchesFavorites;
   });
 
   const featured = catalog[0] || null;
 
-  function openSeries(item) {
-    setSelected(item);
-    setPlaying(null);
-    setEpisodes([]);
+  function openItem(item) {
+    if (currentTab === "channels" || currentTab === "movies") {
+      setPlaying({ title: item.title, video_url: item.video_url });
+    } else {
+      setSelected(item);
+      setPlaying(null);
+      setEpisodes([]);
+    }
   }
 
   function closeDetails() {
@@ -162,7 +225,6 @@ export default function App() {
 
   function toggleFavorite(item) {
     const id = String(item.id);
-
     setFavorites((current) =>
       current.includes(id)
         ? current.filter((favoriteId) => favoriteId !== id)
@@ -175,7 +237,6 @@ export default function App() {
       alert("Este episódio ainda não tem um vídeo cadastrado.");
       return;
     }
-
     setPlaying(episode);
   }
 
@@ -183,7 +244,6 @@ export default function App() {
 
   function playNextEpisode() {
     if (!playing) return;
-
     const currentIndex = visibleEpisodes.findIndex(
       (episode) => String(episode.id) === String(playing.id)
     );
@@ -231,6 +291,24 @@ export default function App() {
           letter-spacing: 2px;
           cursor: pointer;
         }
+        .dv-nav-tabs {
+          display: flex;
+          gap: 8px;
+        }
+        .dv-nav-tab {
+          background: #241532;
+          border: 1px solid #49345c;
+          color: #d8b4fe;
+          padding: 8px 14px;
+          border-radius: 16px;
+          cursor: pointer;
+          font-weight: 600;
+        }
+        .dv-nav-tab.active {
+          background: #9333ea;
+          color: #fff;
+          border-color: #a855f7;
+        }
         .dv-header-actions {
           display: flex;
           align-items: center;
@@ -238,8 +316,8 @@ export default function App() {
           flex-wrap: wrap;
         }
         .dv-search {
-          width: min(320px, 100%);
-          padding: 12px 16px;
+          width: min(260px, 100%);
+          padding: 10px 14px;
           border: 1px solid #49345c;
           border-radius: 24px;
           background: #241532;
@@ -477,29 +555,6 @@ export default function App() {
           height: 100%;
         }
         .dv-player-box p { color: #d8cce2; line-height: 1.6; padding: 20px; }
-        .dv-detail,
-        .dv-detail > div {
-          min-width: 0;
-          max-width: 100%;
-        }
-        .dv-detail h1 {
-          line-height: 1.25;
-          overflow-wrap: anywhere;
-          word-break: normal;
-        }
-        .dv-detail h2 {
-          line-height: 1.3;
-          margin: 22px 0 12px;
-        }
-        .dv-episode {
-          box-sizing: border-box;
-          min-width: 0;
-        }
-        .dv-episode span {
-          min-width: 0;
-          overflow-wrap: anywhere;
-        }
-        .dv-episode small { flex-shrink: 0; }
         @media(max-width:760px) {
           .dv-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
           .dv-hero { min-height: 260px; padding: 22px; }
@@ -527,11 +582,44 @@ export default function App() {
           DRAMOVIX
         </div>
 
+        <div className="dv-nav-tabs">
+          <button
+            className={`dv-nav-tab ${currentTab === "series" ? "active" : ""}`}
+            onClick={() => {
+              setCurrentTab("series");
+              closeDetails();
+              setShowFavorites(false);
+            }}
+          >
+            🎬 Minisséries
+          </button>
+          <button
+            className={`dv-nav-tab ${currentTab === "movies" ? "active" : ""}`}
+            onClick={() => {
+              setCurrentTab("movies");
+              closeDetails();
+              setShowFavorites(false);
+            }}
+          >
+            🍿 Filmes
+          </button>
+          <button
+            className={`dv-nav-tab ${currentTab === "channels" ? "active" : ""}`}
+            onClick={() => {
+              setCurrentTab("channels");
+              closeDetails();
+              setShowFavorites(false);
+            }}
+          >
+            📡 Canais
+          </button>
+        </div>
+
         <div className="dv-header-actions">
           <input
             className="dv-search"
             type="search"
-            placeholder="Buscar minissérie..."
+            placeholder="Buscar..."
             value={search}
             onChange={(event) => {
               setSearch(event.target.value);
@@ -639,7 +727,6 @@ export default function App() {
                 visibleEpisodes.length === 0 && (
                   <p className="dv-message">
                     Ainda não há episódios cadastrados para esta série.
-                    Adicione-os à tabela episodes do Supabase.
                   </p>
                 )}
 
@@ -664,7 +751,7 @@ export default function App() {
           </section>
         ) : (
           <>
-            {!showFavorites && featured && (
+            {!showFavorites && featured && currentTab === "series" && (
               <section className="dv-hero">
                 {featured.image && (
                   <img
@@ -675,12 +762,12 @@ export default function App() {
                 )}
 
                 <div className="dv-hero-content">
-                  <span className="dv-eyebrow">ESCOLHA SEU CLIMA</span>
+                  <span className="dv-eyebrow">DESTAQUE</span>
                   <h1>{featured.title}</h1>
                   <p>{featured.description}</p>
                   <button
                     className="dv-button"
-                    onClick={() => openSeries(featured)}
+                    onClick={() => openItem(featured)}
                   >
                     ▶ Ver detalhes
                   </button>
@@ -689,45 +776,47 @@ export default function App() {
             )}
 
             <section>
-              <h2 className="dv-section-title">
-                {showFavorites ? "Seus favoritos" : "Categorias"}
+              {currentTab === "series" && !showFavorites && (
+                <>
+                  <h2 className="dv-section-title">Categorias</h2>
+                  <div className="dv-categories">
+                    {categories.map((item) => (
+                      <button
+                        key={item}
+                        className={`dv-category ${
+                          category === item ? "active" : ""
+                        }`}
+                        onClick={() => setCategory(item)}
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              <h2 className="dv-section-title" style={{ marginTop: 24 }}>
+                {showFavorites
+                  ? "Seus favoritos"
+                  : currentTab === "series"
+                  ? "Minisséries disponíveis"
+                  : currentTab === "movies"
+                  ? "Filmes disponíveis"
+                  : "Canais ao vivo"}
               </h2>
-
-              {!showFavorites && (
-                <div className="dv-categories">
-                  {categories.map((item) => (
-                    <button
-                      key={item}
-                      className={`dv-category ${
-                        category === item ? "active" : ""
-                      }`}
-                      onClick={() => setCategory(item)}
-                    >
-                      {item}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {!showFavorites && (
-                <h2 className="dv-section-title">
-                  Sempre tem uma nova história
-                </h2>
-              )}
 
               <p className="dv-subtitle">
                 {filtered.length}{" "}
-                {filtered.length === 1 ? "história" : "histórias"}
+                {filtered.length === 1 ? "item" : "itens"} encontrados
               </p>
 
-              {loading && (
+              {loading && currentTab === "series" && (
                 <p className="dv-message">Carregando catálogo...</p>
               )}
 
               {dbError && (
                 <p className="dv-error">
-                  Não foi possível carregar as séries do banco de dados:{" "}
-                  {dbError}
+                  Erro ao carregar dados: {dbError}
                 </p>
               )}
 
@@ -739,12 +828,7 @@ export default function App() {
                     <article className="dv-card" key={item.id}>
                       <button
                         className={`dv-heart ${isFavorite ? "saved" : ""}`}
-                        aria-label={
-                          isFavorite
-                            ? "Remover dos favoritos"
-                            : "Adicionar aos favoritos"
-                        }
-                        title="Favoritos"
+                        aria-label="Favorito"
                         onClick={() => toggleFavorite(item)}
                       >
                         {isFavorite ? "♥" : "♡"}
@@ -752,7 +836,7 @@ export default function App() {
 
                       <button
                         className="dv-card-click"
-                        onClick={() => openSeries(item)}
+                        onClick={() => openItem(item)}
                       >
                         {item.image ? (
                           <img
@@ -780,16 +864,9 @@ export default function App() {
                       <div className="dv-card-actions">
                         <button
                           className="dv-button"
-                          onClick={() => openSeries(item)}
+                          onClick={() => openItem(item)}
                         >
-                          ▶ Ver série
-                        </button>
-
-                        <button
-                          className="dv-button secondary"
-                          onClick={() => toggleFavorite(item)}
-                        >
-                          {isFavorite ? "♥ Favoritado" : "♡ Favoritar"}
+                          ▶ {currentTab === "series" ? "Ver série" : "Assistir"}
                         </button>
                       </div>
                     </article>
@@ -800,8 +877,8 @@ export default function App() {
               {!loading && filtered.length === 0 && (
                 <p className="dv-message">
                   {showFavorites
-                    ? "Você ainda não adicionou séries aos favoritos."
-                    : "Nenhuma série encontrada. Cadastre uma série publicada no Supabase para ela aparecer aqui."}
+                    ? "Você ainda não adicionou itens aos favoritos."
+                    : "Nenhum conteúdo encontrado nesta seção."}
                 </p>
               )}
             </section>
@@ -813,23 +890,21 @@ export default function App() {
         DRAMOVIX · Suas histórias, do seu jeito.
       </footer>
 
-      {playing && selected && (
+      {playing && (
         <div className="dv-player">
           <button
             className="dv-button secondary"
             onClick={() => setPlaying(null)}
           >
-            ✕ Fechar episódio
+            ✕ Fechar player
           </button>
 
-          <h2>
-            {selected.title} — Episódio {playing.episode_number}
-          </h2>
+          <h2>{playing.title}</h2>
 
           <div className="dv-player-box">
             {playing.video_url ? (
               <video
-                key={playing.id}
+                key={playing.id || playing.video_url}
                 className="dv-video"
                 controls
                 playsInline
@@ -840,12 +915,7 @@ export default function App() {
                 Seu navegador não conseguiu abrir este vídeo.
               </video>
             ) : (
-              <p>
-                Este episódio ainda não tem um endereço de vídeo cadastrado.
-                <br />
-                Adicione um link de vídeo na coluna video_url da tabela
-                episodes do Supabase.
-              </p>
+              <p>Este vídeo não possui link de reprodução cadastrado.</p>
             )}
           </div>
         </div>
