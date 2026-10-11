@@ -1,4 +1,3 @@
-```jsx
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import "./App.css";
@@ -129,7 +128,6 @@ export default function App() {
     };
   }, [selected]);
 
-  // O catálogo contém somente séries cadastradas no Supabase.
   const catalog = dbSeries;
 
   const filtered = catalog.filter((item) => {
@@ -148,7 +146,6 @@ export default function App() {
     );
   });
 
-  // A primeira série cadastrada fica em destaque.
   const featured = catalog[0] || null;
 
   function openSeries(item) {
@@ -856,4 +853,3 @@ export default function App() {
     </div>
   );
 }
-```
