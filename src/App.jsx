@@ -261,7 +261,7 @@ export default function App() {
     };
   }, [selected, currentTab]);
 
-  // Player de vídeo e suporte HLS (CORRIGIDO)
+  // Player de vídeo e suporte HLS
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !playing?.video_url) return;
@@ -366,10 +366,3 @@ export default function App() {
     setFavorites((current) =>
       current.includes(id)
         ? current.filter((favoriteId) => favoriteId !== id)
-        : [...current, id]
-    );
-  }
-
-  function playEpisode(episode) {
-    if (!episode?.video_url) {
-      alert("Este episódio ainda não
