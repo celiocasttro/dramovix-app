@@ -126,21 +126,6 @@ function normalizeEpisodeTitle(episode, index) {
   };
 }
 
-function detectHls(url) {
-  try {
-    const parsedUrl = new URL(url, window.location.href);
-
-    return (
-      /\.m3u8$/i.test(parsedUrl.pathname) ||
-      /[?&](format|type)=m3u8(?:&|$)/i.test(
-        parsedUrl.search
-      )
-    );
-  } catch {
-    return /\.m3u8(?:$|[?#])/i.test(url);
-  }
-}
-
 export default function App() {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -318,7 +303,7 @@ export default function App() {
     };
   }, [selectedSeries]);
 
-  // Carrega a playlist de canais.
+  // Carrega a playlist de canais selecionada.
   useEffect(() => {
     let cancelled = false;
     const controller = new AbortController();
@@ -409,30 +394,82 @@ export default function App() {
     }
   }
 
-  // Fecha o player e limpa a mídia.
+  // Reproduz o episódio seguinte da mesma minissérie.
+  function playNextEpisode() {
+    if (
+      !selectedEpisode ||
+      !selectedSeries ||
+      episodes.length === 0
+    ) {
+      return;
+    }
+
+    const currentIndex = episodes.findIndex(
+      (episode) =>
+        String(episode.id) === String(selectedEpisode.id)
+    );
+
+    if (currentIndex === -1) {
+      setPlayerError(
+        "Não foi possível identificar o episódio atual."
+      );
+      return;
+    }
+
+    const nextEpisode = episodes[currentIndex + 1];
+
+    if (!nextEpisode) {
+      setPlayerError(
+        "Você chegou ao último episódio desta minissérie."
+      );
+      return;
+    }
+
+    const videoUrl = String(
+      nextEpisode.video_url ||
+      nextEpisode.stream_url ||
+      nextEpisode.url ||
+      ""
+    ).trim();
+
+    const { displayTitle } = normalizeEpisodeTitle(
+      nextEpisode,
+      currentIndex + 1
+    );
+
+    setSelectedEpisode(nextEpisode);
+
+    setPlayerError("");
+
+    setCurrentVideo({
+      ...nextEpisode,
+      name: displayTitle,
+      url: videoUrl,
+      type: "episode",
+    });
+
+    if (!videoUrl) {
+      setPlayerError(
+        "O próximo episódio ainda não possui um link de vídeo cadastrado."
+      );
+    }
+  }
+
   function closePlayer() {
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
-
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.removeAttribute("src");
-      videoRef.current.load();
-    }
-
     setPlayerOpen(false);
     setCurrentVideo(null);
     setSelectedEpisode(null);
     setPlayerError("");
   }
 
-  // Player para HLS, MP4 e outros formatos suportados pelo navegador.
+  // Player para MP4 e HLS, com suporte a URLs com parâmetros.
   useEffect(() => {
     const video = videoRef.current;
 
     if (!playerOpen || !currentVideo || !video) return;
+
+    let cancelled = false;
+    let hls = null;
 
     const url = String(
       currentVideo.video_url ||
@@ -441,10 +478,6 @@ export default function App() {
       ""
     ).trim();
 
-    let hls = null;
-    let cancelled = false;
-    let fatalErrorShown = false;
-
     const showError = (message) => {
       if (!cancelled) {
         setPlayerError(message);
@@ -452,42 +485,53 @@ export default function App() {
     };
 
     const handleVideoError = () => {
-      if (cancelled || fatalErrorShown) return;
+      if (cancelled) return;
 
       const code = video.error?.code;
 
       const messages = {
         1: "A reprodução foi interrompida.",
-        2: "Erro de rede ao carregar o vídeo. Verifique o endereço e o servidor.",
-        3: "O navegador não conseguiu decodificar este vídeo.",
-        4: "Formato incompatível ou link que não fornece um vídeo diretamente.",
+        2: "Erro de conexão ao carregar o vídeo. Verifique o link.",
+        3: "O navegador não consegue decodificar este vídeo.",
+        4: "Formato incompatível ou o endereço não fornece um vídeo diretamente.",
       };
 
       showError(
         messages[code] ||
-          "Não foi possível reproduzir o vídeo. Verifique o link."
+          "Não foi possível reproduzir o vídeo. Verifique o endereço."
       );
-
-      console.error("Erro no elemento de vídeo:", {
-        code,
-        message: video.error?.message,
-        url,
-      });
     };
 
-    const handleLoadedData = () => {
+    const handleLoaded = () => {
       if (!cancelled) {
         setPlayerError("");
       }
     };
 
     const handleCanPlay = () => {
-      if (!cancelled) {
-        setPlayerError("");
-      }
+      if (cancelled) return;
+
+      setPlayerError("");
+
+      video.play().catch((err) => {
+        if (cancelled) return;
+
+        if (err?.name === "NotAllowedError") {
+          showError(
+            "Toque no botão Play do vídeo para iniciar a reprodução."
+          );
+        } else if (err?.name !== "AbortError") {
+          console.warn("O navegador não iniciou a reprodução:", err);
+        }
+      });
     };
 
-    // Limpa a mídia anterior.
+    // Destrói qualquer instância anterior do HLS.
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+
     video.pause();
     video.removeAttribute("src");
     video.load();
@@ -505,10 +549,23 @@ export default function App() {
     setPlayerError("");
 
     video.addEventListener("error", handleVideoError);
-    video.addEventListener("loadeddata", handleLoadedData);
+    video.addEventListener("loadeddata", handleLoaded);
     video.addEventListener("canplay", handleCanPlay);
 
-    const isHls = detectHls(url);
+    // Identifica HLS pela extensão, mesmo com parâmetros na URL.
+    let isHls = false;
+
+    try {
+      const parsedUrl = new URL(url, window.location.href);
+
+      isHls =
+        /\.m3u8$/i.test(parsedUrl.pathname) ||
+        /[?&](format|type)=m3u8(?:&|$)/i.test(
+          parsedUrl.search
+        );
+    } catch {
+      isHls = /\.m3u8(?:$|[?#])/i.test(url);
+    }
 
     if (isHls && Hls.isSupported()) {
       hls = new Hls({
@@ -520,38 +577,24 @@ export default function App() {
       hlsRef.current = hls;
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (cancelled) return;
-
-        console.error("Erro HLS:", {
-          type: data.type,
-          details: data.details,
-          fatal: data.fatal,
-          responseCode: data.response?.code,
-          url,
-        });
-
-        if (!data.fatal) return;
-
-        fatalErrorShown = true;
+        if (cancelled || !data.fatal) return;
 
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
           showError(
-            "Falha ao carregar a playlist ou os segmentos do vídeo. O servidor pode estar indisponível, bloquear acesso externo ou exigir autorização."
+            "Falha de rede ao carregar o vídeo. Verifique o link, a conexão e se o servidor permite reprodução externa."
           );
 
-          hls.stopLoad();
-        } else if (
-          data.type === Hls.ErrorTypes.MEDIA_ERROR
-        ) {
+          // Tenta recuperar uma falha de rede uma única vez.
+          hls.startLoad();
+        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
           showError(
-            "Ocorreu um erro ao processar a mídia. Tentando recuperar o vídeo..."
+            "Problema ao decodificar o vídeo. Tentando recuperar a reprodução..."
           );
 
-          fatalErrorShown = false;
           hls.recoverMediaError();
         } else {
           showError(
-            "O HLS não conseguiu reproduzir este episódio. Verifique o endereço e o formato do vídeo."
+            "Não foi possível reproduzir este vídeo HLS. Verifique o endereço."
           );
 
           hls.destroy();
@@ -567,18 +610,13 @@ export default function App() {
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         if (cancelled) return;
 
-        fatalErrorShown = false;
-        setPlayerError("");
-
         video.play().catch((err) => {
           if (
             !cancelled &&
-            err?.name !== "NotAllowedError" &&
-            err?.name !== "AbortError"
+            err?.name === "NotAllowedError"
           ) {
-            console.warn(
-              "Não foi possível iniciar a reprodução:",
-              err
+            showError(
+              "Toque no botão Play do vídeo para iniciar a reprodução."
             );
           }
         });
@@ -590,7 +628,7 @@ export default function App() {
       isHls &&
       video.canPlayType("application/vnd.apple.mpegurl")
     ) {
-      // HLS nativo, quando suportado pelo navegador.
+      // HLS nativo, utilizado quando o navegador oferece suporte.
       video.src = url;
       video.load();
     } else if (isHls) {
@@ -598,7 +636,7 @@ export default function App() {
         "Este navegador não oferece suporte à reprodução HLS deste endereço."
       );
     } else {
-      // Vídeo direto, como MP4.
+      // Arquivos de vídeo diretos, como MP4.
       video.src = url;
       video.load();
     }
@@ -609,7 +647,7 @@ export default function App() {
       video.pause();
 
       video.removeEventListener("error", handleVideoError);
-      video.removeEventListener("loadeddata", handleLoadedData);
+      video.removeEventListener("loadeddata", handleLoaded);
       video.removeEventListener("canplay", handleCanPlay);
 
       if (hls) {
@@ -618,14 +656,22 @@ export default function App() {
         if (hlsRef.current === hls) {
           hlsRef.current = null;
         }
-
-        hls = null;
       }
 
       video.removeAttribute("src");
       video.load();
     };
   }, [playerOpen, currentVideo]);
+
+  // Libera recursos do player quando o componente é desmontado.
+  useEffect(() => {
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    };
+  }, []);
 
   function toggleFavorite(item) {
     const id = String(item.id);
@@ -750,14 +796,12 @@ export default function App() {
 
     html {
       width: 100%;
-      min-height: 100%;
       overflow-x: hidden;
     }
 
     body {
       margin: 0;
       width: 100%;
-      min-width: 0;
       overflow-x: hidden;
       background: #080910;
       color: #f8f8fc;
@@ -770,17 +814,11 @@ export default function App() {
 
     button {
       cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    img, video {
-      max-width: 100%;
     }
 
     .dv-app {
-      min-height: 100vh;
-      min-height: 100dvh;
       width: 100%;
+      min-height: 100vh;
       overflow-x: clip;
       background:
         radial-gradient(ellipse at top right, #27102c 0, transparent 36%),
@@ -795,10 +833,9 @@ export default function App() {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
-      width: 100%;
+      gap: 14px;
       padding: 14px 5%;
-      background: rgba(8, 9, 16, .97);
+      background: rgba(8, 9, 16, .96);
       border-bottom: 1px solid #252530;
       backdrop-filter: blur(16px);
     }
@@ -810,7 +847,6 @@ export default function App() {
       letter-spacing: -1px;
       color: #fff;
       cursor: pointer;
-      white-space: nowrap;
     }
 
     .dv-logo span {
@@ -822,17 +858,18 @@ export default function App() {
       align-items: center;
       justify-content: center;
       gap: 5px;
+      flex-wrap: wrap;
       min-width: 0;
     }
 
     .dv-nav button {
-      color: #b9b9c8;
+      color: #c7c6d3;
       background: transparent;
       border: 0;
-      padding: 10px 11px;
+      padding: 9px 10px;
       border-radius: 9px;
       white-space: nowrap;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .dv-nav button.active,
@@ -842,9 +879,10 @@ export default function App() {
     }
 
     .dv-search {
-      width: 200px;
+      width: 190px;
       min-width: 0;
-      padding: 11px 13px;
+      max-width: 100%;
+      padding: 11px 12px;
       color: white;
       background: #171720;
       border: 1px solid #30303d;
@@ -853,7 +891,7 @@ export default function App() {
     }
 
     .dv-search:focus {
-      border-color: #bd4bd9;
+      border-color: #c44be7;
     }
 
     .dv-main {
@@ -980,7 +1018,6 @@ export default function App() {
       margin: 0 0 8px;
       font-size: 15px;
       line-height: 1.35;
-      overflow-wrap: anywhere;
     }
 
     .dv-card p {
@@ -1050,7 +1087,7 @@ export default function App() {
 
     .dv-detail {
       display: grid;
-      grid-template-columns: minmax(180px, 300px) minmax(0, 1fr);
+      grid-template-columns: minmax(180px, 300px) 1fr;
       gap: 30px;
       align-items: start;
     }
@@ -1066,7 +1103,6 @@ export default function App() {
     .dv-detail h1 {
       margin: 0 0 12px;
       font-size: clamp(28px, 4vw, 42px);
-      overflow-wrap: anywhere;
     }
 
     .dv-detail p {
@@ -1133,7 +1169,6 @@ export default function App() {
     }
 
     .dv-episode-play {
-      flex-shrink: 0;
       color: #e87bff;
       font-size: 18px;
     }
@@ -1150,8 +1185,8 @@ export default function App() {
       align-items: center;
       justify-content: center;
       gap: 12px;
-      min-height: 150px;
       min-width: 0;
+      min-height: 150px;
       padding: 18px 12px;
       color: white;
       background: #15151e;
@@ -1184,7 +1219,6 @@ export default function App() {
       background: #14141d;
       border: 1px dashed #363644;
       border-radius: 15px;
-      line-height: 1.6;
     }
 
     .dv-notice {
@@ -1196,7 +1230,6 @@ export default function App() {
       border-radius: 11px;
       font-size: 13px;
       line-height: 1.5;
-      overflow-wrap: anywhere;
     }
 
     .dv-player-overlay {
@@ -1206,10 +1239,9 @@ export default function App() {
       display: grid;
       place-items: center;
       padding: 18px;
-      background: rgba(0,0,0,.92);
+      background: rgba(0,0,0,.88);
       backdrop-filter: blur(8px);
       overflow-y: auto;
-      overscroll-behavior: contain;
     }
 
     .dv-player-modal {
@@ -1219,22 +1251,19 @@ export default function App() {
       background: #101018;
       border: 1px solid #3b3044;
       border-radius: 17px;
-      overscroll-behavior: contain;
     }
 
     .dv-player-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 15px;
       padding: 14px 17px;
     }
 
     .dv-player-top h3 {
-      min-width: 0;
       margin: 0;
       font-size: 15px;
-      line-height: 1.4;
       overflow-wrap: anywhere;
     }
 
@@ -1290,8 +1319,7 @@ export default function App() {
       padding: 15px;
       color: #ffb9c2;
       font-size: 13px;
-      line-height: 1.6;
-      overflow-wrap: anywhere;
+      line-height: 1.5;
     }
 
     .dv-footer {
@@ -1302,12 +1330,15 @@ export default function App() {
       font-size: 12px;
     }
 
-    /* Tablets e celulares. */
-    @media (max-width: 900px) {
+    @media (max-width: 760px) {
       .dv-header {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
-        gap: 12px;
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
         padding: 12px 4%;
       }
 
@@ -1316,112 +1347,44 @@ export default function App() {
       }
 
       .dv-search {
+        order: 2;
         width: 100%;
-        grid-column: 2;
-        grid-row: 1;
+        flex: 1 0 100%;
+        padding: 12px;
       }
 
-      /* Todas as opções aparecem sem rolagem horizontal. */
+      /* Todos os botões de navegação aparecem sem rolagem lateral. */
       .dv-nav {
-        grid-column: 1 / -1;
-        grid-row: 2;
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 6px;
-        width: 100%;
-        overflow: visible;
-      }
-
-      .dv-nav button {
+        order: 3;
         display: flex;
         align-items: center;
         justify-content: center;
         width: 100%;
         min-width: 0;
-        min-height: 38px;
-        padding: 9px 4px;
-        white-space: normal;
-        text-align: center;
-        font-size: 12px;
-        line-height: 1.25;
-        overflow-wrap: anywhere;
-      }
-
-      .dv-main {
-        padding: 20px 4% 45px;
-      }
-
-      .dv-detail {
-        grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
-        gap: 22px;
-      }
-    }
-
-    @media (max-width: 600px) {
-      .dv-header {
-        position: relative;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-        gap: 10px;
-        padding: 12px 4%;
-      }
-
-      .dv-logo {
-        font-size: clamp(19px, 5.2vw, 23px);
-      }
-
-      .dv-search {
-        min-width: 0;
-        padding: 10px;
-        font-size: 12px;
-      }
-
-      .dv-nav {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        overflow: visible;
+        flex-wrap: wrap;
         gap: 5px;
       }
 
       .dv-nav button {
-        min-height: 36px;
-        padding: 8px 3px;
-        font-size: 11px;
-        border-radius: 8px;
+        flex: 0 0 auto;
+        padding: 9px 10px;
+        font-size: 12px;
       }
 
       .dv-main {
-        padding: 16px 4% 40px;
+        padding: 18px 4% 45px;
       }
 
       .dv-hero {
-        min-height: 250px;
-        padding: 20px;
-        border-radius: 15px;
-        background-position: center;
-      }
-
-      .dv-hero h1 {
-        font-size: clamp(30px, 9vw, 42px);
-      }
-
-      .dv-hero p {
-        font-size: 13px;
-      }
-
-      .dv-section-title {
-        align-items: flex-start;
-        margin: 23px 0 15px;
-      }
-
-      .dv-section-title h2 {
-        font-size: 20px;
+        min-height: 260px;
+        padding: 23px;
+        border-radius: 16px;
       }
 
       .dv-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 11px;
-      }
-
-      .dv-card {
-        border-radius: 12px;
+        gap: 12px;
       }
 
       .dv-card-body {
@@ -1432,129 +1395,55 @@ export default function App() {
         font-size: 13px;
       }
 
-      .dv-card p {
-        font-size: 11px;
-      }
-
-      .dv-card-actions {
-        gap: 5px;
-      }
-
-      .dv-card-actions button {
-        padding: 9px 4px;
-        font-size: 11px;
-      }
-
-      .dv-card-actions button:last-child {
-        flex-basis: 32px;
-      }
-
       .dv-detail {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 16px;
+        grid-template-columns: 1fr;
+        gap: 20px;
       }
 
       .dv-detail-poster {
-        width: min(65%, 230px);
-        max-height: 320px;
-        margin: 0 auto;
-        display: block;
-      }
-
-      .dv-detail h1 {
-        font-size: 27px;
-      }
-
-      .dv-detail p {
-        font-size: 14px;
+        width: min(70%, 250px);
+        max-height: 330px;
       }
 
       .dv-episodes {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 10px;
-      }
-
-      .dv-episode {
-        padding: 12px;
-        gap: 10px;
+        grid-template-columns: 1fr;
       }
 
       .dv-channel-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-      }
-
-      .dv-channel {
-        min-height: 130px;
-        padding: 13px 8px;
-      }
-
-      .dv-filters {
-        gap: 7px;
-      }
-
-      .dv-filter {
-        padding: 8px 11px;
-        font-size: 12px;
       }
 
       .dv-player-overlay {
-        padding: 8px;
-      }
-
-      .dv-player-modal {
-        width: 100%;
-        max-height: 92dvh;
-        border-radius: 12px;
-      }
-
-      .dv-player-top {
         padding: 10px;
       }
 
-      .dv-player-top h3 {
-        font-size: 13px;
-      }
-
       .dv-player-modal.dv-player-vertical {
-        width: min(94vw, 420px);
+        width: min(92vw, 420px);
         max-height: 94dvh;
+        border-radius: 13px;
       }
 
       .dv-player-vertical .dv-video-wrap {
-        max-height: calc(94dvh - 65px);
-      }
-
-      .dv-player-error {
-        padding: 11px;
-        font-size: 12px;
-      }
-
-      .dv-footer {
-        padding: 22px 4%;
+        max-height: calc(94dvh - 70px);
       }
     }
 
-    @media (max-width: 350px) {
-      .dv-logo {
-        font-size: 18px;
+    @media (max-width: 360px) {
+      .dv-nav {
+        gap: 3px;
       }
 
       .dv-nav button {
-        font-size: 10px;
-        padding: 7px 2px;
+        padding: 8px 7px;
+        font-size: 11px;
+      }
+
+      .dv-logo {
+        font-size: 21px;
       }
 
       .dv-grid {
         gap: 8px;
-      }
-
-      .dv-card-body {
-        padding: 8px;
-      }
-
-      .dv-card-actions button {
-        font-size: 10px;
       }
     }
   `;
@@ -1564,18 +1453,17 @@ export default function App() {
       <style>{styles}</style>
 
       <header className="dv-header">
-        <div className="dv-logo" onClick={goHome}>
+        <div
+          className="dv-logo"
+          onClick={goHome}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") goHome();
+          }}
+        >
           DRA<span>MOVIX</span>
         </div>
-
-        <input
-          className="dv-search"
-          type="search"
-          placeholder="Buscar conteúdo..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          aria-label="Buscar conteúdo"
-        />
 
         <nav className="dv-nav">
           {[
@@ -1599,6 +1487,15 @@ export default function App() {
             </button>
           ))}
         </nav>
+
+        <input
+          className="dv-search"
+          type="search"
+          placeholder="Buscar conteúdo..."
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          aria-label="Buscar conteúdo"
+        />
       </header>
 
       <main className="dv-main">
@@ -1652,7 +1549,6 @@ export default function App() {
 
                 <div className="dv-section-title">
                   <h2>Episódios</h2>
-
                   <span className="dv-muted">
                     {episodes.length} episódio(s)
                   </span>
@@ -1724,7 +1620,6 @@ export default function App() {
             <section className="dv-section-title">
               <div>
                 <h2>TV ao vivo</h2>
-
                 <p className="dv-muted">
                   Canais disponíveis nas fontes selecionadas.
                 </p>
@@ -1780,7 +1675,8 @@ export default function App() {
 
             {filteredChannels.length === 0 ? (
               <div className="dv-empty">
-                Nenhum canal encontrado. Tente outra fonte ou categoria.
+                Nenhum canal encontrado. Tente outra fonte ou
+                categoria.
               </div>
             ) : (
               <div className="dv-channel-grid">
@@ -1833,7 +1729,6 @@ export default function App() {
           <>
             <div className="dv-section-title">
               <h2>Filmes</h2>
-
               <span className="dv-muted">
                 {filteredMovies.length} título(s)
               </span>
@@ -1868,7 +1763,6 @@ export default function App() {
 
                     <div className="dv-card-body">
                       <h3>{movie.title}</h3>
-
                       <p>{movie.category || "Filme"}</p>
 
                       <div className="dv-card-actions">
@@ -2022,8 +1916,8 @@ export default function App() {
 
                 {movies.length === 0 ? (
                   <div className="dv-empty">
-                    Os filmes aparecerão aqui quando forem cadastrados
-                    no Supabase.
+                    Os filmes aparecerão aqui quando forem
+                    cadastrados no Supabase.
                   </div>
                 ) : (
                   <div className="dv-grid">
@@ -2114,12 +2008,18 @@ export default function App() {
                 className="dv-video"
                 controls
                 playsInline
+                autoPlay
                 preload="metadata"
+                onEnded={() => {
+                  if (currentVideo?.type === "episode") {
+                    playNextEpisode();
+                  }
+                }}
               />
             </div>
 
             {playerError && (
-              <div className="dv-player-error" role="status">
+              <div className="dv-player-error">
                 {playerError}
               </div>
             )}
