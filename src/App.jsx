@@ -21,6 +21,19 @@ function getSavedFavorites() {
   }
 }
 
+// URLs das listas do Brasil, estados e cidades selecionadas
+const playlistUrls = [
+  "https://iptv-org.github.io/iptv/countries/br.m3u",
+  "https://iptv-org.github.io/iptv/subdivisions/br-sc.m3u",
+  "https://iptv-org.github.io/iptv/subdivisions/br-sp.m3u",
+  "https://iptv-org.github.io/iptv/subdivisions/br-rj.m3u",
+  "https://iptv-org.github.io/iptv/subdivisions/br-mg.m3u",
+  "https://iptv-org.github.io/iptv/cities/brbac.m3u",
+  "https://iptv-org.github.io/iptv/cities/brsje.m3u",
+  "https://iptv-org.github.io/iptv/cities/brsao.m3u",
+  "https://iptv-org.github.io/iptv/cities/brrio.m3u"
+];
+
 export default function App() {
   const [currentTab, setCurrentTab] = useState("series"); // "series" | "movies" | "channels"
   const [dbSeries, setDbSeries] = useState([]);
@@ -110,7 +123,7 @@ export default function App() {
     loadMovies();
   }, []);
 
-  // Carregar Canais do Supabase + Lista IPTV em Português do GitHub
+  // Carregar Canais do Supabase + Listas IPTV do GitHub
   useEffect(() => {
     async function loadAllChannels() {
       // 1. Carrega do Supabase
@@ -133,49 +146,55 @@ export default function App() {
 
       setDbChannels(customChannels);
 
-      // 2. Carrega e processa a lista pública de canais em Português (por.m3u)
+      // 2. Carrega as listas IPTV em paralelo
       setLoadingIptv(true);
       try {
-        const response = await fetch("https://iptv-org.github.io/iptv/languages/por.m3u");
-        const text = await response.text();
-        
-        const lines = text.split("\n");
-        const parsedChannels = [];
-        let currentTitle = "";
-        let currentLogo = "";
+        const allParsed = [];
+        const seenUrls = new Set();
 
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].trim();
-          
-          if (line.startsWith("#EXTINF:")) {
-            const parts = line.split(",");
-            currentTitle = parts[parts.length - 1] || "Canal em Português";
+        for (const url of playlistUrls) {
+          try {
+            const response = await fetch(url);
+            const text = await response.text();
+            const lines = text.split("\n");
+            let currentTitle = "";
+            let currentLogo = "";
 
-            const logoMatch = line.match(/tvg-logo="([^"]*)"/);
-            currentLogo = logoMatch ? logoMatch[1] : "";
-          } else if (line && !line.startsWith("#")) {
-            const streamUrl = line;
-            
-            if (currentTitle && streamUrl) {
-              parsedChannels.push({
-                id: `iptv-${parsedChannels.length}`,
-                title: currentTitle.trim(),
-                category: "IPTV Português",
-                description: "Transmissão pública em português",
-                image: currentLogo || "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=500&auto=format&fit=crop&q=60",
-                video_url: streamUrl,
-              });
+            for (let i = 0; i < lines.length; i++) {
+              const line = lines[i].trim();
+              
+              if (line.startsWith("#EXTINF:")) {
+                const parts = line.split(",");
+                currentTitle = parts[parts.length - 1] || "Canal IPTV";
+
+                const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+                currentLogo = logoMatch ? logoMatch[1] : "";
+              } else if (line && !line.startsWith("#")) {
+                const streamUrl = line;
+                
+                if (currentTitle && streamUrl && !seenUrls.has(streamUrl)) {
+                  seenUrls.add(streamUrl);
+                  allParsed.push({
+                    id: `iptv-${allParsed.length}`,
+                    title: currentTitle.trim(),
+                    category: "IPTV Brasil / Regional",
+                    description: "Transmissão ao vivo via iptv-org",
+                    image: currentLogo || "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=500&auto=format&fit=crop&q=60",
+                    video_url: streamUrl,
+                  });
+                }
+                currentTitle = "";
+                currentLogo = "";
+              }
             }
-            currentTitle = "";
-            currentLogo = "";
+          } catch (subErr) {
+            console.warn(`Erro ao carregar lista ${url}:`, subErr);
           }
-
-          if (parsedChannels.length >= 150) break;
         }
 
-        setIptvChannels(parsedChannels);
+        setIptvChannels(allParsed);
       } catch (err) {
-        console.warn("Não foi possível carregar a lista IPTV em português.", err);
+        console.warn("Erro ao processar listas IPTV.", err);
       } finally {
         setLoadingIptv(false);
       }
@@ -407,4 +426,319 @@ export default function App() {
           border: 0;
           cursor: pointer;
         }
-        
+        .dv-cover {
+          width: 100%;
+          aspect-ratio: 3/4;
+          object-fit: cover;
+          display: block;
+          background: #2b1a39;
+          transition: transform .2s;
+        }
+        .dv-card:hover .dv-cover { transform: scale(1.02); }
+        .dv-card-content { padding: 13px; }
+        .dv-card h3 { margin: 7px 0 6px; font-size: 16px; }
+        .dv-tag {
+          color: #c084fc;
+          font-size: 11px;
+          font-weight: 800;
+          text-transform: uppercase;
+        }
+        .dv-description {
+          color: #c5b7d0;
+          font-size: 13px;
+          line-height: 1.5;
+        }
+        .dv-card-actions {
+          display: flex;
+          gap: 8px;
+          padding: 0 13px 14px;
+        }
+        .dv-card-actions .dv-button {
+          flex: 1;
+          padding: 9px 10px;
+        }
+        .dv-heart {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          z-index: 2;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          border: 1px solid #ffffff55;
+          background: #170d25dd;
+          color: white;
+          font-size: 22px;
+          cursor: pointer;
+        }
+        .dv-heart.saved { color: #fb7185; }
+        .dv-message { padding: 20px 0; color: #c5b7d0; }
+        .dv-button {
+          cursor: pointer;
+          border: 0;
+          border-radius: 24px;
+          padding: 11px 17px;
+          background: #9333ea;
+          color: white;
+          font-weight: 700;
+        }
+        .dv-button:hover { background: #a855f7; }
+        .dv-button.secondary {
+          background: #30203e;
+          border: 1px solid #624477;
+        }
+        .dv-button.active { background: #6d28d9; }
+        .dv-footer {
+          padding: 28px 5%;
+          text-align: center;
+          color: #8f7d9f;
+          border-top: 1px solid #30203e;
+        }
+        .dv-player {
+          position: fixed;
+          inset: 0;
+          z-index: 10;
+          background: rgba(8,4,14,.96);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          padding: 24px;
+          text-align: center;
+          overflow: auto;
+        }
+        .dv-player-box {
+          width: min(380px, 100%);
+          background: #000;
+          border: 1px solid #49345c;
+          border-radius: 16px;
+          overflow: hidden;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 0;
+        }
+        .dv-video {
+          display: block;
+          width: 100%;
+          max-height: 80vh;
+          aspect-ratio: 9 / 16;
+          object-fit: contain;
+          background: #000;
+          border-radius: 10px;
+        }
+        @media(max-width:760px) {
+          .dv-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+          .dv-header { align-items: flex-start; }
+          .dv-search { width: 100%; }
+        }
+      `}</style>
+
+      <header className="dv-header">
+        <div
+          className="dv-logo"
+          onClick={() => {
+            closeDetails();
+            setShowFavorites(false);
+          }}
+        >
+          DRAMOVIX
+        </div>
+
+        <div className="dv-nav-tabs">
+          <button
+            className={`dv-nav-tab ${currentTab === "series" ? "active" : ""}`}
+            onClick={() => {
+              setCurrentTab("series");
+              closeDetails();
+              setShowFavorites(false);
+            }}
+          >
+            🎬 Minisséries
+          </button>
+          <button
+            className={`dv-nav-tab ${currentTab === "movies" ? "active" : ""}`}
+            onClick={() => {
+              setCurrentTab("movies");
+              closeDetails();
+              setShowFavorites(false);
+            }}
+          >
+            🍿 Filmes
+          </button>
+          <button
+            className={`dv-nav-tab ${currentTab === "channels" ? "active" : ""}`}
+            onClick={() => {
+              setCurrentTab("channels");
+              closeDetails();
+              setShowFavorites(false);
+            }}
+          >
+            📡 Canais
+          </button>
+        </div>
+
+        <div className="dv-header-actions">
+          <input
+            className="dv-search"
+            type="search"
+            placeholder="Buscar..."
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setSelected(null);
+              setPlaying(null);
+            }}
+          />
+
+          <button
+            className={`dv-button ${showFavorites ? "active" : "secondary"}`}
+            onClick={() => {
+              setShowFavorites((value) => !value);
+              setSelected(null);
+              setPlaying(null);
+            }}
+          >
+            ♥ Favoritos ({favorites.length})
+          </button>
+        </div>
+      </header>
+
+      <main className="dv-main">
+        {selected ? (
+          <section className="dv-detail">
+            {/* Detalhes de séries */}
+          </section>
+        ) : (
+          <section>
+            <h2 className="dv-section-title" style={{ marginTop: 24 }}>
+              {showFavorites
+                ? "Seus favoritos"
+                : currentTab === "series"
+                ? "Minisséries disponíveis"
+                : currentTab === "movies"
+                ? "Filmes disponíveis"
+                : "Canais ao vivo (Regionais e Nacionais)"}
+            </h2>
+
+            <p className="dv-subtitle">
+              {filtered.length} {filtered.length === 1 ? "item" : "itens"} encontrados
+              {loadingIptv && currentTab === "channels" && " (Carregando listas do Brasil...)"}
+            </p>
+
+            <div className="dv-grid">
+              {filtered.map((item) => {
+                const isFavorite = favorites.includes(String(item.id));
+
+                return (
+                  <article className="dv-card" key={item.id}>
+                    <button
+                      className={`dv-heart ${isFavorite ? "saved" : ""}`}
+                      aria-label="Favorito"
+                      onClick={() => toggleFavorite(item)}
+                    >
+                      {isFavorite ? "♥" : "♡"}
+                    </button>
+
+                    <button
+                      className="dv-card-click"
+                      onClick={() => openItem(item)}
+                    >
+                      {item.image ? (
+                        <img
+                          className="dv-cover"
+                          src={item.image}
+                          alt={item.title}
+                          loading="lazy"
+                          onError={(event) => {
+                            event.currentTarget.style.visibility = "hidden";
+                          }}
+                        />
+                      ) : (
+                        <div className="dv-cover" />
+                      )}
+
+                      <div className="dv-card-content">
+                        <span className="dv-tag">{item.category}</span>
+                        <h3>{item.title}</h3>
+                        <p className="dv-description">
+                          {item.description}
+                        </p>
+                      </div>
+                    </button>
+
+                    <div className="dv-card-actions">
+                      <button
+                        className="dv-button"
+                        onClick={() => openItem(item)}
+                      >
+                        ▶ Assistir
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            {!loading && filtered.length === 0 && (
+              <p className="dv-message">
+                Nenhum conteúdo encontrado nesta seção.
+              </p>
+            )}
+          </section>
+        )}
+      </main>
+
+      <footer className="dv-footer">
+        DRAMOVIX · Suas histórias, do seu jeito.
+      </footer>
+
+      {playing && (
+        <div className="dv-player">
+          <button
+            className="dv-button secondary"
+            onClick={() => setPlaying(null)}
+          >
+            ✕ Fechar player
+          </button>
+
+          <h2>{playing.title}</h2>
+
+          <div className="dv-player-box">
+            {playing.video_url ? (
+              <video
+                key={playing.id || playing.video_url}
+                className="dv-video"
+                controls
+                playsInline
+                autoPlay
+                ref={(el) => {
+                  if (!el) return;
+                  const videoUrl = playing.video_url;
+                  
+                  if (videoUrl.includes('.m3u8')) {
+                    if (window.Hls && window.Hls.isSupported()) {
+                      const hls = new window.Hls();
+                      hls.loadSource(videoUrl);
+                      hls.attachMedia(el);
+                      window.currentHls = hls;
+                    } else if (el.canPlayType('application/vnd.apple.mpegurl')) {
+                      el.src = videoUrl;
+                    }
+                  } else {
+                    el.src = videoUrl;
+                  }
+                }}
+              >
+                Seu navegador não conseguiu abrir este stream.
+              </video>
+            ) : (
+              <p>Este vídeo não possui link de reprodução cadastrado.</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
