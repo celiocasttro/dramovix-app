@@ -21,7 +21,6 @@ function getSavedFavorites() {
   }
 }
 
-// Dicionário de tradução das categorias do IPTV-org para o Português
 const categoryTranslations = {
   "Animation": "Animação",
   "Auto": "Automobilismo",
@@ -55,7 +54,6 @@ const categoryTranslations = {
   "Undefined": "Indefinido"
 };
 
-// URLs das listas separadas por categoria do IPTV-org
 const categoryPlaylistUrls = [
   { name: "Animation", url: "https://iptv-org.github.io/iptv/categories/animation.m3u" },
   { name: "Auto", url: "https://iptv-org.github.io/iptv/categories/auto.m3u" },
@@ -80,7 +78,7 @@ const categoryPlaylistUrls = [
 ];
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState("series"); // "series" | "movies" | "channels"
+  const [currentTab, setCurrentTab] = useState("series");
   const [dbSeries, setDbSeries] = useState([]);
   const [dbMovies, setDbMovies] = useState([]);
   const [dbChannels, setDbChannels] = useState([]);
@@ -100,7 +98,6 @@ export default function App() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [favorites, setFavorites] = useState(getSavedFavorites);
 
-  // Carregar Séries
   useEffect(() => {
     let active = true;
 
@@ -116,7 +113,6 @@ export default function App() {
       if (!active) return;
 
       if (error) {
-        console.error("Erro ao carregar séries:", error);
         setDbError(error.message);
         setLoading(false);
         return;
@@ -144,7 +140,6 @@ export default function App() {
     };
   }, []);
 
-  // Carregar Filmes
   useEffect(() => {
     async function loadMovies() {
       const { data } = await supabase
@@ -169,10 +164,8 @@ export default function App() {
     loadMovies();
   }, []);
 
-  // Carregar Canais do Supabase + Listas de Categorias Traduzidas
   useEffect(() => {
     async function loadAllChannels() {
-      // 1. Carrega do Supabase
       let customChannels = [];
       const { data } = await supabase
         .from("channels")
@@ -192,7 +185,6 @@ export default function App() {
 
       setDbChannels(customChannels);
 
-      // 2. Carrega as listas por categoria e traduz
       setLoadingIptv(true);
       try {
         const allParsed = [];
@@ -235,13 +227,13 @@ export default function App() {
               }
             }
           } catch (subErr) {
-            console.warn(`Erro ao carregar categoria ${cat.name}:`, subErr);
+            console.warn(subErr);
           }
         }
 
         setIptvChannels(allParsed);
       } catch (err) {
-        console.warn("Erro ao processar listas de categorias IPTV.", err);
+        console.warn(err);
       } finally {
         setLoadingIptv(false);
       }
@@ -257,7 +249,7 @@ export default function App() {
         JSON.stringify(favorites)
       );
     } catch (error) {
-      console.warn("Não foi possível salvar favoritos.", error);
+      console.warn(error);
     }
   }, [favorites]);
 
@@ -284,7 +276,6 @@ export default function App() {
       if (!active) return;
 
       if (error) {
-        console.error("Erro ao carregar episódios:", error);
         setEpisodesError(error.message);
       } else {
         setEpisodes(data || []);
@@ -302,7 +293,6 @@ export default function App() {
 
   const allChannelsList = [...dbChannels, ...iptvChannels];
 
-  // Extrai lista única de categorias em português disponíveis
   const availableChannelCategories = [
     "Todas",
     ...new Set(allChannelsList.map((item) => item.category))
@@ -332,8 +322,6 @@ export default function App() {
 
     return matchesCategory && matchesSearch && matchesFavorites;
   });
-
-  const featured = catalog[0] || null;
 
   function openItem(item) {
     if (currentTab === "channels" || currentTab === "movies") {
@@ -393,126 +381,344 @@ export default function App() {
   }
 
   return (
-    <div className="dv-app">
-      <style>{`
-        .dv-app {
-          min-height: 100vh;
-          background: #10091b;
-          color: #fff;
-          font-family: Inter, Arial, sans-serif;
-        }
-        .dv-app * { box-sizing: border-box; }
-        .dv-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 16px;
-          padding: 18px 5%;
-          background: #170d25;
-          border-bottom: 1px solid #30203e;
-          flex-wrap: wrap;
-        }
-        .dv-logo {
-          color: #c084fc;
-          font-size: 28px;
-          font-weight: 900;
-          letter-spacing: 2px;
-          cursor: pointer;
-        }
-        .dv-nav-tabs {
-          display: flex;
-          gap: 8px;
-        }
-        .dv-nav-tab {
-          background: #241532;
-          border: 1px solid #49345c;
-          color: #d8b4fe;
-          padding: 8px 14px;
-          border-radius: 16px;
-          cursor: pointer;
-          font-weight: 600;
-        }
-        .dv-nav-tab.active {
-          background: #9333ea;
-          color: #fff;
-          border-color: #a855f7;
-        }
-        .dv-header-actions {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          flex-wrap: wrap;
-        }
-        .dv-search {
-          width: min(260px, 100%);
-          padding: 10px 14px;
-          border: 1px solid #49345c;
-          border-radius: 24px;
-          background: #241532;
-          color: white;
-          outline: none;
-        }
-        .dv-main {
-          width: 90%;
-          max-width: 1400px;
-          margin: auto;
-        }
-        .dv-section-title { font-size: 24px; margin: 0 0 8px; }
-        .dv-subtitle { color: #b9a8c8; margin: 0 0 22px; }
-        .dv-categories {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-          margin: 20px 0 28px;
-        }
-        .dv-category {
-          padding: 9px 16px;
-          border-radius: 20px;
-          background: #241532;
-          color: #e9d5ff;
-          border: 1px solid #49345c;
-          cursor: pointer;
-          font-size: 13px;
-        }
-        .dv-category.active {
-          background: #7e22ce;
-          border-color: #a855f7;
-        }
-        .dv-grid {
-          display: grid;
-          grid-template-columns: repeat(3,minmax(0,1fr));
-          gap: 22px;
-          padding-bottom: 48px;
-        }
-        .dv-card {
-          min-width: 0;
-          position: relative;
-          background: #190f25;
-          border: 1px solid #30203e;
-          border-radius: 15px;
-          overflow: hidden;
-        }
-        .dv-card-click {
-          display: block;
-          width: 100%;
-          padding: 0;
-          text-align: left;
-          color: inherit;
-          background: none;
-          border: 0;
-          cursor: pointer;
-        }
-        .dv-cover {
-          width: 100%;
-          aspect-ratio: 3/4;
-          object-fit: cover;
-          display: block;
-          background: #2b1a39;
-          transition: transform .2s;
-        }
-        .dv-card:hover .dv-cover { transform: scale(1.02); }
-        .dv-card-content { padding: 13px; }
-        .dv-card h3 { margin: 7px 0 6px; font-size: 16px; }
-        .dv-tag {
-          color: #c084fc;
-          
+    <div className="dv-app" style={{ minHeight: "100vh", background: "#10091b", color: "#fff", fontFamily: "Inter, Arial, sans-serif" }}>
+      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", padding: "18px 5%", background: "#170d25", borderBottom: "1px solid #30203e", flexWrap: "wrap" }}>
+        <div
+          style={{ color: "#c084fc", fontSize: "28px", fontWeight: "900", letterSpacing: "2px", cursor: "pointer" }}
+          onClick={() => {
+            closeDetails();
+            setShowFavorites(false);
+          }}
+        >
+          DRAMOVIX
+        </div>
+
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            style={{ background: currentTab === "series" ? "#9333ea" : "#241532", border: "1px solid #49345c", color: currentTab === "series" ? "#fff" : "#d8b4fe", padding: "8px 14px", borderRadius: "16px", cursor: "pointer", fontWeight: "600" }}
+            onClick={() => {
+              setCurrentTab("series");
+              closeDetails();
+              setShowFavorites(false);
+            }}
+          >
+            🎬 Minisséries
+          </button>
+          <button
+            style={{ background: currentTab === "movies" ? "#9333ea" : "#241532", border: "1px solid #49345c", color: currentTab === "movies" ? "#fff" : "#d8b4fe", padding: "8px 14px", borderRadius: "16px", cursor: "pointer", fontWeight: "600" }}
+            onClick={() => {
+              setCurrentTab("movies");
+              closeDetails();
+              setShowFavorites(false);
+            }}
+          >
+            🍿 Filmes
+          </button>
+          <button
+            style={{ background: currentTab === "channels" ? "#9333ea" : "#241532", border: "1px solid #49345c", color: currentTab === "channels" ? "#fff" : "#d8b4fe", padding: "8px 14px", borderRadius: "16px", cursor: "pointer", fontWeight: "600" }}
+            onClick={() => {
+              setCurrentTab("channels");
+              closeDetails();
+              setShowFavorites(false);
+            }}
+          >
+            📡 Canais
+          </button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <input
+            style={{ width: "min(260px, 100%)", padding: "10px 14px", border: "1px solid #49345c", borderRadius: "24px", background: "#241532", color: "white", outline: "none" }}
+            type="search"
+            placeholder="Buscar..."
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setSelected(null);
+              setPlaying(null);
+            }}
+          />
+
+          <button
+            style={{ cursor: "pointer", border: 0, borderRadius: "24px", padding: "11px 17px", background: showFavorites ? "#6d28d9" : "#30203e", color: "white", fontWeight: "700" }}
+            onClick={() => {
+              setShowFavorites((value) => !value);
+              setSelected(null);
+              setPlaying(null);
+            }}
+          >
+            ♥ Favoritos ({favorites.length})
+          </button>
+        </div>
+      </header>
+
+      <main style={{ width: "90%", maxWidth: "1400px", margin: "auto" }}>
+        {selected ? (
+          <section style={{ margin: "30px 0 50px", display: "grid", gridTemplateColumns: "minmax(180px,300px) minmax(0,1fr)", gap: "28px" }}>
+            <div>
+              {selected.image ? (
+                <img
+                  style={{ width: "100%", borderRadius: "16px" }}
+                  src={selected.image}
+                  alt={selected.title}
+                />
+              ) : (
+                <div style={{ background: "#000", padding: "20px", borderRadius: "16px" }}>Capa indisponível</div>
+              )}
+            </div>
+
+            <div>
+              <button
+                style={{ cursor: "pointer", border: "1px solid #624477", borderRadius: "24px", padding: "11px 17px", background: "#30203e", color: "white", fontWeight: "700" }}
+                onClick={closeDetails}
+              >
+                ← Voltar ao catálogo
+              </button>
+
+              <p style={{ color: "#d8b4fe", fontSize: "12px", fontWeight: "800", letterSpacing: "2px", marginTop: "20px" }}>
+                {selected.category}
+              </p>
+
+              <h1 style={{ margin: "8px 0" }}>{selected.title}</h1>
+              <p style={{ color: "#c5b7d0", fontSize: "13px", lineHeight: "1.5" }}>{selected.description}</p>
+
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", margin: "18px 0" }}>
+                <button
+                  style={{ cursor: "pointer", border: 0, borderRadius: "24px", padding: "11px 17px", background: "#9333ea", color: "white", fontWeight: "700" }}
+                  onClick={() => {
+                    if (episodesLoading) {
+                      alert("Aguarde: os episódios ainda estão carregando.");
+                      return;
+                    }
+
+                    const firstPlayable = visibleEpisodes.find(
+                      (episode) => Boolean(episode.video_url)
+                    );
+
+                    if (firstPlayable) {
+                      playEpisode(firstPlayable);
+                    } else {
+                      alert(
+                        "Esta série ainda não tem episódios com vídeos cadastrados."
+                      );
+                    }
+                  }}
+                >
+                  ▶ Assistir
+                </button>
+
+                <button
+                  style={{ cursor: "pointer", border: 0, borderRadius: "24px", padding: "11px 17px", background: favorites.includes(String(selected.id)) ? "#6d28d9" : "#30203e", color: "white", fontWeight: "700" }}
+                  onClick={() => toggleFavorite(selected)}
+                >
+                  {favorites.includes(String(selected.id))
+                    ? "♥ Remover dos favoritos"
+                    : "♡ Adicionar aos favoritos"}
+                </button>
+              </div>
+
+              <h2>Episódios</h2>
+
+              {episodesLoading && (
+                <p style={{ color: "#c5b7d0", padding: "20px 0" }}>Carregando episódios...</p>
+              )}
+
+              {episodesError && (
+                <p style={{ color: "#fca5a5", fontSize: "13px" }}>
+                  Não foi possível carregar os episódios: {episodesError}
+                </p>
+              )}
+
+              {!episodesLoading &&
+                !episodesError &&
+                visibleEpisodes.length === 0 && (
+                  <p style={{ color: "#c5b7d0", padding: "20px 0" }}>
+                    Ainda não há episódios cadastrados para esta série.
+                  </p>
+                )}
+
+              {visibleEpisodes.map((episode) => (
+                <button
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", width: "100%", textAlign: "left", margin: "8px 0", padding: "14px", background: "#241532", color: "white", border: "1px solid #49345c", borderRadius: "10px", cursor: "pointer" }}
+                  key={episode.id}
+                  onClick={() => playEpisode(episode)}
+                >
+                  <span>
+                    ▶ Episódio {episode.episode_number}
+                    {episode.title ? ` — ${episode.title}` : ""}
+                  </span>
+                  <small style={{ color: "#c5b7d0" }}>
+                    {episode.video_url
+                      ? "Assistir"
+                      : "Vídeo não conectado"}
+                  </small>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section>
+            {currentTab === "series" && !showFavorites && (
+              <>
+                <h2 style={{ fontSize: "24px", margin: "24px 0 8px" }}>Categorias</h2>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", margin: "20px 0 28px" }}>
+                  {seriesCategories.map((item) => (
+                    <button
+                      key={item}
+                      style={{ padding: "9px 16px", borderRadius: "20px", background: seriesCategory === item ? "#7e22ce" : "#241532", color: "#e9d5ff", border: "1px solid #49345c", cursor: "pointer", fontSize: "13px" }}
+                      onClick={() => setSeriesCategory(item)}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {currentTab === "channels" && !showFavorites && (
+              <>
+                <h2 style={{ fontSize: "24px", margin: "24px 0 8px" }}>Categorias de Canais</h2>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", margin: "20px 0 28px" }}>
+                  {availableChannelCategories.map((item) => (
+                    <button
+                      key={item}
+                      style={{ padding: "9px 16px", borderRadius: "20px", background: channelCategory === item ? "#7e22ce" : "#241532", color: "#e9d5ff", border: "1px solid #49345c", cursor: "pointer", fontSize: "13px" }}
+                      onClick={() => setChannelCategory(item)}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <h2 style={{ fontSize: "24px", margin: "24px 0 8px" }}>
+              {showFavorites
+                ? "Seus favoritos"
+                : currentTab === "series"
+                ? "Minisséries disponíveis"
+                : currentTab === "movies"
+                ? "Filmes disponíveis"
+                : "Canais ao vivo por categoria"}
+            </h2>
+
+            <p style={{ color: "#b9a8c8", margin: "0 0 22px" }}>
+              {filtered.length} {filtered.length === 1 ? "item" : "itens"} encontrados
+              {loadingIptv && currentTab === "channels" && " (Carregando e traduzindo categorias...)"}
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: "22px", paddingBottom: "48px" }}>
+              {filtered.map((item) => {
+                const isFavorite = favorites.includes(String(item.id));
+
+                return (
+                  <article style={{ minWidth: 0, position: "relative", background: "#190f25", border: "1px solid #30203e", borderRadius: "15px", overflow: "hidden" }} key={item.id}>
+                    <button
+                      style={{ position: "absolute", top: "10px", right: "10px", zIndex: 2, width: "40px", height: "40px", borderRadius: "50%", border: "1px solid #ffffff55", background: "#170d25dd", color: isFavorite ? "#fb7185" : "white", fontSize: "22px", cursor: "pointer" }}
+                      aria-label="Favorito"
+                      onClick={() => toggleFavorite(item)}
+                    >
+                      {isFavorite ? "♥" : "♡"}
+                    </button>
+
+                    <button
+                      style={{ display: "block", width: "100%", padding: 0, textAlign: "left", color: "inherit", background: "none", border: 0, cursor: "pointer" }}
+                      onClick={() => openItem(item)}
+                    >
+                      {item.image ? (
+                        <img
+                          style={{ width: "100%", aspectRatio: "3/4", objectFit: "cover", display: "block", background: "#2b1a39" }}
+                          src={item.image}
+                          alt={item.title}
+                          loading="lazy"
+                          onError={(event) => {
+                            event.currentTarget.style.visibility = "hidden";
+                          }}
+                        />
+                      ) : (
+                        <div style={{ width: "100%", aspectRatio: "3/4", background: "#2b1a39" }} />
+                      )}
+
+                      <div style={{ padding: "13px" }}>
+                        <span style={{ color: "#c084fc", fontSize: "11px", fontWeight: "800", textTransform: "uppercase" }}>{item.category}</span>
+                        <h3 style={{ margin: "7px 0 6px", fontSize: "16px" }}>{item.title}</h3>
+                        <p style={{ color: "#c5b7d0", fontSize: "13px", lineHeight: "1.5" }}>
+                          {item.description}
+                        </p>
+                      </div>
+                    </button>
+
+                    <div style={{ display: "flex", gap: "8px", padding: "0 13px 14px" }}>
+                      <button
+                        style={{ cursor: "pointer", border: 0, borderRadius: "24px", padding: "9px 10px", background: "#9333ea", color: "white", fontWeight: "700", flex: 1 }}
+                        onClick={() => openItem(item)}
+                      >
+                        ▶ {currentTab === "series" ? "Ver série" : "Assistir"}
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            {!loading && filtered.length === 0 && (
+              <p style={{ color: "#c5b7d0", padding: "20px 0" }}>
+                Nenhum conteúdo encontrado nesta categoria.
+              </p>
+            )}
+          </section>
+        )}
+      </main>
+
+      <footer style={{ padding: "28px 5%", textAlign: "center", color: "#8f7d9f", borderTop: "1px solid #30203e" }}>
+        DRAMOVIX · Suas histórias, do seu jeito.
+      </footer>
+
+      {playing && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 10, background: "rgba(8,4,14,.96)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", padding: "24px", textAlign: "center", overflow: "auto" }}>
+          <button
+            style={{ cursor: "pointer", border: "1px solid #624477", borderRadius: "24px", padding: "11px 17px", background: "#30203e", color: "white", fontWeight: "700" }}
+            onClick={() => setPlaying(null)}
+          >
+            ✕ Fechar player
+          </button>
+
+          <h2>{playing.title}</h2>
+
+          <div style={{ width: "min(380px, 100%)", background: "#000", border: "1px solid #49345c", borderRadius: "16px", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center", padding: 0 }}>
+            {playing.video_url ? (
+              <video
+                key={playing.id || playing.video_url}
+                style={{ display: "block", width: "100%", maxHeight: "80vh", aspectRatio: "9 / 16", objectFit: "contain", background: "#000", borderRadius: "10px" }}
+                controls
+                playsInline
+                autoPlay
+                ref={(el) => {
+                  if (!el) return;
+                  const videoUrl = playing.video_url;
+                  
+                  if (videoUrl.includes('.m3u8')) {
+                    if (window.Hls && window.Hls.isSupported()) {
+                      const hls = new window.Hls();
+                      hls.loadSource(videoUrl);
+                      hls.attachMedia(el);
+                      window.currentHls = hls;
+                    } else if (el.canPlayType('application/vnd.apple.mpegurl')) {
+                      el.src = videoUrl;
+                    }
+                  } else {
+                    el.src = videoUrl;
+                  }
+                }}
+              >
+                Seu navegador não conseguiu abrir este stream.
+              </video>
+            ) : (
+              <p style={{ color: "#d8cce2", lineHeight: "1.6", padding: "20px" }}>Este vídeo não possui link de reprodução cadastrado.</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
