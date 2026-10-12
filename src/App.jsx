@@ -174,7 +174,6 @@ function getAnonMP4EmbedUrl(url = "") {
   return `https://${match[1]}/embed/${match[2]}`;
 }
 
-// Identifica os serviços que usam iframe.
 function isEmbeddedVideoUrl(url = "") {
   return (
     isUfoLoadUrl(url) ||
@@ -248,7 +247,6 @@ export default function App() {
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerError, setPlayerError] = useState("");
 
-  // Carrega o catálogo do Supabase.
   useEffect(() => {
     let cancelled = false;
 
@@ -349,7 +347,6 @@ export default function App() {
     };
   }, []);
 
-  // Salva favoritos.
   useEffect(() => {
     try {
       localStorage.setItem(
@@ -361,7 +358,6 @@ export default function App() {
     }
   }, [favorites]);
 
-  // Carrega episódios.
   useEffect(() => {
     if (!selectedSeries) {
       setEpisodes([]);
@@ -402,7 +398,6 @@ export default function App() {
     };
   }, [selectedSeries]);
 
-  // Carrega a playlist selecionada.
   useEffect(() => {
     const playlist = PLAYLISTS[channelSource];
 
@@ -493,8 +488,6 @@ export default function App() {
     );
   }
 
-  // NOVO: botão exclusivo da minissérie do Sireno.
-  // Abre o primeiro episódio que possui um link de vídeo.
   function watchSireno() {
     if (episodesLoading) return;
 
@@ -595,8 +588,6 @@ export default function App() {
     }
   }
 
-  // Reproduz vídeos diretos e HLS.
-  // AnonMP4, UFOLOAD e Internet Archive usam iframe.
   useEffect(() => {
     if (
       !playerOpen ||
@@ -1156,6 +1147,55 @@ export default function App() {
 
         .dv-hero p { max-width: 560px; color: #c2bdce; line-height: 1.7; }
 
+        /* AVISO DE DESENVOLVIMENTO */
+        .dv-development-notice {
+          display: flex;
+          align-items: flex-start;
+          gap: 16px;
+          padding: 20px;
+          margin: 0 0 30px;
+          border: 1px solid #69418a;
+          border-radius: 16px;
+          background: linear-gradient(
+            135deg,
+            rgba(108, 47, 145, 0.25),
+            rgba(25, 20, 36, 0.95)
+          );
+          box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+        }
+
+        .dv-development-icon {
+          flex-shrink: 0;
+          font-size: 30px;
+        }
+
+        .dv-development-notice h2 {
+          margin: 0 0 10px;
+          color: #e3b7ff;
+          font-size: 18px;
+          line-height: 1.4;
+        }
+
+        .dv-development-notice p {
+          margin: 0 0 12px;
+          color: #d0cada;
+          font-size: 13px;
+          line-height: 1.7;
+        }
+
+        .dv-development-notice strong {
+          display: block;
+          color: #e5c4ff;
+          font-size: 13px;
+          line-height: 1.6;
+        }
+
+        .dv-development-notice .dv-development-thanks {
+          margin: 10px 0 0;
+          color: #a9a3b8;
+          font-size: 12px;
+        }
+
         .dv-section-heading {
           display: flex;
           align-items: center;
@@ -1551,6 +1591,19 @@ export default function App() {
           .dv-player-panel { padding: 9px; }
           .dv-player-modal.dv-player-vertical .dv-player-panel { width: min(100%,420px); max-height: 98dvh; }
           .dv-player-vertical .dv-video-wrap { width: 100%; aspect-ratio: 9/16; max-height: calc(98dvh - 95px); }
+
+          .dv-development-notice {
+            gap: 11px;
+            padding: 15px;
+          }
+
+          .dv-development-icon {
+            font-size: 25px;
+          }
+
+          .dv-development-notice h2 {
+            font-size: 16px;
+          }
         }
 
         @media (max-width: 380px) {
@@ -1627,6 +1680,29 @@ export default function App() {
                 Explorar minisséries
               </button>
             </section>
+
+            {/* AVISO DE DESENVOLVIMENTO */}
+            <div className="dv-development-notice">
+              <div className="dv-development-icon">🚧</div>
+
+              <div>
+                <h2>DRAMOVIX está em desenvolvimento</h2>
+
+                <p>
+                  Estamos preparando tudo para você viver grandes histórias!
+                  Nosso catálogo ainda está em construção, e nem todas as
+                  minisséries e episódios estão disponíveis neste momento.
+                </p>
+
+                <strong>
+                  ✨ Novas séries e episódios chegarão em breve!
+                </strong>
+
+                <p className="dv-development-thanks">
+                  Obrigado por fazer parte do começo dessa jornada. ❤️
+                </p>
+              </div>
+            </div>
 
             <div className="dv-section-heading">
               <h2>Em destaque</h2>
@@ -1706,7 +1782,6 @@ export default function App() {
                       {isFavorite(selectedSeries, "series") ? "♥" : "♡"}
                     </button>
 
-                    {/* SIRENO: um único botão para assistir à minissérie. */}
                     {(
                       normalizeText(selectedSeries.title).includes(
                         "sireno"
@@ -1734,7 +1809,6 @@ export default function App() {
                       </div>
                     ) : (
                       <>
-                        {/* Todas as outras minisséries mantêm a lista de episódios. */}
                         <div className="dv-section-heading">
                           <h2>Episódios</h2>
                           <span className="dv-muted">
