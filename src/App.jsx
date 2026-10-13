@@ -249,6 +249,9 @@ const normalize = (value = "") =>
 export default function App() {
   const [series, setSeries] = useState([]);
   const [movies, setMovies] = useState([]);
+  const [liveChannels, setLiveChannels] = useState([]);
+  const [liveChannelsLoading, setLiveChannelsLoading] = useState(true);
+
   const [selectedSeries, setSelectedSeries] = useState(null);
   const [episodes, setEpisodes] = useState([]);
   const [selectedEpisode, setSelectedEpisode] = useState(null);
@@ -287,9 +290,14 @@ export default function App() {
 
     async function loadCatalog() {
       setLoading(true);
+      setLiveChannelsLoading(true);
 
       try {
-        const [seriesResult, moviesResult] = await Promise.all([
+        const [
+          seriesResult,
+          moviesResult,
+          liveChannelsResult,
+        ] = await Promise.all([
           supabase
             .from("series")
             .select("*")
@@ -300,6 +308,12 @@ export default function App() {
             .from("movies")
             .select("*")
             .order("created_at", { ascending: false }),
+
+          supabase
+            .from("movie_live_channels")
+            .select("*")
+            .eq("is_active", true)
+            .order("id", { ascending: true }),
         ]);
 
         if (seriesResult.error) {
@@ -316,36 +330,66 @@ export default function App() {
           );
         }
 
-        const loadedSeries = (seriesResult.data || []).map((item) => ({
-          id: `db-${item.id}`,
-          dbId: item.id,
-          title: item.title || "Sem título",
-          category: item.genre || "Romance",
-          description: item.description || "",
-          image: item.cover_url || DEFAULT_COVER,
-          isChris: normalize(item.title) === normalize(CHRIS_TITLE),
-          isLive: false,
-        }));
+        if (liveChannelsResult.error) {
+          console.error(
+            "Erro ao carregar canais ao vivo:",
+            liveChannelsResult.error
+          );
+        }
 
-        const hasChris = loadedSeries.some((item) => item.isChris);
+        const loadedSeries = (seriesResult.data || []).map(
+          (item) => ({
+            id: `db-${item.id}`,
+            dbId: item.id,
+            title: item.title || "Sem título",
+            category: item.genre || "Romance",
+            description: item.description || "",
+            image: item.cover_url || DEFAULT_COVER,
+            isChris:
+              normalize(item.title) === normalize(CHRIS_TITLE),
+            isLive: false,
+          })
+        );
+
+        const hasChris = loadedSeries.some(
+          (item) => item.isChris
+        );
 
         if (!hasChris) {
           loadedSeries.push(CHRIS_SERIES);
         }
 
-        const loadedMovies = (moviesResult.data || []).map((item) => ({
-          id: `movie-${item.id}`,
+        const loadedMovies = (moviesResult.data || []).map(
+          (item) => ({
+            id: `movie-${item.id}`,
+            dbId: item.id,
+            title: item.title || "Sem título",
+            category: item.genre || "Filme",
+            description: item.description || "",
+            image: item.cover_url || DEFAULT_MOVIE_COVER,
+            video_url: item.video_url || "",
+          })
+        );
+
+        const loadedLiveChannels = (
+          liveChannelsResult.data || []
+        ).map((item) => ({
+          id: `live-channel-${item.id}`,
           dbId: item.id,
-          title: item.title || "Sem título",
-          category: item.genre || "Filme",
-          description: item.description || "",
-          image: item.cover_url || DEFAULT_MOVIE_COVER,
-          video_url: item.video_url || "",
+          title: item.name || "Canal ao vivo",
+          category: item.category || "Ao vivo",
+          description: `Assista ao canal ${item.name || "ao vivo"}.`,
+          image: item.cover_url || DEFAULT_COVER,
+          video_url: item.stream_url || "",
+          isLive: true,
         }));
 
         if (!cancelled) {
           setSeries(loadedSeries);
           setMovies(loadedMovies);
+          setLiveChannels(
+            liveChannelsResult.error ? [] : loadedLiveChannels
+          );
         }
       } catch (error) {
         console.error("Erro ao carregar catálogo:", error);
@@ -353,10 +397,12 @@ export default function App() {
         if (!cancelled) {
           setSeries([CHRIS_SERIES]);
           setMovies([]);
+          setLiveChannels([]);
         }
       } finally {
         if (!cancelled) {
           setLoading(false);
+          setLiveChannelsLoading(false);
         }
       }
     }
@@ -371,6 +417,7 @@ export default function App() {
   useEffect(() => {
     if (!selectedSeries) {
       setEpisodes([]);
+      setEpisodesLoading(false);
       return;
     }
 
@@ -612,6 +659,14 @@ export default function App() {
   const filteredMovies = movies.filter((item) =>
     normalize(item.title).includes(normalize(search))
   );
+
+  const filteredLiveChannels = liveChannels.filter((item) => {
+    const matchesSearch =
+      normalize(item.title).includes(normalize(search)) ||
+      normalize(item.description).includes(normalize(search));
+
+    return matchesSearch;
+  });
 
   function toggleFavorite(item) {
     setFavorites((previous) =>
@@ -1413,7 +1468,7 @@ export default function App() {
           font-size: 22px;
         }
 
-        /* Player: mantém a proporção original do vídeo. */
+        /* Mantém a proporção original do vídeo. */
         .dv-video-wrap {
           display: flex;
           align-items: center;
@@ -1891,6 +1946,44 @@ export default function App() {
               {renderGrid(filteredSeries.slice(0, 8))}
             </section>
 
+            <section className="dv-section">
+              <div className="dv-section-heading">
+                <div>
+                  <h2>Canais ao vivo</h2>
+                  <p>Assista às transmissões disponíveis.</p>
+                </div>
+
+                <button
+                  className="dv-description-toggle"
+                  onClick={() => goToPage("ao-vivo")}
+                >
+                  Ver todos →
+                </button>
+              </div>
+
+              {liveChannelsLoading ? (
+                <p className="dv-message">
+                  Carregando canais ao vivo...
+                </p>
+              ) : (
+                renderGrid(
+                  [
+                    ...liveChannels.slice(0, 4),
+                    ...(
+                      liveChannels.some(
+                        (item) =>
+                          normalize(item.title) ===
+                          normalize("Z Nation")
+                      )
+                        ? []
+                        : [LIVE_SERIES]
+                    ),
+                  ].slice(0, 4),
+                  "live"
+                )
+              )}
+            </section>
+
             {movies.length > 0 && (
               <section className="dv-section">
                 <div className="dv-section-heading">
@@ -1955,7 +2048,27 @@ export default function App() {
               </div>
             </div>
 
-            {renderGrid([LIVE_SERIES], "live")}
+            {liveChannelsLoading ? (
+              <p className="dv-message">
+                Carregando canais ao vivo...
+              </p>
+            ) : (
+              renderGrid(
+                [
+                  ...filteredLiveChannels,
+                  ...(
+                    liveChannels.some(
+                      (item) =>
+                        normalize(item.title) ===
+                        normalize("Z Nation")
+                    )
+                      ? []
+                      : [LIVE_SERIES]
+                  ),
+                ],
+                "live"
+              )
+            )}
           </section>
         )}
 
