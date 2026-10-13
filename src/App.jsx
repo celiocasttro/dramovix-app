@@ -17,7 +17,7 @@ const LIVE_SERIES = {
     "🔴 AO VIVO AGORA! Entre nessa história de ação, terror e sobrevivência em um mundo dominado por zumbis. Acompanhe a transmissão aqui no DRAMOVIX.",
   image:
     "https://placehold.co/600x900/171717/ffffff?text=Z+NATION",
-  video_url: "",
+  video_url: "https://epg.provider.plex.tv/library/parts/646546f35db8ada4c8edd7e5-67d1be3696c7b08c26c19d64.m3u8?includeAllStreams=1&x-plex-product=Plex+Mediaverse&x-plex-token=MZFkHw1Atc9c9bZLRyWw&auto=0",
   type: "live",
   isLive: true,
 };
