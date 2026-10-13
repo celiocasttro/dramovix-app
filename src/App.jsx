@@ -19,7 +19,7 @@ const CHRIS_EPISODES = Array.from({ length: 22 }, (_, index) => ({
   title: `Episódio ${index + 1}`,
   episode_number: index + 1,
   season_number: 4,
-  video_url: "",
+  video_url: "https://cdnst70.tokyvideo.com/videos/636/636141/mp4/06a9d3ea52f2ca3c622c0f908ae3464fe7fa47d698f411e856f893710cba423a.mp4?secure=sdPb9xRPETR-6T9mmqr2Uw%3D%3D%2C1791942986",
   isChrisEpisode: true,
 }));
 
