@@ -31,6 +31,18 @@ const DEFAULT_MOVIE_COVER =
 const DEFAULT_CHANNEL_LOGO =
   "https://placehold.co/100x100/171721/ffffff?text=TV";
 
+// CANAL DE TESTE: Z NATION AO VIVO
+const ZNATION_TEST_CHANNEL = {
+  id: "dramovix-znation-test",
+  name: "Z Nation — AO VIVO (TESTE)",
+  title: "Z Nation — AO VIVO (TESTE)",
+  logo: "https://placehold.co/100x100/171721/ffffff?text=Z+NATION",
+  category: "Séries",
+  source: "test",
+  stream_url:
+    "https://epg.provider.plex.tv/library/parts/646546f35db8ada4c8edd7e5-67d1be3696c7b08c26c19d64.m3u8?includeAllStreams=1&x-plex-product=Plex+Mediaverse&x-plex-token=MZFkHw1Atc9c9bZLRyWw&auto=0",
+};
+
 function normalizeText(value = "") {
   return String(value)
     .normalize("NFD")
@@ -800,8 +812,14 @@ export default function App() {
     setError("");
   }
 
+  // O canal de teste aparece junto dos canais do Supabase e das playlists.
   const allChannels = useMemo(() => {
-    const combined = [...dbChannels, ...playlistChannels];
+    const combined = [
+      ZNATION_TEST_CHANNEL,
+      ...dbChannels,
+      ...playlistChannels,
+    ];
+
     const seen = new Set();
 
     return combined.filter((channel) => {
