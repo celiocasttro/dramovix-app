@@ -3,45 +3,47 @@ import { supabase } from "./supabase";
 import Hls from "hls.js";
 import "./App.css";
 
-const PLAYLISTS = {
-  br: {
-    name: "Canais do Brasil",
-    url: "https://iptv-org.github.io/iptv/countries/br.m3u",
-  },
-  world: {
-    name: "Canais internacionais",
-    url: "https://iptv-org.github.io/iptv/index.m3u",
-  },
-  categories: {
-    name: "Categorias",
-    url: "https://iptv-org.github.io/iptv/index.category.m3u",
-  },
-  languages: {
-    name: "Idiomas",
-    url: "https://iptv-org.github.io/iptv/index.language.m3u",
-  },
-};
-
 const DEFAULT_SERIES_COVER =
   "https://placehold.co/600x800/171721/ffffff?text=Dramovix";
 
 const DEFAULT_MOVIE_COVER =
   "https://placehold.co/600x800/171721/ffffff?text=Filme";
 
-const DEFAULT_CHANNEL_LOGO =
-  "https://placehold.co/100x100/171721/ffffff?text=TV";
-
-// CANAL DE TESTE: Z NATION AO VIVO
-const ZNATION_TEST_CHANNEL = {
-  id: "dramovix-znation-test",
-  name: "Z Nation — AO VIVO (TESTE)",
-  title: "Z Nation — AO VIVO (TESTE)",
-  logo: "https://placehold.co/100x100/171721/ffffff?text=Z+NATION",
-  category: "Séries",
-  source: "test",
-  stream_url:
-    "https://epg.provider.plex.tv/library/parts/646546f35db8ada4c8edd7e5-67d1be3696c7b08c26c19d64.m3u8?includeAllStreams=1&x-plex-product=Plex+Mediaverse&x-plex-token=MZFkHw1Atc9c9bZLRyWw&auto=0",
-};
+// OPÇÕES DA NOVA ABA AO VIVO
+// Por enquanto, são apenas espaços reservados.
+// Os links e a reprodução serão implementados depois.
+const LIVE_OPTIONS = [
+  {
+    id: "tv",
+    title: "TV ao vivo",
+    description: "Canais de televisão para assistir ao vivo.",
+    icon: "📺",
+  },
+  {
+    id: "sports",
+    title: "Esportes ao vivo",
+    description: "Transmissões esportivas ao vivo.",
+    icon: "⚽",
+  },
+  {
+    id: "news",
+    title: "Notícias ao vivo",
+    description: "Acompanhe notícias e acontecimentos.",
+    icon: "📰",
+  },
+  {
+    id: "events",
+    title: "Eventos ao vivo",
+    description: "Eventos e transmissões especiais.",
+    icon: "🎥",
+  },
+  {
+    id: "other",
+    title: "Outros conteúdos",
+    description: "Outras opções de transmissão que serão adicionadas.",
+    icon: "✨",
+  },
+];
 
 function normalizeText(value = "") {
   return String(value)
@@ -72,48 +74,6 @@ function getSeriesCover(item = {}) {
     item.poster ||
     DEFAULT_SERIES_COVER
   );
-}
-
-function parseM3U(text) {
-  const lines = text.split(/\r?\n/);
-  const channels = [];
-  let current = null;
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-
-    if (!line) continue;
-
-    if (line.startsWith("#EXTINF")) {
-      const nameMatch = line.match(/,(.*)$/);
-      const logoMatch = line.match(/tvg-logo="([^"]*)"/i);
-      const groupMatch = line.match(/group-title="([^"]*)"/i);
-      const idMatch = line.match(/tvg-id="([^"]*)"/i);
-
-      current = {
-        id: `playlist-${channels.length}-${Math.random()
-          .toString(36)
-          .slice(2, 8)}`,
-        name: nameMatch?.[1]?.trim() || "Canal sem nome",
-        title: nameMatch?.[1]?.trim() || "Canal sem nome",
-        logo: logoMatch?.[1] || DEFAULT_CHANNEL_LOGO,
-        category: groupMatch?.[1] || "Outros",
-        tvgId: idMatch?.[1] || "",
-        source: "playlist",
-        stream_url: "",
-      };
-    } else if (
-      !line.startsWith("#") &&
-      current &&
-      /^https?:\/\//i.test(line)
-    ) {
-      current.stream_url = line;
-      channels.push(current);
-      current = null;
-    }
-  }
-
-  return channels;
 }
 
 function getErrorDetails(error) {
@@ -227,8 +187,6 @@ export default function App() {
 
   const [series, setSeries] = useState([]);
   const [movies, setMovies] = useState([]);
-  const [dbChannels, setDbChannels] = useState([]);
-  const [playlistChannels, setPlaylistChannels] = useState([]);
 
   const [selectedSeries, setSelectedSeries] = useState(null);
   const [episodes, setEpisodes] = useState([]);
@@ -238,8 +196,8 @@ export default function App() {
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
-  const [channelCategory, setChannelCategory] = useState("Todas");
-  const [channelSource, setChannelSource] = useState("br");
+
+  const [selectedLiveOption, setSelectedLiveOption] = useState(null);
 
   const [favorites, setFavorites] = useState(() => {
     try {
@@ -253,7 +211,6 @@ export default function App() {
 
   const [loading, setLoading] = useState(true);
   const [episodesLoading, setEpisodesLoading] = useState(false);
-  const [playlistLoading, setPlaylistLoading] = useState(false);
 
   const [error, setError] = useState("");
   const [playerOpen, setPlayerOpen] = useState(false);
@@ -266,15 +223,13 @@ export default function App() {
       setLoading(true);
       setError("");
 
-      const [seriesResult, moviesResult, channelsResult] =
-        await Promise.all([
-          supabase
-            .from("series")
-            .select("*")
-            .order("created_at", { ascending: false }),
-          supabase.from("movies").select("*"),
-          supabase.from("channels").select("*"),
-        ]);
+      const [seriesResult, moviesResult] = await Promise.all([
+        supabase
+          .from("series")
+          .select("*")
+          .order("created_at", { ascending: false }),
+        supabase.from("movies").select("*"),
+      ]);
 
       if (cancelled) return;
 
@@ -309,6 +264,7 @@ export default function App() {
           "Não foi possível carregar os filmes:",
           getErrorDetails(moviesResult.error)
         );
+
         setMovies([]);
       } else {
         setMovies(
@@ -324,27 +280,6 @@ export default function App() {
             video_url:
               item.video_url || item.stream_url || item.url || "",
             type: "movie",
-          }))
-        );
-      }
-
-      if (channelsResult.error) {
-        console.warn(
-          "Não foi possível carregar os canais do Supabase:",
-          getErrorDetails(channelsResult.error)
-        );
-        setDbChannels([]);
-      } else {
-        setDbChannels(
-          (channelsResult.data || []).map((item) => ({
-            ...item,
-            id: `db-${item.id}`,
-            name: item.name || item.title || "Canal sem nome",
-            logo: item.logo || item.logo_url || DEFAULT_CHANNEL_LOGO,
-            stream_url:
-              item.stream_url || item.video_url || item.url || "",
-            category: item.category || "Outros",
-            source: "database",
           }))
         );
       }
@@ -395,6 +330,7 @@ export default function App() {
           "Erro ao carregar episódios:",
           getErrorDetails(episodeError)
         );
+
         setEpisodes([]);
       } else {
         setEpisodes(data || []);
@@ -409,48 +345,6 @@ export default function App() {
       cancelled = true;
     };
   }, [selectedSeries]);
-
-  useEffect(() => {
-    const playlist = PLAYLISTS[channelSource];
-
-    if (!playlist) return undefined;
-
-    const controller = new AbortController();
-
-    async function loadPlaylist() {
-      setPlaylistLoading(true);
-
-      try {
-        const response = await fetch(playlist.url, {
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(`Erro HTTP ${response.status}`);
-        }
-
-        const text = await response.text();
-        const parsedChannels = parseM3U(text);
-
-        if (!controller.signal.aborted) {
-          setPlaylistChannels(parsedChannels);
-        }
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          console.error("Erro ao carregar playlist:", err);
-          setPlaylistChannels([]);
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setPlaylistLoading(false);
-        }
-      }
-    }
-
-    loadPlaylist();
-
-    return () => controller.abort();
-  }, [channelSource]);
 
   function openPlayer(item, type = "movie") {
     const videoUrl = String(
@@ -684,6 +578,7 @@ export default function App() {
                 hls.recoverMediaError();
               } catch (err) {
                 console.error("Falha ao recuperar mídia:", err);
+
                 showPlaybackError(
                   "O vídeo apresentou um erro de mídia e não pôde ser recuperado."
                 );
@@ -692,6 +587,7 @@ export default function App() {
               showPlaybackError(
                 "Não foi possível recuperar a reprodução deste vídeo."
               );
+
               hls.destroy();
             }
 
@@ -790,7 +686,6 @@ export default function App() {
             item.image ||
             item.cover_url ||
             item.poster_url ||
-            item.logo ||
             DEFAULT_SERIES_COVER,
           item,
         },
@@ -807,30 +702,11 @@ export default function App() {
   function goHome() {
     setSection("Início");
     setSelectedSeries(null);
+    setSelectedLiveOption(null);
     setSearch("");
     setCategory("Todas");
     setError("");
   }
-
-  // O canal de teste aparece junto dos canais do Supabase e das playlists.
-  const allChannels = useMemo(() => {
-    const combined = [
-      ZNATION_TEST_CHANNEL,
-      ...dbChannels,
-      ...playlistChannels,
-    ];
-
-    const seen = new Set();
-
-    return combined.filter((channel) => {
-      const url = channel.stream_url || channel.url;
-
-      if (!url || seen.has(url)) return false;
-
-      seen.add(url);
-      return true;
-    });
-  }, [dbChannels, playlistChannels]);
 
   const seriesCategories = useMemo(
     () => [
@@ -840,16 +716,6 @@ export default function App() {
       ),
     ],
     [series]
-  );
-
-  const channelCategories = useMemo(
-    () => [
-      "Todas",
-      ...new Set(
-        allChannels.map((item) => item.category).filter(Boolean)
-      ),
-    ],
-    [allChannels]
   );
 
   const filteredSeries = useMemo(() => {
@@ -879,23 +745,6 @@ export default function App() {
         normalizeText(item.description || "").includes(query)
     );
   }, [movies, search]);
-
-  const filteredChannels = useMemo(() => {
-    const query = normalizeText(search);
-
-    return allChannels.filter((item) => {
-      const matchesCategory =
-        channelCategory === "Todas" ||
-        item.category === channelCategory;
-
-      const matchesSearch =
-        !query ||
-        normalizeText(item.name).includes(query) ||
-        normalizeText(item.category).includes(query);
-
-      return matchesCategory && matchesSearch;
-    });
-  }, [allChannels, channelCategory, search]);
 
   const favoriteSeries = favorites.filter(
     (favorite) => favorite.type === "series"
@@ -927,12 +776,15 @@ export default function App() {
               event.currentTarget.src = DEFAULT_SERIES_COVER;
             }}
           />
+
           <span className="dv-card-play">▶</span>
         </button>
 
         <div className="dv-card-info">
           <span className="dv-card-category">{item.category}</span>
+
           <h3>{item.title}</h3>
+
           <p>
             {item.description ||
               "Uma nova história espera por você."}
@@ -983,11 +835,13 @@ export default function App() {
               event.currentTarget.src = DEFAULT_MOVIE_COVER;
             }}
           />
+
           <span className="dv-card-play">▶</span>
         </button>
 
         <div className="dv-card-info">
           <h3>{item.title}</h3>
+
           <p>{item.description || "Assista no DRAMOVIX."}</p>
 
           <div className="dv-card-actions">
@@ -1014,31 +868,28 @@ export default function App() {
     );
   }
 
-  function renderChannelCard(item) {
+  function renderLiveOption(item) {
+    const isSelected = selectedLiveOption === item.id;
+
     return (
-      <article className="dv-channel-card" key={item.id}>
-        <img
-          src={item.logo || DEFAULT_CHANNEL_LOGO}
-          alt=""
-          loading="lazy"
-          onError={(event) => {
-            event.currentTarget.onerror = null;
-            event.currentTarget.src = DEFAULT_CHANNEL_LOGO;
-          }}
-        />
+      <button
+        type="button"
+        className={`dv-live-card ${isSelected ? "active" : ""}`}
+        key={item.id}
+        onClick={() => {
+          setSelectedLiveOption(item.id);
+          setError("");
+        }}
+      >
+        <span className="dv-live-icon">{item.icon}</span>
 
-        <div className="dv-channel-info">
-          <h3>{item.name}</h3>
-          <p>{item.category || "TV ao vivo"}</p>
-        </div>
+        <span className="dv-live-card-content">
+          <strong>{item.title}</strong>
+          <span>{item.description}</span>
+        </span>
 
-        <button
-          className="dv-primary-button"
-          onClick={() => openPlayer(item, "channel")}
-        >
-          ▶ Assistir
-        </button>
-      </article>
+        <span className="dv-live-arrow">›</span>
+      </button>
     );
   }
 
@@ -1163,9 +1014,12 @@ export default function App() {
           max-width: 650px;
         }
 
-        .dv-hero p { max-width: 560px; color: #c2bdce; line-height: 1.7; }
+        .dv-hero p {
+          max-width: 560px;
+          color: #c2bdce;
+          line-height: 1.7;
+        }
 
-        /* AVISO DE DESENVOLVIMENTO */
         .dv-development-notice {
           display: flex;
           align-items: flex-start;
@@ -1223,7 +1077,11 @@ export default function App() {
           margin: 30px 0 18px;
         }
 
-        .dv-section-heading h2 { margin: 0; font-size: 23px; }
+        .dv-section-heading h2 {
+          margin: 0;
+          font-size: 23px;
+        }
+
         .dv-muted { color: #aaa8ba; }
 
         .dv-categories {
@@ -1263,7 +1121,10 @@ export default function App() {
           transition: transform .18s,border-color .18s;
         }
 
-        .dv-card:hover { transform: translateY(-3px); border-color: #674087; }
+        .dv-card:hover {
+          transform: translateY(-3px);
+          border-color: #674087;
+        }
 
         .dv-card-image-button {
           display: block;
@@ -1276,7 +1137,12 @@ export default function App() {
           overflow: hidden;
         }
 
-        .dv-card-image { display: block; width: 100%; height: 100%; object-fit: cover; }
+        .dv-card-image {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
 
         .dv-card-play {
           position: absolute;
@@ -1295,6 +1161,7 @@ export default function App() {
         }
 
         .dv-card-image-button:hover .dv-card-play { opacity: 1; }
+
         .dv-card-info { padding: 13px; }
 
         .dv-card-info h3 {
@@ -1304,7 +1171,12 @@ export default function App() {
           overflow-wrap: anywhere;
         }
 
-        .dv-card-info p { font-size: 12px; line-height: 1.5; color: #a9a7b8; margin: 0 0 12px; }
+        .dv-card-info p {
+          font-size: 12px;
+          line-height: 1.5;
+          color: #a9a7b8;
+          margin: 0 0 12px;
+        }
 
         .dv-card-category {
           color: #d09aff;
@@ -1314,7 +1186,11 @@ export default function App() {
           letter-spacing: 1px;
         }
 
-        .dv-card-actions { display: flex; align-items: center; gap: 8px; }
+        .dv-card-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
 
         .dv-primary-button {
           border: 0;
@@ -1327,7 +1203,10 @@ export default function App() {
         }
 
         .dv-primary-button:hover { background: #aa4ce1; }
-        .dv-primary-button:disabled { opacity: .45; cursor: not-allowed; }
+        .dv-primary-button:disabled {
+          opacity: .45;
+          cursor: not-allowed;
+        }
 
         .dv-favorite-button {
           flex-shrink: 0;
@@ -1340,7 +1219,10 @@ export default function App() {
           font-size: 22px;
         }
 
-        .dv-favorite-button.active { color: #ff6eaa; border-color: #6f304f; }
+        .dv-favorite-button.active {
+          color: #ff6eaa;
+          border-color: #6f304f;
+        }
 
         .dv-back-button {
           margin-bottom: 20px;
@@ -1374,9 +1256,16 @@ export default function App() {
           margin: 0 0 12px;
         }
 
-        .dv-detail-content p { color: #c1bdcf; line-height: 1.7; }
+        .dv-detail-content p {
+          color: #c1bdcf;
+          line-height: 1.7;
+        }
 
-        .dv-episode-list { display: grid; gap: 10px; margin-top: 20px; }
+        .dv-episode-list {
+          display: grid;
+          gap: 10px;
+          margin-top: 20px;
+        }
 
         .dv-episode {
           display: flex;
@@ -1401,7 +1290,10 @@ export default function App() {
           font-weight: 800;
         }
 
-        .dv-episode-info { flex: 1; min-width: 0; }
+        .dv-episode-info {
+          flex: 1;
+          min-width: 0;
+        }
 
         .dv-episode-info h3 {
           font-size: 14px;
@@ -1410,39 +1302,140 @@ export default function App() {
           overflow-wrap: anywhere;
         }
 
-        .dv-episode-info p { font-size: 12px; color: #9f9bad; margin: 5px 0 0; }
+        .dv-episode-info p {
+          font-size: 12px;
+          color: #9f9bad;
+          margin: 5px 0 0;
+        }
+
         .dv-episode .dv-primary-button { flex-shrink: 0; }
 
-        .dv-channel-list {
-          display: grid;
-          grid-template-columns: repeat(2,minmax(0,1fr));
-          gap: 12px;
+        /* NOVA ABA AO VIVO */
+        .dv-live-intro {
+          padding: 30px;
+          margin-bottom: 25px;
+          border: 1px solid #49315e;
+          border-radius: 18px;
+          background:
+            radial-gradient(circle at 90% 10%, rgba(189,92,255,.18), transparent 35%),
+            linear-gradient(120deg, #1b1229, #11111b 75%);
         }
 
-        .dv-channel-card {
+        .dv-live-label {
+          color: #d49aff;
+          font-size: 11px;
+          font-weight: 850;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+        }
+
+        .dv-live-intro h1 {
+          margin: 10px 0;
+          font-size: clamp(28px, 4vw, 40px);
+        }
+
+        .dv-live-intro p {
+          max-width: 650px;
+          margin: 0;
+          color: #c2bdce;
+          line-height: 1.7;
+          font-size: 14px;
+        }
+
+        .dv-live-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px;
+        }
+
+        .dv-live-card {
           display: flex;
           align-items: center;
-          gap: 13px;
+          gap: 15px;
           min-width: 0;
-          padding: 13px;
-          border: 1px solid #2b2a38;
-          border-radius: 12px;
+          width: 100%;
+          padding: 19px;
+          text-align: left;
+          color: #f7f7fb;
+          border: 1px solid #302b3c;
+          border-radius: 15px;
           background: #14141e;
+          transition:
+            background .18s,
+            border-color .18s,
+            transform .18s;
         }
 
-        .dv-channel-card > img {
-          width: 48px;
-          height: 48px;
+        .dv-live-card:hover,
+        .dv-live-card.active {
+          background: #21182d;
+          border-color: #9250bd;
+          transform: translateY(-2px);
+        }
+
+        .dv-live-icon {
+          display: grid;
+          place-items: center;
+          flex: 0 0 54px;
+          width: 54px;
+          height: 54px;
+          border-radius: 13px;
+          background: #292037;
+          font-size: 27px;
+        }
+
+        .dv-live-card-content {
+          display: flex;
+          flex: 1;
+          flex-direction: column;
+          gap: 6px;
+          min-width: 0;
+        }
+
+        .dv-live-card-content strong {
+          font-size: 15px;
+          line-height: 1.4;
+        }
+
+        .dv-live-card-content > span {
+          color: #aaa8ba;
+          font-size: 12px;
+          line-height: 1.5;
+        }
+
+        .dv-live-arrow {
           flex-shrink: 0;
-          border-radius: 9px;
-          object-fit: contain;
-          background: #20202b;
+          color: #c98aff;
+          font-size: 28px;
         }
 
-        .dv-channel-info { flex: 1; min-width: 0; }
-        .dv-channel-info h3 { margin: 0 0 5px; font-size: 14px; overflow-wrap: anywhere; }
-        .dv-channel-info p { margin: 0; font-size: 12px; color: #a8a5b7; }
-        .dv-channel-card .dv-primary-button { flex-shrink: 0; }
+        .dv-live-placeholder {
+          margin-top: 22px;
+          padding: 22px;
+          border: 1px dashed #604276;
+          border-radius: 14px;
+          background: rgba(26, 20, 36, .75);
+          text-align: center;
+        }
+
+        .dv-live-placeholder .dv-live-placeholder-icon {
+          display: block;
+          margin-bottom: 8px;
+          font-size: 30px;
+        }
+
+        .dv-live-placeholder h3 {
+          margin: 0 0 8px;
+          color: #e3b7ff;
+          font-size: 17px;
+        }
+
+        .dv-live-placeholder p {
+          margin: 0;
+          color: #bcb5ca;
+          font-size: 13px;
+          line-height: 1.7;
+        }
 
         .dv-notice {
           padding: 15px;
@@ -1581,54 +1574,143 @@ export default function App() {
           overflow-wrap: anywhere;
         }
 
-        .dv-player-next { display: flex; justify-content: flex-end; margin-top: 12px; }
+        .dv-player-next {
+          display: flex;
+          justify-content: flex-end;
+          margin-top: 12px;
+        }
 
         @media (max-width: 1000px) {
-          .dv-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
+          .dv-grid {
+            grid-template-columns: repeat(4,minmax(0,1fr));
+          }
         }
 
         @media (max-width: 760px) {
-          .dv-header-inner { padding: 12px 14px; gap: 12px; }
+          .dv-header-inner {
+            padding: 12px 14px;
+            gap: 12px;
+          }
+
           .dv-brand { font-size: 22px; }
-          .dv-nav { width: 100%; display: flex; flex-wrap: wrap; gap: 5px; }
-          .dv-nav button { padding: 8px 9px; font-size: 12px; }
+
+          .dv-nav {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+          }
+
+          .dv-nav button {
+            padding: 8px 9px;
+            font-size: 12px;
+          }
+
           .dv-main { padding: 18px 14px 40px; }
-          .dv-hero { padding: 27px 21px; border-radius: 17px; }
-          .dv-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+
+          .dv-hero {
+            padding: 27px 21px;
+            border-radius: 17px;
+          }
+
+          .dv-grid {
+            grid-template-columns: repeat(2,minmax(0,1fr));
+            gap: 12px;
+          }
+
           .dv-card-info { padding: 10px; }
+
           .dv-card-info h3 { font-size: 13px; }
           .dv-card-info p { font-size: 11px; }
-          .dv-detail { grid-template-columns: 1fr; gap: 20px; }
-          .dv-detail-cover { width: min(65%,240px); margin: 0 auto; display: block; }
-          .dv-channel-list { grid-template-columns: 1fr; }
-          .dv-episode { gap: 9px; padding: 10px; }
-          .dv-episode-number { flex-basis: 34px; width: 34px; height: 34px; }
+
+          .dv-detail {
+            grid-template-columns: 1fr;
+            gap: 20px;
+          }
+
+          .dv-detail-cover {
+            width: min(65%,240px);
+            margin: 0 auto;
+            display: block;
+          }
+
+          .dv-episode {
+            gap: 9px;
+            padding: 10px;
+          }
+
+          .dv-episode-number {
+            flex-basis: 34px;
+            width: 34px;
+            height: 34px;
+          }
+
           .dv-episode-info h3 { font-size: 12px; }
-          .dv-episode .dv-primary-button { padding: 9px; font-size: 11px; }
+
+          .dv-episode .dv-primary-button {
+            padding: 9px;
+            font-size: 11px;
+          }
+
+          .dv-live-intro {
+            padding: 23px 19px;
+          }
+
+          .dv-live-grid {
+            grid-template-columns: 1fr;
+            gap: 11px;
+          }
+
+          .dv-live-card { padding: 15px; }
+
           .dv-player-modal { padding: 8px; }
           .dv-player-panel { padding: 9px; }
-          .dv-player-modal.dv-player-vertical .dv-player-panel { width: min(100%,420px); max-height: 98dvh; }
-          .dv-player-vertical .dv-video-wrap { width: 100%; aspect-ratio: 9/16; max-height: calc(98dvh - 95px); }
+
+          .dv-player-modal.dv-player-vertical .dv-player-panel {
+            width: min(100%,420px);
+            max-height: 98dvh;
+          }
+
+          .dv-player-vertical .dv-video-wrap {
+            width: 100%;
+            aspect-ratio: 9/16;
+            max-height: calc(98dvh - 95px);
+          }
 
           .dv-development-notice {
             gap: 11px;
             padding: 15px;
           }
 
-          .dv-development-icon {
-            font-size: 25px;
-          }
+          .dv-development-icon { font-size: 25px; }
 
-          .dv-development-notice h2 {
-            font-size: 16px;
-          }
+          .dv-development-notice h2 { font-size: 16px; }
         }
 
         @media (max-width: 380px) {
-          .dv-nav button { padding: 7px; font-size: 11px; }
+          .dv-nav button {
+            padding: 7px;
+            font-size: 11px;
+          }
+
           .dv-card-actions { gap: 5px; }
-          .dv-primary-button { padding: 9px; font-size: 11px; }
-          .dv-favorite-button { width: 34px; height: 34px; }
+
+          .dv-primary-button {
+            padding: 9px;
+            font-size: 11px;
+          }
+
+          .dv-favorite-button {
+            width: 34px;
+            height: 34px;
+          }
+
+          .dv-live-icon {
+            flex-basis: 45px;
+            width: 45px;
+            height: 45px;
+            font-size: 23px;
+          }
         }
       `}</style>
 
@@ -1643,7 +1725,7 @@ export default function App() {
               "Início",
               "Minisséries",
               "Filmes",
-              "TV ao vivo",
+              "Ao vivo",
               "Favoritos",
             ].map((item) => (
               <button
@@ -1652,6 +1734,7 @@ export default function App() {
                 onClick={() => {
                   setSection(item);
                   setSelectedSeries(null);
+                  setSelectedLiveOption(null);
                   setError("");
                 }}
               >
@@ -1668,7 +1751,11 @@ export default function App() {
         <input
           className="dv-search"
           type="search"
-          placeholder="Buscar minisséries, filmes ou canais..."
+          placeholder={
+            section === "Ao vivo"
+              ? "Buscar opções ao vivo..."
+              : "Buscar minisséries ou filmes..."
+          }
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
@@ -1683,11 +1770,14 @@ export default function App() {
           <>
             <section className="dv-hero">
               <span className="dv-hero-label">Escolha seu clima</span>
+
               <h1>Sempre tem uma nova história.</h1>
+
               <p>
                 Romance, vingança, suspense e histórias que prendem
                 você do primeiro ao último episódio.
               </p>
+
               <button
                 className="dv-primary-button"
                 onClick={() => {
@@ -1699,7 +1789,6 @@ export default function App() {
               </button>
             </section>
 
-            {/* AVISO DE DESENVOLVIMENTO */}
             <div className="dv-development-notice">
               <div className="dv-development-icon">🚧</div>
 
@@ -1724,6 +1813,7 @@ export default function App() {
 
             <div className="dv-section-heading">
               <h2>Em destaque</h2>
+
               <span className="dv-muted">
                 {filteredSeries.length} histórias
               </span>
@@ -1744,6 +1834,7 @@ export default function App() {
                 <div className="dv-section-heading">
                   <h2>Filmes</h2>
                 </div>
+
                 <div className="dv-grid">
                   {filteredMovies.slice(0, 5).map(renderMovieCard)}
                 </div>
@@ -1829,6 +1920,7 @@ export default function App() {
                       <>
                         <div className="dv-section-heading">
                           <h2>Episódios</h2>
+
                           <span className="dv-muted">
                             {episodes.length} episódios
                           </span>
@@ -1856,6 +1948,7 @@ export default function App() {
                                       index
                                     )}
                                   </h3>
+
                                   <p>
                                     Episódio{" "}
                                     {episode.episode_number ?? index + 1}
@@ -1888,6 +1981,7 @@ export default function App() {
               <>
                 <div className="dv-section-heading">
                   <h2>Minisséries</h2>
+
                   <span className="dv-muted">
                     {filteredSeries.length} histórias
                   </span>
@@ -1923,6 +2017,7 @@ export default function App() {
           <>
             <div className="dv-section-heading">
               <h2>Filmes</h2>
+
               <span className="dv-muted">
                 {filteredMovies.length} filmes
               </span>
@@ -1941,54 +2036,73 @@ export default function App() {
           </>
         )}
 
-        {!loading && section === "TV ao vivo" && (
+        {!loading && section === "Ao vivo" && (
           <>
+            <section className="dv-live-intro">
+              <span className="dv-live-label">
+                DRAMOVIX · AO VIVO
+              </span>
+
+              <h1>O que você quer assistir?</h1>
+
+              <p>
+                Escolha uma opção abaixo. Estamos preparando esta área
+                para receber suas transmissões ao vivo. Os conteúdos e
+                links serão adicionados posteriormente.
+              </p>
+            </section>
+
             <div className="dv-section-heading">
-              <h2>TV ao vivo</h2>
+              <h2>Escolha uma categoria</h2>
+
               <span className="dv-muted">
-                {filteredChannels.length} canais
+                {LIVE_OPTIONS.length} opções
               </span>
             </div>
 
-            <div className="dv-categories">
-              {Object.entries(PLAYLISTS).map(([key, playlist]) => (
-                <button
-                  key={key}
-                  className={channelSource === key ? "active" : ""}
-                  onClick={() => setChannelSource(key)}
-                >
-                  {playlist.name}
-                </button>
-              ))}
+            <div className="dv-live-grid">
+              {LIVE_OPTIONS.filter((item) => {
+                const query = normalizeText(search);
+
+                return (
+                  !query ||
+                  normalizeText(item.title).includes(query) ||
+                  normalizeText(item.description).includes(query)
+                );
+              }).map(renderLiveOption)}
             </div>
 
-            <div className="dv-categories">
-              {channelCategories.map((item) => (
-                <button
-                  key={item}
-                  className={
-                    channelCategory === item ? "active" : ""
-                  }
-                  onClick={() => setChannelCategory(item)}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
+            {LIVE_OPTIONS.filter((item) => {
+              const query = normalizeText(search);
 
-            {playlistLoading && (
-              <div className="dv-notice">
-                Carregando canais da playlist...
+              return (
+                !query ||
+                normalizeText(item.title).includes(query) ||
+                normalizeText(item.description).includes(query)
+              );
+            }).length === 0 && (
+              <div className="dv-empty">
+                Nenhuma opção ao vivo encontrada.
               </div>
             )}
 
-            {filteredChannels.length ? (
-              <div className="dv-channel-list">
-                {filteredChannels.map(renderChannelCard)}
-              </div>
-            ) : (
-              <div className="dv-empty">
-                Nenhum canal encontrado nesta lista.
+            {selectedLiveOption && (
+              <div className="dv-live-placeholder">
+                <span className="dv-live-placeholder-icon">🚧</span>
+
+                <h3>
+                  {
+                    LIVE_OPTIONS.find(
+                      (item) => item.id === selectedLiveOption
+                    )?.title
+                  }
+                </h3>
+
+                <p>
+                  Esta opção ainda está sendo preparada. Você poderá
+                  adicionar os links e configurar o que será exibido
+                  aqui quando estiver tudo pronto.
+                </p>
               </div>
             )}
           </>
@@ -1998,6 +2112,7 @@ export default function App() {
           <>
             <div className="dv-section-heading">
               <h2>Meus favoritos</h2>
+
               <span className="dv-muted">
                 {favorites.length} salvos
               </span>
