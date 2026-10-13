@@ -62,6 +62,8 @@ export default function App() {
   const [episodes, setEpisodes] = useState([]);
   const [selectedEpisode, setSelectedEpisode] = useState(null);
 
+  const [showDescription, setShowDescription] = useState(false);
+
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
 
@@ -122,7 +124,8 @@ export default function App() {
       }
 
       const dbSeries = (seriesResult.data || []).map((item) => {
-        const isChris = normalize(item.title) === normalize(CHRIS_TITLE);
+        const isChris =
+          normalize(item.title) === normalize(CHRIS_TITLE);
 
         return {
           ...item,
@@ -170,6 +173,7 @@ export default function App() {
   useEffect(() => {
     if (!selectedSeries) {
       setEpisodes([]);
+      setEpisodesLoading(false);
       return;
     }
 
@@ -193,7 +197,9 @@ export default function App() {
             : null);
 
         if (!dbId) {
-          if (!cancelled) setEpisodes([]);
+          if (!cancelled) {
+            setEpisodes([]);
+          }
           return;
         }
 
@@ -203,16 +209,23 @@ export default function App() {
           .eq("series_id", dbId)
           .order("episode_number", { ascending: true });
 
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
 
         if (!cancelled) {
           setEpisodes(data || []);
         }
       } catch (error) {
         console.error("Erro ao carregar episódios:", error);
-        if (!cancelled) setEpisodes([]);
+
+        if (!cancelled) {
+          setEpisodes([]);
+        }
       } finally {
-        if (!cancelled) setEpisodesLoading(false);
+        if (!cancelled) {
+          setEpisodesLoading(false);
+        }
       }
     }
 
@@ -257,6 +270,7 @@ export default function App() {
 
   function openSeries(item) {
     setSelectedSeries(item);
+    setShowDescription(false);
     setSection("detalhes");
     setSearch("");
   }
@@ -273,26 +287,35 @@ export default function App() {
       setPlayerError(
         "Este vídeo ainda não possui um endereço configurado. Adicione um link de vídeo autorizado para reproduzi-lo."
       );
+
       setCurrentVideo({ ...item, type });
       setPlayerOpen(true);
       return;
     }
 
     setPlayerError("");
-    setCurrentVideo({ ...item, video_url: videoUrl, type });
+    setCurrentVideo({
+      ...item,
+      video_url: videoUrl,
+      type,
+    });
     setPlayerOpen(true);
   }
 
   function openEpisode(episode) {
+    setSelectedEpisode(episode);
+
     if (!episode.video_url) {
       setPlayerError(
         "O endereço de vídeo deste episódio ainda não foi configurado."
       );
+
       setCurrentVideo({
         ...episode,
         title: `${selectedSeries?.title || CHRIS_TITLE} — ${episode.title}`,
         type: "episode",
       });
+
       setPlayerOpen(true);
       return;
     }
@@ -307,7 +330,9 @@ export default function App() {
   }
 
   function playNextEpisode() {
-    if (!currentVideo || !selectedSeries) return;
+    if (!currentVideo || !selectedSeries) {
+      return;
+    }
 
     const currentNumber =
       currentVideo.episode_number ?? currentVideo.episodeNumber;
@@ -328,18 +353,29 @@ export default function App() {
       hlsRef.current = null;
     }
 
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.removeAttribute("src");
+      videoRef.current.load();
+    }
+
     setPlayerOpen(false);
     setCurrentVideo(null);
+    setSelectedEpisode(null);
     setPlayerError("");
   }
 
   useEffect(() => {
-    if (!playerOpen || !currentVideo || playerError) return;
+    if (!playerOpen || !currentVideo || playerError) {
+      return;
+    }
 
     const video = videoRef.current;
     const url = currentVideo.video_url;
 
-    if (!video || !url) return;
+    if (!video || !url) {
+      return;
+    }
 
     if (hlsRef.current) {
       hlsRef.current.destroy();
@@ -352,6 +388,7 @@ export default function App() {
       } else if (Hls.isSupported()) {
         const hls = new Hls();
         hlsRef.current = hls;
+
         hls.loadSource(url);
         hls.attachMedia(video);
 
@@ -363,7 +400,9 @@ export default function App() {
           }
         });
       } else {
-        setPlayerError("Este navegador não suporta este formato de vídeo.");
+        setPlayerError(
+          "Este navegador não suporta este formato de vídeo."
+        );
       }
     } else {
       video.src = url;
@@ -392,16 +431,14 @@ export default function App() {
   ];
 
   const filteredSeries = allSeries.filter((item) => {
-    const matchesSearch = normalize(item.title).includes(normalize(search));
+    const matchesSearch = normalize(item.title).includes(
+      normalize(search)
+    );
 
     const matchesCategory =
       category === "Todas" || item.category === category;
 
-    return (
-      matchesSearch &&
-      matchesCategory &&
-      !item.isLive
-    );
+    return matchesSearch && matchesCategory && !item.isLive;
   });
 
   const filteredMovies = movies.filter((movie) =>
@@ -420,19 +457,21 @@ export default function App() {
     const live = Boolean(item.isLive);
     const favorite = isFavorite(item);
 
+    function handleOpen() {
+      if (live) {
+        openPlayer(item, "live");
+      } else if (type === "movie") {
+        openPlayer(item, "movie");
+      } else {
+        openSeries(item);
+      }
+    }
+
     return (
       <article className="dv-card" key={`${type}-${item.id}`}>
         <button
           className="dv-cover-button"
-          onClick={() => {
-            if (live) {
-              openPlayer(item, "live");
-            } else if (type === "movie") {
-              openPlayer(item, "movie");
-            } else {
-              openSeries(item);
-            }
-          }}
+          onClick={handleOpen}
           aria-label={`Abrir ${item.title}`}
         >
           <img
@@ -441,13 +480,17 @@ export default function App() {
             alt={item.title}
             loading="lazy"
             onError={(event) => {
-              event.currentTarget.src = DEFAULT_COVER;
+              event.currentTarget.onerror = null;
+              event.currentTarget.src =
+                type === "movie" ? DEFAULT_MOVIE_COVER : DEFAULT_COVER;
             }}
           />
 
           <span className="dv-play-icon">▶</span>
 
-          {live && <span className="dv-live-badge">AO VIVO</span>}
+          {live && (
+            <span className="dv-live-badge">AO VIVO</span>
+          )}
         </button>
 
         <div className="dv-card-info">
@@ -455,19 +498,11 @@ export default function App() {
             {item.category || (type === "movie" ? "Filme" : "Série")}
           </span>
 
-          <h3>{item.title}</h3>
+          <h3 title={item.title}>{item.title}</h3>
 
           <button
             className="dv-primary-button"
-            onClick={() => {
-              if (live) {
-                openPlayer(item, "live");
-              } else if (type === "movie") {
-                openPlayer(item, "movie");
-              } else {
-                openSeries(item);
-              }
-            }}
+            onClick={handleOpen}
           >
             {live
               ? "Assistir ao vivo"
@@ -489,7 +524,11 @@ export default function App() {
 
   function renderGrid(items, type = "series") {
     if (!items.length) {
-      return <p className="dv-empty">Nenhum título encontrado.</p>;
+      return (
+        <p className="dv-empty">
+          Nenhum título encontrado.
+        </p>
+      );
     }
 
     return (
@@ -507,6 +546,7 @@ export default function App() {
           onClick={() => {
             setSection("inicio");
             setSelectedSeries(null);
+            setShowDescription(false);
           }}
         >
           DRAMOVIX<span>+</span>
@@ -518,6 +558,7 @@ export default function App() {
             placeholder="Buscar séries e filmes..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
+            aria-label="Buscar séries e filmes"
           />
         </div>
       </header>
@@ -536,6 +577,7 @@ export default function App() {
             onClick={() => {
               setSection(key);
               setSelectedSeries(null);
+              setShowDescription(false);
             }}
           >
             {label}
@@ -544,15 +586,24 @@ export default function App() {
       </nav>
 
       <main className="dv-main">
-        {loading && <p className="dv-empty">Carregando catálogo...</p>}
+        {loading && (
+          <p className="dv-empty">
+            Carregando catálogo...
+          </p>
+        )}
 
         {!loading && section === "inicio" && (
           <>
             <section className="dv-hero">
               <div>
                 <span className="dv-eyebrow">DRAMOVIX</span>
+
                 <h1>Sempre tem uma nova história.</h1>
-                <p>Escolha seu clima e descubra o que assistir.</p>
+
+                <p>
+                  Escolha seu clima e descubra o que assistir.
+                </p>
+
                 <button
                   className="dv-primary-button"
                   onClick={() => setSection("series")}
@@ -583,14 +634,21 @@ export default function App() {
 
             <section className="dv-section">
               <h2>Em destaque</h2>
+
               {renderGrid(
-                filteredSeries.filter((item) => !item.isLive).slice(0, 8)
+                filteredSeries
+                  .filter((item) => !item.isLive)
+                  .slice(0, 8)
               )}
             </section>
 
             <section className="dv-section">
               <h2>Filmes</h2>
-              {renderGrid(filteredMovies.slice(0, 4), "movie")}
+
+              {renderGrid(
+                filteredMovies.slice(0, 4),
+                "movie"
+              )}
             </section>
           </>
         )}
@@ -618,6 +676,7 @@ export default function App() {
         {!loading && section === "movies" && (
           <section className="dv-section">
             <h1>Filmes</h1>
+
             {renderGrid(filteredMovies, "movie")}
           </section>
         )}
@@ -625,6 +684,7 @@ export default function App() {
         {!loading && section === "live" && (
           <section className="dv-section">
             <h1>Ao vivo</h1>
+
             {renderGrid([LIVE_SERIES])}
           </section>
         )}
@@ -634,9 +694,11 @@ export default function App() {
             <h1>Meus favoritos</h1>
 
             <h2>Séries</h2>
+
             {renderGrid(favoriteSeries)}
 
             <h2>Filmes</h2>
+
             {renderGrid(favoriteMovies, "movie")}
           </section>
         )}
@@ -645,7 +707,10 @@ export default function App() {
           <section className="dv-details">
             <button
               className="dv-back-button"
-              onClick={() => setSection("series")}
+              onClick={() => {
+                setSection("series");
+                setShowDescription(false);
+              }}
             >
               ← Voltar ao catálogo
             </button>
@@ -655,21 +720,44 @@ export default function App() {
                 src={selectedSeries.image || DEFAULT_COVER}
                 alt={selectedSeries.title}
                 onError={(event) => {
+                  event.currentTarget.onerror = null;
                   event.currentTarget.src = DEFAULT_COVER;
                 }}
               />
 
-              <div>
+              <div className="dv-detail-content">
                 <span className="dv-eyebrow">
                   {selectedSeries.category}
                 </span>
 
                 <h1>{selectedSeries.title}</h1>
 
-                <p>{selectedSeries.description}</p>
+                {selectedSeries.description && (
+                  <div className="dv-description">
+                    <button
+                      className="dv-description-toggle"
+                      onClick={() =>
+                        setShowDescription((previous) => !previous)
+                      }
+                      aria-expanded={showDescription}
+                    >
+                      {showDescription
+                        ? "Ocultar descrição ▲"
+                        : "Ver descrição ▼"}
+                    </button>
+
+                    {showDescription && (
+                      <p className="dv-description-text">
+                        {selectedSeries.description}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <button
-                  className="dv-favorite-button"
+                  className={`dv-favorite-button ${
+                    isFavorite(selectedSeries) ? "active" : ""
+                  }`}
                   onClick={() => toggleFavorite(selectedSeries)}
                 >
                   {isFavorite(selectedSeries)
@@ -694,7 +782,9 @@ export default function App() {
               )}
 
               {episodesLoading && (
-                <p className="dv-empty">Carregando episódios...</p>
+                <p className="dv-empty">
+                  Carregando episódios...
+                </p>
               )}
 
               {!episodesLoading && episodes.length === 0 && (
@@ -707,7 +797,11 @@ export default function App() {
                 {episodes.map((episode, index) => (
                   <article
                     className="dv-episode"
-                    key={episode.id || episode.episode_number || index}
+                    key={
+                      episode.id ||
+                      episode.episode_number ||
+                      index
+                    }
                   >
                     <div className="dv-episode-number">
                       {String(
@@ -745,14 +839,19 @@ export default function App() {
         <div
           className="dv-player-overlay"
           onClick={(event) => {
-            if (event.target === event.currentTarget) closePlayer();
+            if (event.target === event.currentTarget) {
+              closePlayer();
+            }
           }}
         >
           <div className="dv-player-modal">
             <div className="dv-player-header">
               <h2>{currentVideo?.title || "Reprodutor"}</h2>
 
-              <button onClick={closePlayer} aria-label="Fechar player">
+              <button
+                onClick={closePlayer}
+                aria-label="Fechar player"
+              >
                 ✕
               </button>
             </div>
@@ -760,7 +859,9 @@ export default function App() {
             {playerError ? (
               <div className="dv-player-message">
                 <span>▶</span>
+
                 <p>{playerError}</p>
+
                 <button
                   className="dv-primary-button"
                   onClick={closePlayer}
@@ -820,12 +921,17 @@ export default function App() {
           box-sizing: border-box;
         }
 
+        html {
+          background: #090909;
+        }
+
         body {
           margin: 0;
           background: #090909;
         }
 
-        button, input {
+        button,
+        input {
           font: inherit;
         }
 
@@ -846,17 +952,18 @@ export default function App() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 20px;
-          padding: 16px 5%;
-          background: rgba(9,9,9,.96);
+          gap: 16px;
+          padding: 12px 4%;
+          background: rgba(9, 9, 9, 0.97);
           border-bottom: 1px solid #242424;
         }
 
         .dv-logo {
+          flex-shrink: 0;
           border: 0;
           background: transparent;
           color: #f20d25;
-          font-size: 25px;
+          font-size: 24px;
           font-weight: 900;
           letter-spacing: -1px;
         }
@@ -865,9 +972,13 @@ export default function App() {
           color: white;
         }
 
+        .dv-search {
+          min-width: 0;
+        }
+
         .dv-search input {
-          width: min(330px, 48vw);
-          padding: 11px 14px;
+          width: min(310px, 45vw);
+          padding: 10px 13px;
           border: 1px solid #333;
           border-radius: 9px;
           outline: none;
@@ -875,22 +986,31 @@ export default function App() {
           color: white;
         }
 
+        .dv-search input:focus {
+          border-color: #ed1027;
+        }
+
         .dv-nav {
           display: flex;
           gap: 8px;
-          padding: 12px 5%;
+          padding: 10px 4%;
           overflow-x: auto;
           border-bottom: 1px solid #222;
+          scrollbar-width: thin;
         }
 
         .dv-nav button,
         .dv-categories button {
+          flex-shrink: 0;
           white-space: nowrap;
-          padding: 10px 15px;
+          padding: 9px 13px;
           border: 1px solid #303030;
           border-radius: 20px;
           background: #171717;
           color: #ddd;
+          transition:
+            background 0.2s,
+            border-color 0.2s;
         }
 
         .dv-nav button.selected,
@@ -901,72 +1021,97 @@ export default function App() {
         }
 
         .dv-main {
-          width: min(1400px, 100%);
+          width: min(1180px, 100%);
           min-height: 70vh;
           margin: auto;
-          padding: 20px 5% 50px;
+          padding: 16px 4% 42px;
         }
 
         .dv-hero {
           display: flex;
           align-items: center;
-          min-height: 300px;
-          padding: clamp(25px, 6vw, 70px);
-          border-radius: 18px;
+          min-height: 225px;
+          padding: clamp(22px, 4vw, 45px);
+          border: 1px solid #292020;
+          border-radius: 15px;
           background:
-            linear-gradient(90deg, #171717 0%, rgba(20,20,20,.94) 50%, rgba(20,20,20,.25) 100%),
-            radial-gradient(circle at 85% 40%, #68111b, #111 65%);
+            linear-gradient(
+              90deg,
+              #171717 0%,
+              rgba(20, 20, 20, 0.96) 55%,
+              rgba(20, 20, 20, 0.45) 100%
+            ),
+            radial-gradient(
+              circle at 85% 40%,
+              #68111b,
+              #111 65%
+            );
         }
 
         .dv-hero h1 {
-          max-width: 600px;
-          margin: 10px 0;
-          font-size: clamp(30px, 5vw, 52px);
+          max-width: 480px;
+          margin: 9px 0;
+          font-size: clamp(26px, 3.5vw, 42px);
+          line-height: 1.15;
         }
 
-        .dv-hero p,
-        .dv-detail-hero p {
+        .dv-hero p {
+          margin: 10px 0 18px;
           color: #bdbdbd;
-          line-height: 1.7;
+          line-height: 1.6;
         }
 
         .dv-eyebrow,
         .dv-card-category {
           color: #ff4052;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: bold;
           text-transform: uppercase;
-          letter-spacing: 1px;
+          letter-spacing: 0.8px;
         }
 
         .dv-section {
-          margin-top: 34px;
+          margin-top: 26px;
         }
 
-        .dv-section h1,
-        .dv-section h2 {
-          margin-bottom: 18px;
+        .dv-section > h1 {
+          margin: 0 0 18px;
+          font-size: clamp(25px, 3vw, 34px);
+        }
+
+        .dv-section > h2 {
+          margin: 0 0 15px;
+          font-size: 21px;
         }
 
         .dv-categories {
           display: flex;
           flex-wrap: wrap;
-          gap: 9px;
-          margin: 16px 0 24px;
+          gap: 8px;
+          margin: 13px 0 20px;
         }
 
         .dv-grid {
           display: grid;
           grid-template-columns: repeat(5, minmax(0, 1fr));
-          gap: 18px;
+          align-items: start;
+          gap: 14px;
         }
 
         .dv-card {
           min-width: 0;
           overflow: hidden;
           border: 1px solid #252525;
-          border-radius: 12px;
+          border-radius: 10px;
           background: #141414;
+          transition:
+            border-color 0.2s,
+            transform 0.2s;
+        }
+
+        .dv-card:hover {
+          border-color: #484848;
+          transform: translateY(-2px);
         }
 
         .dv-cover-button {
@@ -974,6 +1119,7 @@ export default function App() {
           display: block;
           width: 100%;
           padding: 0;
+          overflow: hidden;
           border: 0;
           background: #171717;
         }
@@ -983,7 +1129,7 @@ export default function App() {
           width: 100%;
           aspect-ratio: 3 / 4;
           object-fit: cover;
-          transition: transform .2s;
+          transition: transform 0.2s;
         }
 
         .dv-cover-button:hover .dv-cover {
@@ -992,46 +1138,67 @@ export default function App() {
 
         .dv-play-icon {
           position: absolute;
-          right: 12px;
-          bottom: 12px;
+          right: 9px;
+          bottom: 9px;
           display: grid;
-          width: 38px;
-          height: 38px;
+          width: 34px;
+          height: 34px;
           place-items: center;
           border-radius: 50%;
           background: #ed1027;
           color: white;
+          font-size: 13px;
         }
 
         .dv-live-badge {
           position: absolute;
-          top: 10px;
-          left: 10px;
-          padding: 6px 9px;
+          top: 8px;
+          left: 8px;
+          padding: 5px 7px;
           border-radius: 5px;
           background: #ed1027;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: bold;
         }
 
         .dv-card-info {
-          padding: 13px;
+          display: flex;
+          min-width: 0;
+          flex-direction: column;
+          align-items: stretch;
+          padding: 10px;
+        }
+
+        .dv-card-category {
+          display: block;
+          overflow: hidden;
+          font-size: 10px;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .dv-card-info h3 {
-          min-height: 40px;
-          margin: 8px 0 13px;
-          font-size: 15px;
-          line-height: 1.4;
+          display: -webkit-box;
+          min-width: 0;
+          margin: 7px 0 10px;
+          overflow: hidden;
+          font-size: 14px;
+          font-weight: 700;
+          line-height: 1.35;
+          overflow-wrap: anywhere;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
         }
 
         .dv-primary-button {
-          padding: 10px 14px;
+          padding: 9px 11px;
           border: 0;
           border-radius: 7px;
           background: #ed1027;
           color: white;
+          font-size: 13px;
           font-weight: bold;
+          transition: background 0.2s;
         }
 
         .dv-primary-button:hover {
@@ -1040,14 +1207,19 @@ export default function App() {
 
         .dv-card-info .dv-primary-button {
           width: 100%;
+          margin-top: auto;
         }
 
         .dv-favorite-button {
-          margin-top: 9px;
-          padding: 8px 0;
+          align-self: flex-start;
+          max-width: 100%;
+          margin-top: 7px;
+          padding: 6px 0;
           border: 0;
           background: transparent;
-          color: #ddd;
+          color: #ccc;
+          font-size: 12px;
+          text-align: left;
         }
 
         .dv-favorite-button.active {
@@ -1055,49 +1227,98 @@ export default function App() {
         }
 
         .dv-details {
-          padding-top: 15px;
+          padding-top: 8px;
         }
 
         .dv-back-button {
-          margin-bottom: 20px;
-          padding: 9px 13px;
+          margin-bottom: 15px;
+          padding: 9px 12px;
           border: 1px solid #333;
           border-radius: 8px;
           background: #171717;
           color: white;
+          font-size: 13px;
+        }
+
+        .dv-back-button:hover {
+          border-color: #ed1027;
         }
 
         .dv-detail-hero {
           display: grid;
-          grid-template-columns: minmax(180px, 260px) 1fr;
-          align-items: center;
-          gap: 28px;
-          padding: 22px;
+          grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
+          align-items: start;
+          gap: 22px;
+          padding: 18px;
           border: 1px solid #252525;
-          border-radius: 14px;
+          border-radius: 12px;
           background: #131313;
         }
 
-        .dv-detail-hero img {
+        .dv-detail-hero > img {
+          display: block;
           width: 100%;
-          max-height: 350px;
-          border-radius: 10px;
+          max-height: 300px;
+          aspect-ratio: 3 / 4;
+          border-radius: 9px;
+          background: #171717;
           object-fit: cover;
         }
 
+        .dv-detail-content {
+          min-width: 0;
+        }
+
         .dv-detail-hero h1 {
-          font-size: clamp(25px, 4vw, 40px);
+          margin: 8px 0 12px;
+          font-size: clamp(23px, 3vw, 34px);
+          line-height: 1.2;
+          overflow-wrap: anywhere;
+        }
+
+        .dv-description {
+          margin: 12px 0;
+        }
+
+        .dv-description-toggle {
+          padding: 9px 12px;
+          border: 1px solid #383838;
+          border-radius: 7px;
+          background: #1b1b1b;
+          color: #fff;
+          font-size: 13px;
+          font-weight: bold;
+          text-align: left;
+        }
+
+        .dv-description-toggle:hover {
+          border-color: #ed1027;
+          background: #241416;
+        }
+
+        .dv-description-text {
+          margin: 12px 0;
+          color: #bdbdbd;
+          font-size: 14px;
+          line-height: 1.65;
+          overflow-wrap: anywhere;
+        }
+
+        .dv-detail-content > .dv-favorite-button {
+          display: block;
+          margin-top: 12px;
         }
 
         .dv-season-label {
           display: flex;
           justify-content: space-between;
-          gap: 15px;
-          margin: 15px 0;
-          padding: 13px 15px;
+          gap: 12px;
+          margin: 12px 0;
+          padding: 12px 14px;
           border-left: 3px solid #ed1027;
           border-radius: 5px;
           background: #171717;
+          font-size: 14px;
           font-weight: bold;
         }
 
@@ -1108,29 +1329,30 @@ export default function App() {
 
         .dv-episodes {
           display: grid;
-          gap: 10px;
+          gap: 9px;
         }
 
         .dv-episode {
           display: flex;
           align-items: center;
-          gap: 14px;
+          gap: 12px;
           min-width: 0;
-          padding: 13px;
+          padding: 11px;
           border: 1px solid #292929;
-          border-radius: 10px;
+          border-radius: 9px;
           background: #141414;
         }
 
         .dv-episode-number {
           display: grid;
           flex-shrink: 0;
-          width: 42px;
-          height: 42px;
+          width: 38px;
+          height: 38px;
           place-items: center;
           border-radius: 8px;
           background: #292929;
           color: #ff4052;
+          font-size: 13px;
           font-weight: bold;
         }
 
@@ -1141,13 +1363,15 @@ export default function App() {
 
         .dv-episode-info h3 {
           margin: 0 0 5px;
-          font-size: 15px;
+          font-size: 14px;
+          overflow-wrap: anywhere;
         }
 
         .dv-episode-info p {
           margin: 0;
           color: #999;
-          font-size: 12px;
+          font-size: 11px;
+          line-height: 1.4;
         }
 
         .dv-player-overlay {
@@ -1157,8 +1381,8 @@ export default function App() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 15px;
-          background: rgba(0,0,0,.88);
+          padding: 12px;
+          background: rgba(0, 0, 0, 0.9);
         }
 
         .dv-player-modal {
@@ -1174,16 +1398,21 @@ export default function App() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 15px;
-          padding: 12px 16px;
+          gap: 12px;
+          padding: 11px 14px;
         }
 
         .dv-player-header h2 {
+          min-width: 0;
           margin: 0;
-          font-size: 16px;
+          font-size: 15px;
+          line-height: 1.4;
+          overflow-wrap: anywhere;
         }
 
         .dv-player-header button {
+          flex-shrink: 0;
+          padding: 3px 7px;
           border: 0;
           background: transparent;
           color: white;
@@ -1208,12 +1437,12 @@ export default function App() {
 
         .dv-player-message {
           display: flex;
-          min-height: 260px;
+          min-height: 250px;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 15px;
-          padding: 25px;
+          gap: 14px;
+          padding: 22px;
           text-align: center;
         }
 
@@ -1225,6 +1454,7 @@ export default function App() {
         .dv-player-message p {
           max-width: 480px;
           color: #ccc;
+          font-size: 14px;
           line-height: 1.6;
         }
 
@@ -1234,55 +1464,46 @@ export default function App() {
         }
 
         .dv-empty {
-          padding: 25px 0;
+          padding: 20px 0;
           color: #aaa;
+          line-height: 1.5;
         }
 
         .dv-footer {
-          padding: 25px 5%;
+          margin-top: 25px;
+          padding: 22px 4%;
           border-top: 1px solid #222;
           color: #777;
           text-align: center;
-          font-size: 13px;
+          font-size: 12px;
+        }
+
+        @media (min-width: 1500px) {
+          .dv-main {
+            width: min(1280px, 100%);
+          }
         }
 
         @media (max-width: 1050px) {
           .dv-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-          }
-        }
-
-        @media (max-width: 650px) {
-          .dv-header {
-            align-items: stretch;
-            flex-direction: column;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 12px;
-            padding: 14px 4%;
-          }
-
-          .dv-logo {
-            align-self: flex-start;
-          }
-
-          .dv-search input {
-            width: 100%;
-          }
-
-          .dv-nav {
-            padding: 10px 4%;
           }
 
           .dv-main {
-            padding: 15px 4% 35px;
+            padding-right: 3%;
+            padding-left: 3%;
           }
+        }
 
+        @media (max-width: 760px) {
           .dv-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
           }
 
           .dv-card-info {
-            padding: 10px;
+            padding: 9px;
           }
 
           .dv-card-info h3 {
@@ -1290,31 +1511,153 @@ export default function App() {
           }
 
           .dv-primary-button {
-            padding: 9px 10px;
+            padding: 9px 8px;
             font-size: 12px;
           }
 
           .dv-detail-hero {
-            grid-template-columns: 1fr;
+            grid-template-columns: minmax(120px, 170px) minmax(0, 1fr);
+            gap: 15px;
+            padding: 14px;
           }
 
-          .dv-detail-hero img {
-            width: min(220px, 100%);
-            margin: auto;
+          .dv-detail-hero h1 {
+            font-size: 23px;
+          }
+        }
+
+        @media (max-width: 520px) {
+          .dv-header {
+            align-items: stretch;
+            flex-direction: column;
+            gap: 10px;
+            padding: 12px 4%;
           }
 
-          .dv-episode {
-            gap: 9px;
+          .dv-logo {
+            align-self: flex-start;
+            font-size: 23px;
+          }
+
+          .dv-search input {
+            width: 100%;
+          }
+
+          .dv-nav {
+            gap: 7px;
+            padding: 9px 4%;
+          }
+
+          .dv-nav button {
+            padding: 8px 11px;
+            font-size: 12px;
+          }
+
+          .dv-main {
+            padding: 13px 4% 30px;
+          }
+
+          .dv-hero {
+            min-height: 195px;
+            padding: 22px 18px;
+            border-radius: 11px;
+          }
+
+          .dv-hero h1 {
+            font-size: 29px;
+          }
+
+          .dv-hero p {
+            font-size: 13px;
+          }
+
+          .dv-section {
+            margin-top: 23px;
+          }
+
+          .dv-section > h2 {
+            font-size: 19px;
+          }
+
+          .dv-categories {
+            gap: 7px;
+            margin: 12px 0 17px;
+          }
+
+          .dv-categories button {
+            padding: 8px 11px;
+            font-size: 12px;
+          }
+
+          .dv-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 11px;
+          }
+
+          .dv-card {
+            border-radius: 9px;
+          }
+
+          .dv-card-info {
             padding: 9px;
           }
 
+          .dv-card-category {
+            font-size: 9px;
+          }
+
+          .dv-card-info h3 {
+            margin: 6px 0 9px;
+            font-size: 13px;
+            line-height: 1.35;
+          }
+
+          .dv-card-info .dv-primary-button {
+            font-size: 11px;
+          }
+
+          .dv-favorite-button {
+            font-size: 11px;
+          }
+
+          .dv-detail-hero {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 13px;
+            padding: 13px;
+          }
+
+          .dv-detail-hero > img {
+            width: min(185px, 100%);
+            max-height: 250px;
+            margin: 0 auto;
+          }
+
+          .dv-detail-content {
+            width: 100%;
+          }
+
+          .dv-detail-hero h1 {
+            margin: 7px 0 10px;
+            font-size: 25px;
+          }
+
+          .dv-description-text {
+            font-size: 13px;
+          }
+
+          .dv-episode {
+            gap: 8px;
+            padding: 8px;
+          }
+
           .dv-episode-number {
-            width: 34px;
-            height: 34px;
+            width: 32px;
+            height: 32px;
+            font-size: 11px;
           }
 
           .dv-episode-info h3 {
-            font-size: 13px;
+            font-size: 12px;
           }
 
           .dv-episode-info p {
@@ -1322,12 +1665,39 @@ export default function App() {
           }
 
           .dv-episode .dv-primary-button {
-            padding: 9px 8px;
-            font-size: 11px;
+            flex-shrink: 0;
+            padding: 9px 7px;
+            font-size: 10px;
+          }
+
+          .dv-season-label {
+            padding: 11px;
+            font-size: 12px;
           }
 
           .dv-video-vertical {
             height: min(70vh, 650px);
+          }
+
+          .dv-player-overlay {
+            padding: 7px;
+          }
+
+          .dv-player-modal {
+            max-height: 96vh;
+            border-radius: 9px;
+          }
+
+          .dv-player-header {
+            padding: 10px;
+          }
+
+          .dv-player-header h2 {
+            font-size: 13px;
+          }
+
+          .dv-footer {
+            padding: 20px 4%;
           }
         }
       `}</style>
