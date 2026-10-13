@@ -365,7 +365,6 @@ export default function App() {
       setEpisodesLoading(true);
 
       try {
-        // Os episódios do Chris ficam diretamente neste App.jsx.
         if (selectedSeries.isChris) {
           if (!cancelled) setEpisodes(CHRIS_EPISODES);
           return;
@@ -411,12 +410,14 @@ export default function App() {
     };
   }, [selectedSeries]);
 
+  // PLAYER CORRIGIDO: reproduz MP4 diretamente e HLS com hls.js.
   useEffect(() => {
     if (!playerOpen || !selectedEpisode || !videoRef.current) return;
 
     const video = videoRef.current;
     const url = selectedEpisode.video_url || "";
-    let hls;
+    let hls = null;
+    let cancelled = false;
 
     setPlayerError("");
 
@@ -434,7 +435,27 @@ export default function App() {
     video.removeAttribute("src");
     video.load();
 
-    const isHls = /\.m3u8($|\?)/i.test(url);
+    const isHls = /\.m3u8(?:$|\?)/i.test(url);
+
+    const handleVideoError = () => {
+      if (cancelled) return;
+
+      const mediaError = video.error;
+
+      if (mediaError) {
+        console.error("Erro do elemento de vídeo:", {
+          code: mediaError.code,
+          message: mediaError.message,
+          url,
+        });
+      }
+
+      setPlayerError(
+        "Não foi possível reproduzir este vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução."
+      );
+    };
+
+    video.addEventListener("error", handleVideoError);
 
     if (isHls && Hls.isSupported()) {
       hls = new Hls({
@@ -443,26 +464,51 @@ export default function App() {
       });
 
       hlsRef.current = hls;
-      hls.loadSource(url);
-      hls.attachMedia(video);
+
+      hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+        if (!cancelled) {
+          hls.loadSource(url);
+        }
+      });
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play().catch(() => {});
+        if (!cancelled) {
+          video.play().catch((error) => {
+            console.warn("Reprodução automática bloqueada:", error);
+          });
+        }
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (data.fatal) {
-          setPlayerError(
-            "Não foi possível carregar o vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução."
-          );
-        }
+        if (cancelled || !data.fatal) return;
+
+        console.error("Erro fatal do HLS:", data);
+
+        setPlayerError(
+          "Não foi possível carregar a transmissão. O link pode ter expirado ou o servidor pode bloquear a reprodução."
+        );
       });
-    } else if (isHls && video.canPlayType("application/vnd.apple.mpegurl")) {
+
+      hls.attachMedia(video);
+    } else if (
+      isHls &&
+      video.canPlayType("application/vnd.apple.mpegurl")
+    ) {
       video.src = url;
-      video.play().catch(() => {});
+      video.load();
+
+      video.play().catch((error) => {
+        console.warn("Reprodução automática bloqueada:", error);
+      });
     } else if (!isHls) {
+      // O link do episódio 1 do Chris é um arquivo MP4 direto.
       video.src = url;
-      video.play().catch(() => {});
+      video.load();
+
+      video.play().catch((error) => {
+        // O usuário ainda pode iniciar a reprodução pelo botão do player.
+        console.warn("Reprodução automática bloqueada:", error);
+      });
     } else {
       setPlayerError(
         "Este navegador não conseguiu reproduzir o formato de vídeo."
@@ -470,13 +516,19 @@ export default function App() {
     }
 
     return () => {
-      video.pause();
+      cancelled = true;
+
+      video.removeEventListener("error", handleVideoError);
 
       if (hls) {
         hls.destroy();
-        hlsRef.current = null;
+
+        if (hlsRef.current === hls) {
+          hlsRef.current = null;
+        }
       }
 
+      video.pause();
       video.removeAttribute("src");
       video.load();
     };
@@ -677,7 +729,9 @@ export default function App() {
                 }`}
                 onClick={() => toggleFavorite(item)}
                 aria-label={
-                  favorite ? "Remover dos favoritos" : "Adicionar aos favoritos"
+                  favorite
+                    ? "Remover dos favoritos"
+                    : "Adicionar aos favoritos"
                 }
               >
                 {favorite ? "♥" : "♡"}
@@ -1130,6 +1184,10 @@ export default function App() {
           background: var(--dv-panel-2);
         }
 
+        .dv-detail-info {
+          min-width: 0;
+        }
+
         .dv-detail-info h1 {
           margin: 9px 0 15px;
           font-size: clamp(25px, 4vw, 38px);
@@ -1160,6 +1218,7 @@ export default function App() {
         }
 
         .dv-episodes {
+          min-width: 0;
           margin-top: 28px;
         }
 
@@ -1170,6 +1229,7 @@ export default function App() {
         .dv-episode-list {
           display: grid;
           gap: 10px;
+          min-width: 0;
         }
 
         .dv-episode {
@@ -1207,6 +1267,7 @@ export default function App() {
         .dv-episode-info {
           flex: 1;
           min-width: 0;
+          overflow-wrap: anywhere;
         }
 
         .dv-episode-info strong {
@@ -1314,10 +1375,11 @@ export default function App() {
         }
 
         .dv-player-error {
-          padding: 25px 18px;
+          padding: 18px;
           color: #fecaca;
           text-align: center;
           line-height: 1.7;
+          overflow-wrap: anywhere;
         }
 
         .dv-player-bottom {
@@ -1567,7 +1629,10 @@ export default function App() {
       <main className="dv-main">
         {page === "detalhes" && selectedSeries && (
           <section className="dv-detail">
-            <button className="dv-back" onClick={() => goToPage("minisseries")}>
+            <button
+              className="dv-back"
+              onClick={() => goToPage("minisseries")}
+            >
               ← Voltar ao catálogo
             </button>
 
@@ -1592,7 +1657,8 @@ export default function App() {
                 <p>
                   {showDescription
                     ? selectedSeries.description || "Descrição indisponível."
-                    : (selectedSeries.description || "Uma nova história espera por você.")
+                    : (selectedSeries.description ||
+                        "Uma nova história espera por você.")
                         .slice(0, 180) +
                       ((selectedSeries.description || "").length > 180
                         ? "..."
@@ -1602,9 +1668,13 @@ export default function App() {
                 {(selectedSeries.description || "").length > 180 && (
                   <button
                     className="dv-description-toggle"
-                    onClick={() => setShowDescription((value) => !value)}
+                    onClick={() =>
+                      setShowDescription((value) => !value)
+                    }
                   >
-                    {showDescription ? "Mostrar menos" : "Ler descrição completa"}
+                    {showDescription
+                      ? "Mostrar menos"
+                      : "Ler descrição completa"}
                   </button>
                 )}
 
@@ -1663,6 +1733,7 @@ export default function App() {
                         <strong>
                           {episode.title || `Episódio ${index + 1}`}
                         </strong>
+
                         <small>
                           {episode.video_url
                             ? "▶ Pronto para assistir"
@@ -1677,7 +1748,9 @@ export default function App() {
               ) : (
                 <div className="dv-empty">
                   <h3>Nenhum episódio cadastrado</h3>
-                  <p>Os episódios desta série ainda não estão disponíveis.</p>
+                  <p>
+                    Os episódios desta série ainda não estão disponíveis.
+                  </p>
                 </div>
               )}
             </section>
@@ -1691,11 +1764,14 @@ export default function App() {
                 <span className="dv-eyebrow">
                   ✦ DRAMOVIX+ ORIGINAL
                 </span>
+
                 <h1>Sempre tem uma nova história.</h1>
+
                 <p>
                   Romance, vingança, suspense e histórias que prendem você
                   do primeiro ao último episódio.
                 </p>
+
                 <button
                   className="dv-button-primary"
                   onClick={() => goToPage("minisseries")}
@@ -1738,6 +1814,7 @@ export default function App() {
                   <p>Descubra sua próxima história favorita.</p>
                 </div>
               </div>
+
               {renderGrid(filteredSeries.slice(0, 8))}
             </section>
 
@@ -1749,6 +1826,7 @@ export default function App() {
                     <p>Escolha e comece a assistir.</p>
                   </div>
                 </div>
+
                 {renderGrid(filteredMovies.slice(0, 4), "movie")}
               </section>
             )}
@@ -1790,6 +1868,7 @@ export default function App() {
                 <p>Seus filmes disponíveis no catálogo.</p>
               </div>
             </div>
+
             {renderGrid(filteredMovies, "movie")}
           </section>
         )}
@@ -1802,6 +1881,7 @@ export default function App() {
                 <p>Transmissões disponíveis.</p>
               </div>
             </div>
+
             {renderGrid([LIVE_SERIES], "live")}
           </section>
         )}
@@ -1815,6 +1895,7 @@ export default function App() {
                   <p>Suas histórias salvas neste dispositivo.</p>
                 </div>
               </div>
+
               {renderGrid(favoriteSeries)}
             </section>
 
@@ -1825,6 +1906,7 @@ export default function App() {
                     <h2>Filmes favoritos</h2>
                   </div>
                 </div>
+
                 {renderGrid(favoriteMovies, "movie")}
               </section>
             )}
@@ -1856,6 +1938,7 @@ export default function App() {
                     selectedSeries?.title ||
                     "Reproduzindo"}
                 </strong>
+
                 <small>
                   {selectedEpisode?.isLive
                     ? "Transmissão ao vivo"
@@ -1874,6 +1957,7 @@ export default function App() {
 
             <div className="dv-video-wrap">
               <video
+                key={selectedEpisode?.id || "dramovix-video"}
                 ref={videoRef}
                 className="dv-video"
                 controls
@@ -1884,7 +1968,9 @@ export default function App() {
             </div>
 
             {playerError && (
-              <div className="dv-player-error">{playerError}</div>
+              <div className="dv-player-error" role="alert">
+                {playerError}
+              </div>
             )}
 
             <div className="dv-player-bottom">
