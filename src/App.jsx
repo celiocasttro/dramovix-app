@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase";
 import Hls from "hls.js";
@@ -317,17 +318,11 @@ export default function App() {
         ]);
 
         if (seriesResult.error) {
-          console.error(
-            "Erro ao carregar séries:",
-            seriesResult.error
-          );
+          console.error("Erro ao carregar séries:", seriesResult.error);
         }
 
         if (moviesResult.error) {
-          console.error(
-            "Erro ao carregar filmes:",
-            moviesResult.error
-          );
+          console.error("Erro ao carregar filmes:", moviesResult.error);
         }
 
         if (liveChannelsResult.error) {
@@ -337,52 +332,45 @@ export default function App() {
           );
         }
 
-        const loadedSeries = (seriesResult.data || []).map(
-          (item) => ({
-            id: `db-${item.id}`,
-            dbId: item.id,
-            title: item.title || "Sem título",
-            category: item.genre || "Romance",
-            description: item.description || "",
-            image: item.cover_url || DEFAULT_COVER,
-            isChris:
-              normalize(item.title) === normalize(CHRIS_TITLE),
-            isLive: false,
-          })
-        );
+        const loadedSeries = (seriesResult.data || []).map((item) => ({
+          id: `db-${item.id}`,
+          dbId: item.id,
+          title: item.title || "Sem título",
+          category: item.genre || "Romance",
+          description: item.description || "",
+          image: item.cover_url || DEFAULT_COVER,
+          isChris: normalize(item.title) === normalize(CHRIS_TITLE),
+          isLive: false,
+        }));
 
-        const hasChris = loadedSeries.some(
-          (item) => item.isChris
-        );
+        const hasChris = loadedSeries.some((item) => item.isChris);
 
         if (!hasChris) {
           loadedSeries.push(CHRIS_SERIES);
         }
 
-        const loadedMovies = (moviesResult.data || []).map(
+        const loadedMovies = (moviesResult.data || []).map((item) => ({
+          id: `movie-${item.id}`,
+          dbId: item.id,
+          title: item.title || "Sem título",
+          category: item.genre || "Filme",
+          description: item.description || "",
+          image: item.cover_url || DEFAULT_MOVIE_COVER,
+          video_url: item.video_url || "",
+        }));
+
+        const loadedLiveChannels = (liveChannelsResult.data || []).map(
           (item) => ({
-            id: `movie-${item.id}`,
+            id: `live-channel-${item.id}`,
             dbId: item.id,
-            title: item.title || "Sem título",
-            category: item.genre || "Filme",
-            description: item.description || "",
-            image: item.cover_url || DEFAULT_MOVIE_COVER,
-            video_url: item.video_url || "",
+            title: item.name || "Canal ao vivo",
+            category: item.category || "Ao vivo",
+            description: `Assista ao canal ${item.name || "ao vivo"}.`,
+            image: item.cover_url || DEFAULT_COVER,
+            video_url: item.stream_url || "",
+            isLive: true,
           })
         );
-
-        const loadedLiveChannels = (
-          liveChannelsResult.data || []
-        ).map((item) => ({
-          id: `live-channel-${item.id}`,
-          dbId: item.id,
-          title: item.name || "Canal ao vivo",
-          category: item.category || "Ao vivo",
-          description: `Assista ao canal ${item.name || "ao vivo"}.`,
-          image: item.cover_url || DEFAULT_COVER,
-          video_url: item.stream_url || "",
-          isLive: true,
-        }));
 
         if (!cancelled) {
           setSeries(loadedSeries);
@@ -447,9 +435,7 @@ export default function App() {
           .eq("series_id", selectedSeries.dbId)
           .order("episode_number", { ascending: true });
 
-        if (error) {
-          throw error;
-        }
+        if (error) throw error;
 
         if (!cancelled) {
           setEpisodes(
@@ -564,10 +550,7 @@ export default function App() {
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         if (!cancelled) {
           video.play().catch((error) => {
-            console.warn(
-              "Reprodução automática bloqueada:",
-              error
-            );
+            console.warn("Reprodução automática bloqueada:", error);
           });
         }
       });
@@ -591,20 +574,14 @@ export default function App() {
       video.load();
 
       video.play().catch((error) => {
-        console.warn(
-          "Reprodução automática bloqueada:",
-          error
-        );
+        console.warn("Reprodução automática bloqueada:", error);
       });
     } else if (!isHls) {
       video.src = url;
       video.load();
 
       video.play().catch((error) => {
-        console.warn(
-          "Reprodução automática bloqueada:",
-          error
-        );
+        console.warn("Reprodução automática bloqueada:", error);
       });
     } else {
       setPlayerError(
@@ -616,10 +593,7 @@ export default function App() {
       cancelled = true;
 
       video.removeEventListener("error", handleVideoError);
-      video.removeEventListener(
-        "loadedmetadata",
-        handleMetadata
-      );
+      video.removeEventListener("loadedmetadata", handleMetadata);
 
       if (hls) {
         hls.destroy();
@@ -777,6 +751,7 @@ export default function App() {
           id: item.id,
           title: item.title,
           video_url: item.video_url,
+          isMovie: true,
         });
       } else {
         openSeries(item);
@@ -851,9 +826,7 @@ export default function App() {
 
   function renderGrid(items, type = "series") {
     if (loading && type !== "live") {
-      return (
-        <p className="dv-message">Carregando catálogo...</p>
-      );
+      return <p className="dv-message">Carregando catálogo...</p>;
     }
 
     if (!items.length) {
@@ -875,13 +848,14 @@ export default function App() {
     );
   }
 
-  const favoriteSeries = series.filter((item) =>
-    isFavorite(item)
-  );
+  const favoriteSeries = series.filter((item) => isFavorite(item));
+  const favoriteMovies = movies.filter((item) => isFavorite(item));
 
-  const favoriteMovies = movies.filter((item) =>
-    isFavorite(item)
-  );
+  const isLandscapePlayer =
+    Boolean(selectedEpisode?.isMovie) ||
+    Boolean(selectedEpisode?.isLive) ||
+    Boolean(selectedSeries?.isChris) ||
+    Boolean(selectedEpisode?.isChrisEpisode);
 
   return (
     <div className="dv-app">
@@ -898,13 +872,9 @@ export default function App() {
           --dv-border: rgba(255,255,255,.09);
         }
 
-        * {
-          box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
-        html {
-          scroll-behavior: smooth;
-        }
+        html { scroll-behavior: smooth; }
 
         body {
           margin: 0;
@@ -914,13 +884,8 @@ export default function App() {
             "Segoe UI", sans-serif;
         }
 
-        button, input {
-          font: inherit;
-        }
-
-        button {
-          cursor: pointer;
-        }
+        button, input { font: inherit; }
+        button { cursor: pointer; }
 
         .dv-app {
           min-height: 100vh;
@@ -954,9 +919,7 @@ export default function App() {
           white-space: nowrap;
         }
 
-        .dv-logo span {
-          color: var(--dv-accent);
-        }
+        .dv-logo span { color: var(--dv-accent); }
 
         .dv-search {
           display: flex;
@@ -968,9 +931,7 @@ export default function App() {
           background: #141620;
         }
 
-        .dv-search span {
-          color: var(--dv-muted);
-        }
+        .dv-search span { color: var(--dv-muted); }
 
         .dv-search input {
           width: 100%;
@@ -1006,7 +967,6 @@ export default function App() {
           background: rgba(168,85,247,.14);
         }
 
-        /* Aviso de desenvolvimento do DRAMOVIX */
         .dv-development-notice {
           display: flex;
           align-items: flex-start;
@@ -1034,9 +994,7 @@ export default function App() {
           font-size: 22px;
         }
 
-        .dv-development-content {
-          min-width: 0;
-        }
+        .dv-development-content { min-width: 0; }
 
         .dv-development-content h2 {
           margin: 1px 0 7px;
@@ -1053,9 +1011,7 @@ export default function App() {
           line-height: 1.75;
         }
 
-        .dv-development-content strong {
-          color: #fff;
-        }
+        .dv-development-content strong { color: #fff; }
 
         .dv-inline-notice {
           display: flex;
@@ -1101,11 +1057,7 @@ export default function App() {
             linear-gradient(120deg, #181321, #10121b 72%);
         }
 
-        .dv-hero-content {
-          position: relative;
-          z-index: 1;
-          max-width: 650px;
-        }
+        .dv-hero-content { position: relative; z-index: 1; max-width: 650px; }
 
         .dv-eyebrow {
           display: inline-flex;
@@ -1125,11 +1077,7 @@ export default function App() {
           letter-spacing: -2px;
         }
 
-        .dv-hero p {
-          max-width: 500px;
-          color: #c0c1cf;
-          line-height: 1.7;
-        }
+        .dv-hero p { max-width: 500px; color: #c0c1cf; line-height: 1.7; }
 
         .dv-button-primary {
           padding: 11px 17px;
@@ -1141,14 +1089,9 @@ export default function App() {
           transition: transform .2s, filter .2s;
         }
 
-        .dv-button-primary:hover {
-          transform: translateY(-2px);
-          filter: brightness(1.12);
-        }
+        .dv-button-primary:hover { transform: translateY(-2px); filter: brightness(1.12); }
 
-        .dv-section {
-          margin: 32px 0 40px;
-        }
+        .dv-section { margin: 32px 0 40px; }
 
         .dv-section-heading {
           display: flex;
@@ -1158,24 +1101,10 @@ export default function App() {
           margin-bottom: 19px;
         }
 
-        .dv-section-heading h2 {
-          margin: 0;
-          font-size: clamp(21px, 3vw, 29px);
-          letter-spacing: -.6px;
-        }
+        .dv-section-heading h2 { margin: 0; font-size: clamp(21px, 3vw, 29px); letter-spacing: -.6px; }
+        .dv-section-heading p { margin: 7px 0 0; color: var(--dv-muted); font-size: 14px; }
 
-        .dv-section-heading p {
-          margin: 7px 0 0;
-          color: var(--dv-muted);
-          font-size: 14px;
-        }
-
-        .dv-categories {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 9px;
-          margin: 17px 0 30px;
-        }
+        .dv-categories { display: flex; flex-wrap: wrap; gap: 9px; margin: 17px 0 30px; }
 
         .dv-category-button {
           padding: 10px 16px;
@@ -1192,11 +1121,7 @@ export default function App() {
           background: rgba(168,85,247,.17);
         }
 
-        .dv-grid {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 19px;
-        }
+        .dv-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 19px; }
 
         .dv-card {
           min-width: 0;
@@ -1207,10 +1132,7 @@ export default function App() {
           transition: transform .22s, border-color .22s;
         }
 
-        .dv-card:hover {
-          transform: translateY(-4px);
-          border-color: rgba(168,85,247,.45);
-        }
+        .dv-card:hover { transform: translateY(-4px); border-color: rgba(168,85,247,.45); }
 
         .dv-card-image-button {
           position: relative;
@@ -1223,16 +1145,8 @@ export default function App() {
           background: #20212b;
         }
 
-        .dv-card-image {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          transition: transform .3s;
-        }
-
-        .dv-card:hover .dv-card-image {
-          transform: scale(1.04);
-        }
+        .dv-card-image { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+        .dv-card:hover .dv-card-image { transform: scale(1.04); }
 
         .dv-card-play {
           position: absolute;
@@ -1261,23 +1175,9 @@ export default function App() {
           letter-spacing: 1px;
         }
 
-        .dv-card-content {
-          padding: 15px;
-        }
-
-        .dv-card-category {
-          color: #c084fc;
-          font-size: 10px;
-          font-weight: 850;
-          letter-spacing: 1.2px;
-          text-transform: uppercase;
-        }
-
-        .dv-card h3 {
-          margin: 8px 0;
-          font-size: 16px;
-          line-height: 1.4;
-        }
+        .dv-card-content { padding: 15px; }
+        .dv-card-category { color: #c084fc; font-size: 10px; font-weight: 850; letter-spacing: 1.2px; text-transform: uppercase; }
+        .dv-card h3 { margin: 8px 0; font-size: 16px; line-height: 1.4; }
 
         .dv-card p {
           display: -webkit-box;
@@ -1291,17 +1191,8 @@ export default function App() {
           -webkit-line-clamp: 2;
         }
 
-        .dv-card-actions {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .dv-card-actions .dv-button-primary {
-          flex: 1;
-          padding: 10px 8px;
-          font-size: 12px;
-        }
+        .dv-card-actions { display: flex; align-items: center; gap: 8px; }
+        .dv-card-actions .dv-button-primary { flex: 1; padding: 10px 8px; font-size: 12px; }
 
         .dv-favorite-button {
           display: grid;
@@ -1316,39 +1207,14 @@ export default function App() {
           font-size: 20px;
         }
 
-        .dv-favorite-button.active {
-          color: #fb7185;
-          border-color: rgba(251,113,133,.4);
-        }
+        .dv-favorite-button.active { color: #fb7185; border-color: rgba(251,113,133,.4); }
+        .dv-empty, .dv-message { padding: 40px 15px; text-align: center; color: var(--dv-muted); }
+        .dv-empty span { color: #c084fc; font-size: 35px; }
+        .dv-empty h3 { color: white; }
 
-        .dv-empty,
-        .dv-message {
-          padding: 40px 15px;
-          text-align: center;
-          color: var(--dv-muted);
-        }
+        .dv-detail { max-width: 1050px; margin: 15px auto; }
 
-        .dv-empty span {
-          color: #c084fc;
-          font-size: 35px;
-        }
-
-        .dv-empty h3 {
-          color: white;
-        }
-
-        .dv-detail {
-          max-width: 1050px;
-          margin: 15px auto;
-        }
-
-        .dv-back {
-          margin-bottom: 20px;
-          padding: 9px 0;
-          color: #d8b4fe;
-          border: 0;
-          background: transparent;
-        }
+        .dv-back { margin-bottom: 20px; padding: 9px 0; color: #d8b4fe; border: 0; background: transparent; }
 
         .dv-detail-header {
           display: grid;
@@ -1371,9 +1237,7 @@ export default function App() {
           background: var(--dv-panel-2);
         }
 
-        .dv-detail-info {
-          min-width: 0;
-        }
+        .dv-detail-info { min-width: 0; }
 
         .dv-detail-info h1 {
           margin: 9px 0 15px;
@@ -1382,19 +1246,9 @@ export default function App() {
           overflow-wrap: anywhere;
         }
 
-        .dv-detail-info p {
-          color: #b8bac9;
-          line-height: 1.8;
-          white-space: pre-wrap;
-          overflow-wrap: anywhere;
-        }
+        .dv-detail-info p { color: #b8bac9; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
 
-        .dv-detail-actions {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-          margin-top: 20px;
-        }
+        .dv-detail-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
 
         .dv-description-toggle {
           padding: 10px 14px;
@@ -1404,20 +1258,9 @@ export default function App() {
           background: var(--dv-panel-2);
         }
 
-        .dv-episodes {
-          min-width: 0;
-          margin-top: 28px;
-        }
-
-        .dv-episodes h2 {
-          margin-bottom: 16px;
-        }
-
-        .dv-episode-list {
-          display: grid;
-          gap: 10px;
-          min-width: 0;
-        }
+        .dv-episodes { min-width: 0; margin-top: 28px; }
+        .dv-episodes h2 { margin-bottom: 16px; }
+        .dv-episode-list { display: grid; gap: 10px; min-width: 0; }
 
         .dv-episode {
           display: flex;
@@ -1434,10 +1277,7 @@ export default function App() {
           transition: border-color .2s, background .2s;
         }
 
-        .dv-episode:hover {
-          border-color: var(--dv-accent);
-          background: #191522;
-        }
+        .dv-episode:hover { border-color: var(--dv-accent); background: #191522; }
 
         .dv-episode-number {
           display: grid;
@@ -1451,29 +1291,12 @@ export default function App() {
           font-weight: 900;
         }
 
-        .dv-episode-info {
-          flex: 1;
-          min-width: 0;
-          overflow-wrap: anywhere;
-        }
+        .dv-episode-info { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+        .dv-episode-info strong { display: block; overflow-wrap: anywhere; }
+        .dv-episode-info small { display: block; margin-top: 5px; color: var(--dv-muted); }
+        .dv-episode-play { flex-shrink: 0; color: #d8b4fe; font-size: 20px; }
 
-        .dv-episode-info strong {
-          display: block;
-          overflow-wrap: anywhere;
-        }
-
-        .dv-episode-info small {
-          display: block;
-          margin-top: 5px;
-          color: var(--dv-muted);
-        }
-
-        .dv-episode-play {
-          flex-shrink: 0;
-          color: #d8b4fe;
-          font-size: 20px;
-        }
-
+        /* PLAYER: modal com cabeçalho e rodapé sempre visíveis. */
         .dv-player-overlay {
           position: fixed;
           inset: 0;
@@ -1481,37 +1304,41 @@ export default function App() {
           display: flex;
           align-items: center;
           justify-content: center;
-          overflow-y: auto;
-          padding: 16px;
-          background: rgba(0,0,0,.92);
+          overflow: auto;
+          padding: 12px;
+          background: rgba(0,0,0,.94);
           backdrop-filter: blur(12px);
+          overscroll-behavior: contain;
         }
 
         .dv-player-modal {
           position: relative;
           display: flex;
           flex-direction: column;
-          width: min(100%, 480px);
-          max-height: calc(100dvh - 32px);
-          overflow: hidden;
+          flex: 0 0 auto;
+          width: min(100%, 900px);
+          max-height: calc(100dvh - 24px);
+          min-height: 0;
+          overflow: auto;
           border: 1px solid rgba(255,255,255,.12);
-          border-radius: 18px;
+          border-radius: 16px;
           background: #0d0e14;
           box-shadow: 0 25px 90px rgba(0,0,0,.55);
+          overscroll-behavior: contain;
         }
 
         .dv-player-top {
           display: flex;
           align-items: center;
           justify-content: space-between;
+          flex: 0 0 auto;
           gap: 12px;
-          padding: 13px 15px;
+          min-height: 58px;
+          padding: 10px 14px;
           border-bottom: 1px solid var(--dv-border);
         }
 
-        .dv-player-heading {
-          min-width: 0;
-        }
+        .dv-player-heading { min-width: 0; }
 
         .dv-player-heading strong {
           display: block;
@@ -1521,49 +1348,68 @@ export default function App() {
           white-space: nowrap;
         }
 
-        .dv-player-heading small {
-          display: block;
-          margin-top: 4px;
-          color: var(--dv-muted);
-        }
+        .dv-player-heading small { display: block; margin-top: 4px; color: var(--dv-muted); }
 
         .dv-player-close {
           display: grid;
-          width: 36px;
-          height: 36px;
+          width: 42px;
+          height: 42px;
           flex-shrink: 0;
           place-items: center;
           color: white;
           border: 1px solid var(--dv-border);
           border-radius: 50%;
           background: #20212b;
-          font-size: 22px;
+          font-size: 25px;
+          line-height: 1;
+          touch-action: manipulation;
         }
 
-        /* Mantém a proporção original do vídeo. */
+        .dv-player-close:hover { background: #343544; }
+
+        /* A área do vídeo respeita a proporção selecionada. */
         .dv-video-wrap {
+          position: relative;
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 100%;
-          max-height: calc(100dvh - 125px);
+          flex: 0 1 auto;
+          min-width: 0;
           min-height: 0;
+          margin: 0 auto;
           overflow: hidden;
           background: #000;
         }
 
+        /* Minisséries: 9:16, com altura limitada à tela. */
+        .dv-video-wrap--portrait {
+          width: min(100%, 430px, calc((100dvh - 160px) * 9 / 16));
+          aspect-ratio: 9 / 16;
+          max-height: calc(100dvh - 160px);
+        }
+
+        /* Filmes e transmissões: 16:9, com largura limitada à tela. */
+        .dv-video-wrap--landscape {
+          width: min(100%, calc((100dvh - 160px) * 16 / 9));
+          aspect-ratio: 16 / 9;
+          max-height: calc(100dvh - 160px);
+        }
+
         .dv-video {
           display: block;
-          width: auto;
-          height: auto;
+          width: 100%;
+          height: 100%;
+          min-width: 0;
+          min-height: 0;
           max-width: 100%;
-          max-height: calc(100dvh - 125px);
+          max-height: 100%;
           object-fit: contain;
           background: #000;
         }
 
         .dv-player-error {
-          padding: 18px;
+          flex: 0 0 auto;
+          padding: 14px 16px;
           color: #fecaca;
           text-align: center;
           line-height: 1.7;
@@ -1574,12 +1420,15 @@ export default function App() {
           display: flex;
           align-items: center;
           justify-content: space-between;
+          flex: 0 0 auto;
           gap: 10px;
-          padding: 12px;
+          min-height: 58px;
+          padding: 10px 12px;
           border-top: 1px solid var(--dv-border);
         }
 
         .dv-player-bottom span {
+          min-width: 0;
           overflow: hidden;
           color: var(--dv-muted);
           font-size: 12px;
@@ -1588,6 +1437,8 @@ export default function App() {
         }
 
         .dv-player-next {
+          flex: 0 0 auto;
+          min-height: 40px;
           padding: 10px 13px;
           color: white;
           border: 0;
@@ -1595,12 +1446,10 @@ export default function App() {
           background: #7c3aed;
           font-size: 12px;
           font-weight: 800;
+          touch-action: manipulation;
         }
 
-        .dv-player-next:disabled {
-          cursor: not-allowed;
-          opacity: .45;
-        }
+        .dv-player-next:disabled { cursor: not-allowed; opacity: .45; }
 
         .dv-footer {
           padding: 25px 16px;
@@ -1611,40 +1460,19 @@ export default function App() {
         }
 
         @media (min-width: 1500px) {
-          .dv-grid {
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-          }
+          .dv-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
         }
 
         @media (max-width: 1050px) {
-          .dv-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-          }
-
-          .dv-header {
-            padding-inline: 22px;
-          }
-
-          .dv-main {
-            padding-inline: 22px;
-          }
+          .dv-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+          .dv-header { padding-inline: 22px; }
+          .dv-main { padding-inline: 22px; }
         }
 
         @media (max-width: 760px) {
-          .dv-header {
-            flex-wrap: wrap;
-            gap: 12px;
-            padding: 13px 16px;
-          }
-
-          .dv-logo {
-            font-size: 22px;
-          }
-
-          .dv-search {
-            order: 3;
-            width: 100%;
-          }
+          .dv-header { flex-wrap: wrap; gap: 12px; padding: 13px 16px; }
+          .dv-logo { font-size: 22px; }
+          .dv-search { order: 3; width: 100%; }
 
           .dv-nav {
             justify-content: flex-start;
@@ -1653,10 +1481,7 @@ export default function App() {
             padding: 10px 12px;
           }
 
-          .dv-nav button {
-            flex-shrink: 0;
-            font-size: 12px;
-          }
+          .dv-nav button { flex-shrink: 0; font-size: 12px; }
 
           .dv-development-notice {
             width: calc(100% - 24px);
@@ -1665,77 +1490,26 @@ export default function App() {
             gap: 11px;
           }
 
-          .dv-development-icon {
-            width: 36px;
-            height: 36px;
-            font-size: 19px;
-          }
+          .dv-development-icon { width: 36px; height: 36px; font-size: 19px; }
+          .dv-development-content h2 { font-size: 13px; line-height: 1.5; }
+          .dv-development-content p { font-size: 12px; }
+          .dv-main { padding: 18px 15px 50px; }
 
-          .dv-development-content h2 {
-            font-size: 13px;
-            line-height: 1.5;
-          }
+          .dv-hero { min-height: 255px; margin-top: 3px; border-radius: 18px; }
+          .dv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+          .dv-card { border-radius: 13px; }
+          .dv-card-content { padding: 11px; }
+          .dv-card h3 { font-size: 14px; }
+          .dv-card p { font-size: 11px; }
+          .dv-card-actions .dv-button-primary { font-size: 11px; }
 
-          .dv-development-content p {
-            font-size: 12px;
-          }
-
-          .dv-main {
-            padding: 18px 15px 50px;
-          }
-
-          .dv-hero {
-            min-height: 255px;
-            margin-top: 3px;
-            border-radius: 18px;
-          }
-
-          .dv-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
-          }
-
-          .dv-card {
-            border-radius: 13px;
-          }
-
-          .dv-card-content {
-            padding: 11px;
-          }
-
-          .dv-card h3 {
-            font-size: 14px;
-          }
-
-          .dv-card p {
-            font-size: 11px;
-          }
-
-          .dv-card-actions .dv-button-primary {
-            font-size: 11px;
-          }
-
-          .dv-detail-header {
-            grid-template-columns: 1fr;
-            gap: 18px;
-            padding: 15px;
-          }
-
-          .dv-detail-cover {
-            width: min(100%, 260px);
-            margin: 0 auto;
-          }
-
-          .dv-detail-info h1 {
-            font-size: 27px;
-          }
-
-          .dv-episode {
-            gap: 10px;
-            padding: 10px;
-          }
+          .dv-detail-header { grid-template-columns: 1fr; gap: 18px; padding: 15px; }
+          .dv-detail-cover { width: min(100%, 260px); margin: 0 auto; }
+          .dv-detail-info h1 { font-size: 27px; }
+          .dv-episode { gap: 10px; padding: 10px; }
 
           .dv-player-overlay {
+            align-items: center;
             padding: 0;
           }
 
@@ -1746,52 +1520,43 @@ export default function App() {
             border: 0;
           }
 
-          .dv-video-wrap {
-            max-height: calc(100dvh - 125px);
+          .dv-video-wrap--portrait {
+            width: min(100%, 430px, calc((100dvh - 132px) * 9 / 16));
+            max-height: calc(100dvh - 132px);
           }
 
-          .dv-video {
-            max-width: 100%;
-            max-height: calc(100dvh - 125px);
+          .dv-video-wrap--landscape {
+            width: min(100%, calc((100dvh - 132px) * 16 / 9));
+            max-height: calc(100dvh - 132px);
           }
         }
 
         @media (max-width: 520px) {
-          .dv-grid {
-            gap: 10px;
-          }
+          .dv-grid { gap: 10px; }
+          .dv-card-play { width: 35px; height: 35px; right: 9px; bottom: 9px; }
+          .dv-card-category { font-size: 9px; }
+          .dv-card h3 { font-size: 13px; }
+          .dv-card-actions { gap: 5px; }
+          .dv-favorite-button { width: 34px; height: 36px; }
+          .dv-section-heading h2 { font-size: 22px; }
+          .dv-episode-number { width: 38px; height: 38px; }
 
-          .dv-card-play {
-            width: 35px;
-            height: 35px;
-            right: 9px;
-            bottom: 9px;
-          }
+          .dv-player-top { min-height: 52px; padding: 7px 10px; }
+          .dv-player-close { width: 40px; height: 40px; }
+          .dv-player-bottom { min-height: 54px; padding: 7px 9px; }
+          .dv-player-next { min-height: 38px; padding: 8px 10px; }
+        }
 
-          .dv-card-category {
-            font-size: 9px;
+        @media (max-height: 520px) {
+          .dv-player-overlay { align-items: flex-start; }
+          .dv-player-modal { margin-block: 4px; max-height: none; }
+          .dv-video-wrap--portrait {
+            width: min(100%, calc((100dvh - 130px) * 9 / 16));
+            max-height: calc(100dvh - 130px);
           }
-
-          .dv-card h3 {
-            font-size: 13px;
-          }
-
-          .dv-card-actions {
-            gap: 5px;
-          }
-
-          .dv-favorite-button {
-            width: 34px;
-            height: 36px;
-          }
-
-          .dv-section-heading h2 {
-            font-size: 22px;
-          }
-
-          .dv-episode-number {
-            width: 38px;
-            height: 38px;
+          .dv-video-wrap--landscape {
+            width: min(100%, calc((100dvh - 130px) * 16 / 9));
+            max-height: calc(100dvh - 130px);
           }
         }
       `}</style>
@@ -1813,10 +1578,7 @@ export default function App() {
             value={search}
             onChange={(event) => {
               setSearch(event.target.value);
-
-              if (page === "inicio") {
-                setPage("minisseries");
-              }
+              if (page === "inicio") setPage("minisseries");
             }}
           />
         </label>
@@ -1840,7 +1602,6 @@ export default function App() {
         ))}
       </nav>
 
-      {/* Aviso visível em todas as páginas do catálogo. */}
       <aside
         className="dv-development-notice"
         role="status"
@@ -1894,29 +1655,22 @@ export default function App() {
 
                 <p>
                   {showDescription
-                    ? selectedSeries.description ||
-                      "Descrição indisponível."
+                    ? selectedSeries.description || "Descrição indisponível."
                     : (
                         selectedSeries.description ||
                         "Uma nova história espera por você."
                       ).slice(0, 180) +
-                      (
-                        (selectedSeries.description || "").length > 180
-                          ? "..."
-                          : ""
-                      )}
+                      ((selectedSeries.description || "").length > 180
+                        ? "..."
+                        : "")}
                 </p>
 
                 {(selectedSeries.description || "").length > 180 && (
                   <button
                     className="dv-description-toggle"
-                    onClick={() =>
-                      setShowDescription((value) => !value)
-                    }
+                    onClick={() => setShowDescription((value) => !value)}
                   >
-                    {showDescription
-                      ? "Mostrar menos"
-                      : "Ler descrição completa"}
+                    {showDescription ? "Mostrar menos" : "Ler descrição completa"}
                   </button>
                 )}
 
@@ -1924,13 +1678,9 @@ export default function App() {
                   <button
                     className="dv-button-primary"
                     onClick={() => {
-                      if (episodes.length) {
-                        openEpisode(episodes[0]);
-                      }
+                      if (episodes.length) openEpisode(episodes[0]);
                     }}
-                    disabled={
-                      episodesLoading || !episodes.length
-                    }
+                    disabled={episodesLoading || !episodes.length}
                   >
                     ▶ Assistir primeiro episódio
                   </button>
@@ -1960,9 +1710,7 @@ export default function App() {
               </div>
 
               {episodesLoading ? (
-                <p className="dv-message">
-                  Carregando episódios...
-                </p>
+                <p className="dv-message">Carregando episódios...</p>
               ) : episodes.length ? (
                 <div className="dv-episode-list">
                   {episodes.map((episode, index) => (
@@ -1977,8 +1725,7 @@ export default function App() {
 
                       <span className="dv-episode-info">
                         <strong>
-                          {episode.title ||
-                            `Episódio ${index + 1}`}
+                          {episode.title || `Episódio ${index + 1}`}
                         </strong>
                         <small>
                           {episode.video_url
@@ -2009,9 +1756,7 @@ export default function App() {
           <>
             <section className="dv-hero">
               <div className="dv-hero-content">
-                <span className="dv-eyebrow">
-                  ✦ DRAMOVIX+ ORIGINAL
-                </span>
+                <span className="dv-eyebrow">✦ DRAMOVIX+ ORIGINAL</span>
                 <h1>Sempre tem uma nova história.</h1>
                 <p>
                   Romance, vingança, suspense e histórias que prendem
@@ -2056,9 +1801,7 @@ export default function App() {
               <div className="dv-section-heading">
                 <div>
                   <h2>Em destaque</h2>
-                  <p>
-                    Descubra sua próxima história favorita.
-                  </p>
+                  <p>Descubra sua próxima história favorita.</p>
                 </div>
               </div>
 
@@ -2081,22 +1824,17 @@ export default function App() {
               </div>
 
               {liveChannelsLoading ? (
-                <p className="dv-message">
-                  Carregando canais ao vivo...
-                </p>
+                <p className="dv-message">Carregando canais ao vivo...</p>
               ) : (
                 renderGrid(
                   [
                     ...liveChannels.slice(0, 4),
-                    ...(
-                      liveChannels.some(
-                        (item) =>
-                          normalize(item.title) ===
-                          normalize("Z Nation")
-                      )
-                        ? []
-                        : [LIVE_SERIES]
-                    ),
+                    ...(liveChannels.some(
+                      (item) =>
+                        normalize(item.title) === normalize("Z Nation")
+                    )
+                      ? []
+                      : [LIVE_SERIES]),
                   ].slice(0, 4),
                   "live"
                 )
@@ -2168,22 +1906,17 @@ export default function App() {
             </div>
 
             {liveChannelsLoading ? (
-              <p className="dv-message">
-                Carregando canais ao vivo...
-              </p>
+              <p className="dv-message">Carregando canais ao vivo...</p>
             ) : (
               renderGrid(
                 [
                   ...filteredLiveChannels,
-                  ...(
-                    liveChannels.some(
-                      (item) =>
-                        normalize(item.title) ===
-                        normalize("Z Nation")
-                    )
-                      ? []
-                      : [LIVE_SERIES]
-                  ),
+                  ...(liveChannels.some(
+                    (item) =>
+                      normalize(item.title) === normalize("Z Nation")
+                  )
+                    ? []
+                    : [LIVE_SERIES]),
                 ],
                 "live"
               )
@@ -2197,9 +1930,7 @@ export default function App() {
               <div className="dv-section-heading">
                 <div>
                   <h2>Meus favoritos</h2>
-                  <p>
-                    Suas histórias salvas neste dispositivo.
-                  </p>
+                  <p>Suas histórias salvas neste dispositivo.</p>
                 </div>
               </div>
 
@@ -2232,9 +1963,7 @@ export default function App() {
         <div
           className="dv-player-overlay"
           onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              closePlayer();
-            }
+            if (event.target === event.currentTarget) closePlayer();
           }}
         >
           <div
@@ -2253,7 +1982,9 @@ export default function App() {
                 <small>
                   {selectedEpisode?.isLive
                     ? "Transmissão ao vivo"
-                    : selectedSeries?.title || "DRAMOVIX+"}
+                    : selectedEpisode?.isMovie
+                      ? "Filme"
+                      : selectedSeries?.title || "DRAMOVIX+"}
                 </small>
               </div>
 
@@ -2266,7 +1997,13 @@ export default function App() {
               </button>
             </div>
 
-            <div className="dv-video-wrap">
+            <div
+              className={`dv-video-wrap ${
+                isLandscapePlayer
+                  ? "dv-video-wrap--landscape"
+                  : "dv-video-wrap--portrait"
+              }`}
+            >
               <video
                 key={selectedEpisode?.id || "dramovix-video"}
                 ref={videoRef}
@@ -2288,29 +2025,31 @@ export default function App() {
               <span>
                 {selectedEpisode?.isLive
                   ? "Transmissão ao vivo"
-                  : selectedEpisode?.episode_number
-                    ? `Episódio ${selectedEpisode.episode_number} · Temporada ${
-                        selectedEpisode.season_number || 4
-                      }`
-                    : "DRAMOVIX+"}
+                  : selectedEpisode?.isMovie
+                    ? "Filme · DRAMOVIX+"
+                    : selectedEpisode?.episode_number
+                      ? `Episódio ${selectedEpisode.episode_number} · Temporada ${
+                          selectedEpisode.season_number || 4
+                        }`
+                      : "DRAMOVIX+"}
               </span>
 
-              {!selectedEpisode?.isLive && (
-                <button
-                  className="dv-player-next"
-                  onClick={playNextEpisode}
-                  disabled={
-                    !episodes.length ||
-                    episodes.findIndex(
-                      (episode) =>
-                        episode.id === selectedEpisode?.id
-                    ) >=
-                      episodes.length - 1
-                  }
-                >
-                  Próximo episódio →
-                </button>
-              )}
+              {!selectedEpisode?.isLive &&
+                !selectedEpisode?.isMovie && (
+                  <button
+                    className="dv-player-next"
+                    onClick={playNextEpisode}
+                    disabled={
+                      !episodes.length ||
+                      episodes.findIndex(
+                        (episode) => episode.id === selectedEpisode?.id
+                      ) >=
+                        episodes.length - 1
+                    }
+                  >
+                    Próximo episódio →
+                  </button>
+                )}
             </div>
           </div>
         </div>
