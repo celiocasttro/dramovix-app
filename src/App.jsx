@@ -1006,6 +1006,78 @@ export default function App() {
           background: rgba(168,85,247,.14);
         }
 
+        /* Aviso de desenvolvimento do DRAMOVIX */
+        .dv-development-notice {
+          display: flex;
+          align-items: flex-start;
+          gap: 14px;
+          width: min(1450px, calc(100% - 32px));
+          margin: 20px auto 0;
+          padding: 17px 20px;
+          border: 1px solid rgba(168,85,247,.38);
+          border-radius: 16px;
+          background:
+            linear-gradient(110deg, rgba(124,58,237,.18), rgba(236,72,153,.09)),
+            #11121b;
+          box-shadow: 0 8px 30px rgba(0,0,0,.14);
+        }
+
+        .dv-development-icon {
+          display: grid;
+          width: 42px;
+          height: 42px;
+          flex-shrink: 0;
+          place-items: center;
+          border-radius: 12px;
+          background: rgba(168,85,247,.18);
+          color: #d8b4fe;
+          font-size: 22px;
+        }
+
+        .dv-development-content {
+          min-width: 0;
+        }
+
+        .dv-development-content h2 {
+          margin: 1px 0 7px;
+          color: #f5d0fe;
+          font-size: 15px;
+          font-weight: 900;
+          letter-spacing: .5px;
+        }
+
+        .dv-development-content p {
+          margin: 0;
+          color: #c7c8d5;
+          font-size: 13px;
+          line-height: 1.75;
+        }
+
+        .dv-development-content strong {
+          color: #fff;
+        }
+
+        .dv-inline-notice {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          margin: 18px 0 22px;
+          padding: 14px 16px;
+          border: 1px solid rgba(236,72,153,.25);
+          border-radius: 12px;
+          background: rgba(168,85,247,.08);
+          color: #d6d4e2;
+          font-size: 13px;
+          line-height: 1.7;
+          overflow-wrap: anywhere;
+        }
+
+        .dv-inline-notice span {
+          flex-shrink: 0;
+          color: #d8b4fe;
+          font-size: 17px;
+        }
+
         .dv-main {
           width: min(1450px, 100%);
           min-height: 70vh;
@@ -1586,6 +1658,28 @@ export default function App() {
             font-size: 12px;
           }
 
+          .dv-development-notice {
+            width: calc(100% - 24px);
+            margin-top: 13px;
+            padding: 14px;
+            gap: 11px;
+          }
+
+          .dv-development-icon {
+            width: 36px;
+            height: 36px;
+            font-size: 19px;
+          }
+
+          .dv-development-content h2 {
+            font-size: 13px;
+            line-height: 1.5;
+          }
+
+          .dv-development-content p {
+            font-size: 12px;
+          }
+
           .dv-main {
             padding: 18px 15px 50px;
           }
@@ -1746,6 +1840,30 @@ export default function App() {
         ))}
       </nav>
 
+      {/* Aviso visível em todas as páginas do catálogo. */}
+      <aside
+        className="dv-development-notice"
+        role="status"
+        aria-label="Aviso de desenvolvimento"
+      >
+        <div className="dv-development-icon" aria-hidden="true">
+          🚧
+        </div>
+
+        <div className="dv-development-content">
+          <h2>O DRAMOVIX AINDA ESTÁ EM DESENVOLVIMENTO</h2>
+          <p>
+            Estamos preparando muitas novidades para você!
+            Algumas séries ainda não possuem episódios disponíveis,
+            e outras ainda não chegaram ao catálogo.
+            <strong>
+              {" "}Em breve teremos novas histórias e mais episódios.
+            </strong>
+            {" "}Obrigado pela paciência e por fazer parte dessa história! ❤️
+          </p>
+        </div>
+      </aside>
+
       <main className="dv-main">
         {page === "detalhes" && selectedSeries && (
           <section className="dv-detail">
@@ -1875,10 +1993,11 @@ export default function App() {
                 </div>
               ) : (
                 <div className="dv-empty">
-                  <h3>Nenhum episódio cadastrado</h3>
+                  <h3>Esta história está chegando!</h3>
                   <p>
-                    Os episódios desta série ainda não estão
-                    disponíveis.
+                    Esta série ainda não possui episódios disponíveis.
+                    Estamos trabalhando para trazer novidades ao DRAMOVIX.
+                    Volte em breve para conferir as atualizações! ❤️
                   </p>
                 </div>
               )}
@@ -2104,6 +2223,9 @@ export default function App() {
 
       <footer className="dv-footer">
         DRAMOVIX+ · Sempre tem uma nova história.
+        <p>
+          Plataforma em desenvolvimento. Novidades chegando em breve! ❤️
+        </p>
       </footer>
 
       {playerOpen && (
