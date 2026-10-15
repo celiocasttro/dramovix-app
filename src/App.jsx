@@ -4,6 +4,8 @@ import { supabase } from "./supabase";
 import Hls from "hls.js";
 import "./App.css";
 
+
+
 const ZNATION_URL =
   "https://epg.provider.plex.tv/library/parts/646546f35db8ada4c8edd7e5-67d1be3696c7b08c26c19d64.m3u8?includeAllStreams=1&x-plex-product=Plex+Mediaverse&x-plex-token=MZFkHw1Atc9c9bZLRyWw&auto=0";
 
@@ -12,6 +14,8 @@ const DEFAULT_COVER =
 
 const DEFAULT_MOVIE_COVER =
   "https://svinrjrlrlitipleiccb.supabase.co/storage/v1/object/public/dramovix-videos/Capas/Znation.PNG";
+
+
 
 const LIVE_SERIES = {
   id: "live-znation",
