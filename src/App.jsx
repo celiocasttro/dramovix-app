@@ -4,7 +4,10 @@ import { supabase } from "./supabase";
 import Hls from "hls.js";
 import "./App.css";
 
+const CHRIS_TITLE = "Todo Mundo Odeia o Chris";
 
+const CHRIS_COVER =
+  "https://svinrjrlrlitipleiccb.supabase.co/storage/v1/object/public/dramovix-videos/Capas/CHRIS%20TEMP4.png";
 
 const ZNATION_URL =
   "https://epg.provider.plex.tv/library/parts/646546f35db8ada4c8edd7e5-67d1be3696c7b08c26c19d64.m3u8?includeAllStreams=1&x-plex-product=Plex+Mediaverse&x-plex-token=MZFkHw1Atc9c9bZLRyWw&auto=0";
@@ -15,7 +18,217 @@ const DEFAULT_COVER =
 const DEFAULT_MOVIE_COVER =
   "https://svinrjrlrlitipleiccb.supabase.co/storage/v1/object/public/dramovix-videos/Capas/Znation.PNG";
 
+const CHRIS_EPISODES = [
+  {
+    id: "chris-s4-ep-1",
+    title: "Episódio 1",
+    episode_number: 1,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636141/mp4/06a9d3ea52f2ca3c622c0f908ae3464fe7fa47d698f411e856f893710cba423a.mp4?secure=sdPb9xRPETR-6T9mmqr2Uw%3D%3D%2C1791942986",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-2",
+    title: "Episódio 2",
+    episode_number: 2,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636145/mp4/b9b21e4b0b5266b4a844c298bc32fb9c924f669f20ef07610f9259a5af1ac457.mp4?secure=CDvKQ7hv1N6tmdFbkEml9g%3D%3D%2C1791943214",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-3",
+    title: "Episódio 3",
+    episode_number: 3,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636150/mp4/4c5e0c2048c576ca59ac07dded31754547f843d641dd7862a97634eb8e2d63c7.mp4?secure=7aitJRF5Vgnzzc-TD1oWhg%3D%3D%2C1791943246",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-4",
+    title: "Episódio 4",
+    episode_number: 4,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636153/mp4/5d7ae6fa268ffb9ccb458bedc5acbcc0309f1af9895914485d47e461e1731d8e.mp4?secure=_GSKKh1jEoXr7DemqknWOA%3D%3D%2C1791943437",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-5",
+    title: "Episódio 5",
+    episode_number: 5,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636159/mp4/fe2fbdb7ef8639f7298f3dec41f00ee1a09ce637776604cf1a0438d47d757db5.mp4?secure=ZftfL-apKOQhDjPrbfGTNw%3D%3D%2C1791943176",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-6",
+    title: "Episódio 6",
+    episode_number: 6,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636165/mp4/a5ed57a34ec54a7269882c14535e86e973ac92850485e043cd2055ff8577f5aa.mp4?secure=UIXa7VIcdnHN0UpS80OeGw%3D%3D%2C1791942256",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-7",
+    title: "Episódio 7",
+    episode_number: 7,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636168/mp4/7d81e095149366190fa688f85520c6831aa5748b67bcdecd221f5d78cdbad6a4.mp4?secure=M8wtHs8pWTDC_Wvsi-TMPg%3D%3D%2C1791943510",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-8",
+    title: "Episódio 8",
+    episode_number: 8,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636171/mp4/e50ea655d2e94fd095048a07369a5ad3dbb64dacee08b45822f08a6a37b88f06.mp4?secure=XpSSswVxeexkmptszHWMAQ%3D%3D%2C1791943533",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-9",
+    title: "Episódio 9",
+    episode_number: 9,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636175/mp4/79de605fcf1f3768eeece43490ca5767a495412659697c99aae7b4fe38ba8ddd.mp4?secure=Iiz3TA9tU4bebNN0e3liew%3D%3D%2C1791942623",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-10",
+    title: "Episódio 10",
+    episode_number: 10,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636178/mp4/fc1dbff31eaa2120c1ba379a2923c08c45b985fc2b2a5e4ac23a0b7e9ef6e266.mp4?secure=mWxrkFerGzeXEbbaQ0REOA%3D%3D%2C1791943661",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-11",
+    title: "Episódio 11",
+    episode_number: 11,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636184/mp4/79a40db9a7239fa8cfc23b3d2a09caf8aca9f738410b615c42b83becd12900ea.mp4?secure=rQdwvb6NJF0jL2ivyqam6w%3D%3D%2C1791943679",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-12",
+    title: "Episódio 12",
+    episode_number: 12,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636192/mp4/045e4f79ee0b664bd0053646ada353d9c07b78db3ae21ef3d71719374175f969.mp4?secure=VYJTkds8ce3jJldEAF5bCg%3D%3D%2C1791943277",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-13",
+    title: "Episódio 13",
+    episode_number: 13,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636194/mp4/a01c22e56a786b95b0574891b92c0291f23fee2b5f143fc49cba8dd884b0d432.mp4?secure=qX8BF8D_o4LAKWA8WvjW5g%3D%3D%2C1791943738",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-14",
+    title: "Episódio 14",
+    episode_number: 14,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636196/mp4/b78f787c4ac1437ed84949db08bb7028a038da5a4e6ff22238f437250091e2df.mp4?secure=AlTiO8u_XO-Qe7fi2BecGg%3D%3D%2C1791943145",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-15",
+    title: "Episódio 15",
+    episode_number: 15,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636201/mp4/1c72672a81e4daea6bb305b69f46626409be7e6c98d4840689ab8828bfad3c83.mp4?secure=pSHlnMaEKqOTqpF6Bacyhw%3D%3D%2C1791943791",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-16",
+    title: "Episódio 16",
+    episode_number: 16,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636206/mp4/2ab2134c0209d14474fabb53cd1cb1332b788bde9be6c21c18e69cb9f435590d.mp4?secure=kJjPqsHVKBqWkYR2m8QXfg%3D%3D%2C1791943817",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-17",
+    title: "Episódio 17",
+    episode_number: 17,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636209/mp4/81e667d6089a76953909190c9785f89206adc120ca3738a3b15be1e04a895e13.mp4?secure=aqLK1CACDarZdP7ytawsmw%3D%3D%2C1791942855",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-18",
+    title: "Episódio 18",
+    episode_number: 18,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636216/mp4/e577caca3f2efa7b446de3636c6f03efac1fd38b6cdf958d0a329d26b4f234cd.mp4?secure=z9L5yBzsEcTFD2yg4wo49g%3D%3D%2C1791943855",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-19",
+    title: "Episódio 19",
+    episode_number: 19,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636222/mp4/dae74a16de2a9183d5abe572c4fae03ee52645483a383d6d5156701154f798c9.mp4?secure=rRr9vwaieuwqXdHe1qi8zQ%3D%3D%2C1791943891",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-20",
+    title: "Episódio 20",
+    episode_number: 20,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636225/mp4/04a8a190e3ba693171baee4b732c18137dad6c800a1be8f76b26533c21095b35.mp4?secure=KNMb_FmsYuJIeJgEXbpGHQ%3D%3D%2C1791943910",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-21",
+    title: "Episódio 21",
+    episode_number: 21,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636229/mp4/61a3a063993f2a55acec54eea140f4dae57b3d4d726469f3de4d36ac39399d3f.mp4?secure=60MemR67F9Mkh3hFPV6z-A%3D%3D%2C1791943927",
+    isChrisEpisode: true,
+  },
+  {
+    id: "chris-s4-ep-22",
+    title: "Episódio 22",
+    episode_number: 22,
+    season_number: 4,
+    video_url:
+      "https://cdnst70.tokyvideo.com/videos/636/636230/mp4/d5412af27357ef2595289cdae6cbc9ef3e204cb90bc3dd8960d73889972fa7d1.mp4?secure=cMijEbbfxvHhVG4RbLo8GQ%3D%3D%2C1791943519",
+    isChrisEpisode: true,
+  },
+];
 
+const CHRIS_SERIES = {
+  id: "chris-series",
+  title: CHRIS_TITLE,
+  category: "Comédia",
+  description:
+    "Acompanhe as aventuras e confusões de Chris e sua família.",
+  image: CHRIS_COVER,
+  isChris: true,
+  episodes: CHRIS_EPISODES,
+};
 
 const LIVE_SERIES = {
   id: "live-znation",
