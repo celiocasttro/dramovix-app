@@ -32,7 +32,27 @@ jobs:
       - name: Instalar dependências
         run: npm install
 
+      - name: Verificar configurações do Supabase
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ]; then
+            echo "::error::Falta configurar VITE_SUPABASE_URL nos Secrets."
+            exit 1
+          fi
+
+          if [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::Falta configurar VITE_SUPABASE_ANON_KEY nos Secrets."
+            exit 1
+          fi
+
+          echo "As duas configurações do Supabase estão presentes."
+
       - name: Compilar DRAMOVIX
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Preparar Android
@@ -69,7 +89,27 @@ jobs:
       - name: Instalar dependências
         run: npm install
 
+      - name: Verificar configurações do Supabase
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ]; then
+            echo "::error::Falta configurar VITE_SUPABASE_URL nos Secrets."
+            exit 1
+          fi
+
+          if [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::Falta configurar VITE_SUPABASE_ANON_KEY nos Secrets."
+            exit 1
+          fi
+
+          echo "As duas configurações do Supabase estão presentes."
+
       - name: Compilar DRAMOVIX
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Preparar iOS
