@@ -714,17 +714,17 @@ button, input {
 }
 
 /* ========================================
-   PLAYER MODAL (ESTILO SHORTS / VERTICAL SEM BORDAS)
+   PLAYER MODAL DINÂMICO (SUPORTE RETRATO E PAISAGEM)
 ======================================== */
 .dv-player-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  background: rgba(0, 0, 0, 0.98);
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.95);
   backdrop-filter: blur(14px);
 }
 
@@ -732,206 +732,129 @@ button, input {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  max-width: 440px;
-  height: 100vh;
-  height: 100dvh;
-  max-height: 100vh;
-  border: 0;
-  border-radius: 0;
-  background: #000;
+  width: min(100%, 900px);
+  max-height: calc(100vh - 24px);
+  border: 1px solid rgba(229, 9, 20, 0.3);
+  border-radius: 16px;
+  background: #0d0808;
   box-shadow: 0 25px 80px rgba(0,0,0,0.9);
   overflow: hidden;
 }
 
-@media (min-width: 768px) {
-  .dv-player-modal {
-    height: 90vh;
-    border-radius: 16px;
-    border: 1px solid rgba(229, 9, 20, 0.3);
-  }
+.dv-player-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: #110808;
 }
 
+.dv-player-heading strong {
+  display: block;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.dv-player-heading small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.dv-player-close {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  background: #1a0f0f;
+  font-size: 20px;
+}
+
+/* Container do Vídeo adaptativo */
 .dv-video-wrap {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #000;
+  width: 100%;
   overflow: hidden;
-  z-index: 1;
+}
+
+/* Retrato (Shorts / Minisséries - 9:16) */
+.dv-video-wrap--portrait {
+  width: min(100%, 420px);
+  aspect-ratio: 9 / 16;
+  max-height: 70vh;
+  margin: 0 auto;
+}
+
+.dv-video-wrap--portrait .dv-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover !important;
+}
+
+/* Paisagem (Filmes / Ao Vivo - 16:9) */
+.dv-video-wrap--landscape {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 75vh;
+  margin: 0 auto;
+}
+
+.dv-video-wrap--landscape .dv-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain !important;
 }
 
 .dv-video {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
+  display: block;
+  width: 100%;
+  height: 100%;
   background: #000;
 }
 
-.dv-shorts-ui {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 16px;
-  background: linear-gradient(
-    180deg,
-    rgba(0,0,0,0.5) 0%,
-    transparent 20%,
-    transparent 60%,
-    rgba(0,0,0,0.9) 100%
-  );
-  pointer-events: none;
-}
-
-.dv-shorts-ui > * {
-  pointer-events: auto;
-}
-
-.dv-shorts-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: env(safe-area-inset-top);
-}
-
-.dv-shorts-back, .dv-shorts-speed {
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  border-radius: 20px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  backdrop-filter: blur(10px);
-}
-
-.dv-shorts-sidebar {
-  position: absolute;
-  right: 16px;
-  bottom: 120px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 18px;
-  z-index: 10;
-}
-
-.dv-shorts-action-btn {
-  background: transparent;
-  border: none;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.dv-shorts-action-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  display: grid;
-  place-items: center;
-  font-size: 20px;
-}
-
-.dv-shorts-action-btn.liked .dv-shorts-action-icon {
-  color: #e50914;
-  border-color: rgba(229, 9, 20, 0.6);
-}
-
-.dv-shorts-bottom {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-bottom: 10px;
-}
-
-.dv-shorts-tags {
-  display: flex;
-  gap: 6px;
-}
-
-.dv-shorts-tag {
-  background: rgba(229, 9, 20, 0.3);
-  backdrop-filter: blur(6px);
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #fca5a5;
-  border: 1px solid rgba(229, 9, 20, 0.4);
-}
-
-.dv-shorts-title-row {
-  color: white;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.dv-shorts-desc {
-  color: #d1d5db;
-  font-size: 12px;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin: 0;
-}
-
-.dv-shorts-episodes-bar {
-  background: rgba(20, 10, 10, 0.85);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(229, 9, 20, 0.3);
-  border-radius: 12px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: white;
-  cursor: pointer;
-  margin-top: 6px;
-}
-
-.dv-shorts-episodes-bar:hover {
-  background: rgba(35, 12, 12, 0.9);
-}
-
-.dv-shorts-episodes-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  font-weight: 700;
-}
-
 .dv-player-error {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0,0,0,0.9);
-  padding: 16px;
-  border-radius: 12px;
+  padding: 12px 16px;
   color: #fca5a5;
+  font-size: 12px;
   text-align: center;
-  z-index: 20;
-  max-width: 80%;
-  border: 1px solid var(--red-primary);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.dv-player-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: #110808;
+}
+
+.dv-player-bottom span {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.dv-player-next {
+  padding: 8px 14px;
+  color: white;
+  border: 0;
+  border-radius: 8px;
+  background: #e50914;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(229, 9, 20, 0.4);
 }
 
 /* ========================================
