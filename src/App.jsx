@@ -39,7 +39,7 @@ export default function App() {
   const [selectedEpisode, setSelectedEpisode] = useState(null);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
-  const [page, setPage] = useState("inicio");
+  const [page, setPage] = useState("curtas"); // Alterado para iniciar na aba Curtas
 
   const [favorites, setFavorites] = useState(() => {
     try {
@@ -523,17 +523,12 @@ export default function App() {
   const favoriteSeries = series.filter((item) => isFavorite(item));
   const favoriteMovies = movies.filter((item) => isFavorite(item));
 
-  const isLandscapePlayer =
-    Boolean(selectedEpisode?.isMovie) ||
-    Boolean(selectedEpisode?.isLive) ||
-    Boolean(selectedSeries?.isLive);
-
   return (
     <div className="dv-app">
       <header className="dv-header">
         <button
           className="dv-logo"
-          onClick={() => goToPage("inicio")}
+          onClick={() => goToPage("curtas")}
           aria-label="DRAMOVIX início"
         >
           DRAMOVIX<span>+</span>
@@ -548,51 +543,39 @@ export default function App() {
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value);
-                if (page === "inicio") setPage("minisseries");
+                if (page === "curtas") setPage("explorar");
               }}
             />
           </label>
         </div>
       </header>
 
-      {/* Barra de Navegação Inferior (Estilo App / Imagens de Referência) */}
+      {/* Nova Barra de Navegação Inferior (Curtas, Tendências, Explorar, Lista, Meu) */}
       <nav className="dv-nav" aria-label="Navegação principal">
         {[
-          ["inicio", "⚡ Curtas", "Início"],
-          ["minisseries", "🎬 Tendências", "Minisséries"],
-          ["filmes", "🗂️ Explorar", "Filmes"],
-          ["ao-vivo", "📡 Ao vivo", "Ao vivo"],
-          ["favoritos", "👤 Meu", `Favoritos (${favorites.length})`],
-        ].map(([key, iconLabel, altLabel]) => (
+          ["curtas", "🏠", "Curtas"],
+          ["tendencias", "📈", "Tendências"],
+          ["explorar", "🗂️", "Explorar"],
+          ["lista", "📋", "Lista"],
+          ["meu", "👤", "Meu"],
+        ].map(([key, icon, label]) => (
           <button
             key={key}
             className={page === key ? "active" : ""}
             onClick={() => goToPage(key)}
           >
-            <span style={{ fontSize: "15px" }}>{iconLabel.split(" ")[0]}</span>
-            <span>{iconLabel.split(" ")[1] || altLabel}</span>
+            <span style={{ fontSize: "16px" }}>{icon}</span>
+            <span>{label}</span>
           </button>
         ))}
       </nav>
-
-      <aside className="dv-development-notice" role="status">
-        <div className="dv-development-icon" aria-hidden="true">
-          🚧
-        </div>
-        <div className="dv-development-content">
-          <h2>DRAMOVIX EM DESENVOLVIMENTO</h2>
-          <p>
-            Novas histórias e episódios adicionados com frequência através do Supabase. Obrigado por acompanhar! ❤️
-          </p>
-        </div>
-      </aside>
 
       <main className="dv-main">
         {page === "detalhes" && selectedSeries && (
           <section className="dv-detail">
             <button
               className="dv-back"
-              onClick={() => goToPage("minisseries")}
+              onClick={() => goToPage("explorar")}
             >
               ← Voltar ao catálogo
             </button>
@@ -693,16 +676,16 @@ export default function App() {
           </section>
         )}
 
-        {page === "inicio" && (
+        {page === "curtas" && (
           <>
             <section className="dv-hero">
               <div className="dv-hero-content">
-                <span className="dv-eyebrow">✦ DRAMOVIX+ ORIGINAIS</span>
+                <span className="dv-eyebrow">✦ DRAMOVIX+ CURTAS</span>
                 <h1>Sempre tem uma nova história.</h1>
-                <p>Explore dramas eletrizantes, romances intensos e muito mais.</p>
+                <p>Explore os minidramas mais populares e assistidos agora.</p>
                 <button
                   className="dv-button-primary"
-                  onClick={() => goToPage("minisseries")}
+                  onClick={() => goToPage("explorar")}
                 >
                   Explorar catálogo →
                 </button>
@@ -712,85 +695,33 @@ export default function App() {
             <section className="dv-section">
               <div className="dv-section-heading">
                 <div>
-                  <h2>Categorias</h2>
-                </div>
-              </div>
-              <div className="dv-categories">
-                {categories.map((item) => (
-                  <button
-                    key={item}
-                    className={`dv-category-button ${
-                      category === item ? "active" : ""
-                    }`}
-                    onClick={() => {
-                      setCategory(item);
-                      setPage("minisseries");
-                    }}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="dv-section">
-              <div className="dv-section-heading">
-                <div>
-                  <h2>Hot Shorts & Destaques</h2>
+                  <h2>Em Destaque (Curtas)</h2>
                   <p>As tramas mais comentadas do momento.</p>
                 </div>
               </div>
               {renderGrid(filteredSeries.slice(0, 8))}
             </section>
-
-            <section className="dv-section">
-              <div className="dv-section-heading">
-                <div>
-                  <h2>Canais ao vivo</h2>
-                </div>
-                <button
-                  className="dv-description-toggle"
-                  onClick={() => goToPage("ao-vivo")}
-                >
-                  Ver todos →
-                </button>
-              </div>
-              {liveChannelsLoading ? (
-                <p className="dv-message">Carregando transmissões...</p>
-              ) : (
-                renderGrid(
-                  [
-                    ...liveChannels.slice(0, 4),
-                    ...(liveChannels.some(
-                      (item) => normalize(item.title) === normalize("Z Nation")
-                    )
-                      ? []
-                      : [LIVE_SERIES]),
-                  ].slice(0, 4),
-                  "live"
-                )
-              )}
-            </section>
-
-            {movies.length > 0 && (
-              <section className="dv-section">
-                <div className="dv-section-heading">
-                  <div>
-                    <h2>Filmes em destaque</h2>
-                  </div>
-                </div>
-                {renderGrid(filteredMovies.slice(0, 4), "movie")}
-              </section>
-            )}
           </>
         )}
 
-        {page === "minisseries" && (
+        {page === "tendencias" && (
           <section className="dv-section">
             <div className="dv-section-heading">
               <div>
-                <h2>Minisséries</h2>
-                <p>Escolha sua próxima maratona.</p>
+                <h2>Tendências em Alta</h2>
+                <p>O que todo mundo está assistindo hoje.</p>
+              </div>
+            </div>
+            {renderGrid(filteredSeries)}
+          </section>
+        )}
+
+        {page === "explorar" && (
+          <section className="dv-section">
+            <div className="dv-section-heading">
+              <div>
+                <h2>Explorar Plataforma</h2>
+                <p>Filtre por categorias e encontre sua próxima maratona.</p>
               </div>
             </div>
 
@@ -812,66 +743,64 @@ export default function App() {
           </section>
         )}
 
-        {page === "filmes" && (
+        {page === "lista" && (
           <section className="dv-section">
             <div className="dv-section-heading">
               <div>
-                <h2>Filmes</h2>
-                <p>Longas metragens disponíveis.</p>
+                <h2>Minha Lista</h2>
+                <p>Seus conteúdos salvos favoritos.</p>
               </div>
             </div>
-            {renderGrid(filteredMovies, "movie")}
-          </section>
-        )}
 
-        {page === "ao-vivo" && (
-          <section className="dv-section">
-            <div className="dv-section-heading">
-              <div>
-                <h2>Transmissões ao vivo</h2>
+            {favoriteSeries.length === 0 && favoriteMovies.length === 0 ? (
+              <div className="dv-empty">
+                <span>🎬</span>
+                <h3>Sem conteúdo ainda</h3>
+                <p>Adicione séries ou filmes aos favoritos para vê-los aqui.</p>
               </div>
-            </div>
-            {liveChannelsLoading ? (
-              <p className="dv-message">Carregando...</p>
             ) : (
-              renderGrid(
-                [
-                  ...filteredLiveChannels,
-                  ...(liveChannels.some(
-                    (item) => normalize(item.title) === normalize("Z Nation")
-                  )
-                    ? []
-                    : [LIVE_SERIES]),
-                ],
-                "live"
-              )
+              <>
+                {favoriteSeries.length > 0 && renderGrid(favoriteSeries)}
+                {favoriteMovies.length > 0 && renderGrid(favoriteMovies, "movie")}
+              </>
             )}
           </section>
         )}
 
-        {page === "favoritos" && (
-          <>
-            <section className="dv-section">
-              <div className="dv-section-heading">
-                <div>
-                  <h2>Minha Lista / Favoritos</h2>
-                  <p>Conteúdos salvos no seu dispositivo.</p>
-                </div>
+        {page === "meu" && (
+          <section className="dv-section">
+            <div className="dv-section-heading">
+              <div>
+                <h2>Meu Perfil</h2>
               </div>
-              {renderGrid(favoriteSeries)}
-            </section>
+            </div>
 
-            {favoriteMovies.length > 0 && (
-              <section className="dv-section">
-                <div className="dv-section-heading">
-                  <div>
-                    <h2>Filmes Favoritos</h2>
-                  </div>
-                </div>
-                {renderGrid(favoriteMovies, "movie")}
-              </section>
-            )}
-          </>
+            <div style={{ display: "grid", gap: "12px", maxWidth: "500px", margin: "20px auto" }}>
+              <div className="dv-episode" style={{ justifyContent: "space-between" }}>
+                <span>Mudança de linguagem</span>
+                <span>›</span>
+              </div>
+              <div className="dv-episode" style={{ justifyContent: "space-between" }}>
+                <span>Minha ordem</span>
+                <span>›</span>
+              </div>
+              <div className="dv-episode" style={{ justifyContent: "space-between" }}>
+                <span>Opinião</span>
+                <span>›</span>
+              </div>
+              <div className="dv-episode" style={{ justifyContent: "space-between" }}>
+                <span>Limpar cache</span>
+                <span>›</span>
+              </div>
+              <div className="dv-episode" style={{ justifyContent: "space-between" }}>
+                <span>Atendimento ao cliente</span>
+                <span>›</span>
+              </div>
+              <p style={{ textAlign: "center", color: "var(--text-muted)", marginTop: "20px", fontSize: "12px" }}>
+                ID: 21830627
+              </p>
+            </div>
+          </section>
         )}
       </main>
 
@@ -879,56 +808,28 @@ export default function App() {
         DRAMOVIX+ · Sempre tem uma nova história.
       </footer>
 
+      {/* Player Estilo Shorts (Preenchimento Total) */}
       {playerOpen && (
-        <div
-          className="dv-player-overlay"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closePlayer();
-          }}
-        >
+        <div className="dv-player-overlay">
           <div
             className="dv-player-modal"
             role="dialog"
             aria-modal="true"
-            aria-label="Player"
+            aria-label="Player de Vídeo"
           >
-            <div className="dv-player-top">
-              <div className="dv-player-heading">
-                <strong>
-                  {selectedEpisode?.title || selectedSeries?.title || "Reproduzindo"}
-                </strong>
-                <small>
-                  {selectedEpisode?.isLive
-                    ? "Ao vivo"
-                    : selectedEpisode?.isMovie
-                    ? "Filme"
-                    : selectedSeries?.title || "DRAMOVIX+"}
-                </small>
-              </div>
-
-              <button
-                className="dv-player-close"
-                onClick={closePlayer}
-                aria-label="Fechar"
-              >
-                ×
-              </button>
-            </div>
-
-            <div
-              className={`dv-video-wrap ${
-                isLandscapePlayer
-                  ? "dv-video-wrap--landscape"
-                  : "dv-video-wrap--portrait"
-              }`}
-            >
+            <div className="dv-video-wrap">
               <video
                 key={selectedEpisode?.id || "video-player"}
                 ref={videoRef}
                 className="dv-video"
-                controls
+                controls={false}
                 playsInline
-                preload="metadata"
+                autoPlay
+                preload="auto"
+                onClick={(e) => {
+                  if (e.target.paused) e.target.play();
+                  else e.target.pause();
+                }}
                 onEnded={handleVideoEnded}
               />
             </div>
@@ -939,32 +840,84 @@ export default function App() {
               </div>
             )}
 
-            <div className="dv-player-bottom">
-              <span>
-                {selectedEpisode?.isLive
-                  ? "Transmissão ao vivo"
-                  : selectedEpisode?.isMovie
-                  ? "Filme · DRAMOVIX+"
-                  : selectedEpisode?.episode_number
-                  ? `Episódio ${selectedEpisode.episode_number}`
-                  : "DRAMOVIX+"}
-              </span>
-
-              {!selectedEpisode?.isLive && !selectedEpisode?.isMovie && (
-                <button
-                  className="dv-player-next"
-                  onClick={playNextEpisode}
-                  disabled={
-                    !episodes.length ||
-                    episodes.findIndex(
-                      (ep) => ep.id === selectedEpisode?.id
-                    ) >=
-                      episodes.length - 1
-                  }
-                >
-                  Próximo episódio →
+            <div className="dv-shorts-ui">
+              <div className="dv-shorts-top">
+                <button className="dv-shorts-back" onClick={closePlayer}>
+                  ❮ Voltar
                 </button>
-              )}
+                <button
+                  className="dv-shorts-speed"
+                  onClick={() => {
+                    if (videoRef.current) {
+                      const speeds = [1, 1.25, 1.5, 2];
+                      const next = speeds[(speeds.indexOf(videoRef.current.playbackRate) + 1) % speeds.length];
+                      videoRef.current.playbackRate = next;
+                    }
+                  }}
+                >
+                  ⏱️ Velocidade
+                </button>
+              </div>
+
+              <div className="dv-shorts-sidebar">
+                <button
+                  className={`dv-shorts-action-btn ${
+                    isFavorite(selectedSeries || {}) ? "liked" : ""
+                  }`}
+                  onClick={() => selectedSeries && toggleFavorite(selectedSeries)}
+                >
+                  <div className="dv-shorts-action-icon">
+                    {isFavorite(selectedSeries || {}) ? "♥" : "♡"}
+                  </div>
+                  <span>Favorito</span>
+                </button>
+
+                <button
+                  className="dv-shorts-action-btn"
+                  onClick={playNextEpisode}
+                >
+                  <div className="dv-shorts-action-icon">⏭️</div>
+                  <span>Próximo</span>
+                </button>
+              </div>
+
+              <div className="dv-shorts-bottom">
+                <div className="dv-shorts-tags">
+                  <span className="dv-shorts-tag">
+                    {selectedSeries?.category || "Dramovix"}
+                  </span>
+                  <span className="dv-shorts-tag">Dublado / HD</span>
+                </div>
+
+                <div className="dv-shorts-title-row">
+                  <span>
+                    {selectedSeries?.title || "Dramovix+"}
+                  </span>
+                </div>
+
+                <p className="dv-shorts-desc">
+                  {selectedEpisode?.title ||
+                    selectedSeries?.description ||
+                    "Assista agora com alta qualidade e sem travar."}
+                </p>
+
+                {!selectedEpisode?.isLive && !selectedEpisode?.isMovie && episodes.length > 0 && (
+                  <div
+                    className="dv-shorts-episodes-bar"
+                    onClick={() => {
+                      playNextEpisode();
+                    }}
+                  >
+                    <div className="dv-shorts-episodes-left">
+                      <span>📦</span>
+                      <span>
+                        EP.{selectedEpisode?.episode_number || 1} / EP.{episodes.length}
+                      </span>
+                    </div>
+                    <span>∧</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
