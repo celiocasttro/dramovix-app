@@ -56,7 +56,7 @@ export default function App() {
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerError, setPlayerError] = useState("");
   const [showDescription, setShowDescription] = useState(false);
-  const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false); // Estado para abrir a gaveta de episódios no player
+  const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false);
 
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -558,13 +558,13 @@ export default function App() {
         </div>
       </header>
 
-      {/* Barra de Navegação Inferior (Início, Explorar, Favoritos, Downloads, Mais) */}
+      {/* Barra de Navegação Inferior (Início, Séries/TV, Explorar, Favoritos, Mais) */}
       <nav className="dv-nav" aria-label="Navegação principal">
         {[
           ["inicio", "🏠", "Início"],
+          ["series-tv", "📺", "Séries/TV"],
           ["explorar", "🗂️", "Explorar"],
           ["favoritos", "♥", "Favoritos"],
-          ["downloads", "📥", "Downloads"],
           ["mais", "⚙️", "Mais"],
         ].map(([key, icon, label]) => (
           <button
@@ -588,6 +588,7 @@ export default function App() {
               ← Voltar ao catálogo
             </button>
 
+            {/* Informações organizadas abaixo da capa em linha reta */}
             <div className="dv-detail-header">
               <img
                 className="dv-detail-cover"
@@ -600,7 +601,7 @@ export default function App() {
               />
 
               <div className="dv-detail-info">
-                <span className="dv-eyebrow">
+                <span className="dv-eyebrow" style={{ color: "#fca5a5" }}>
                   {selectedSeries.category || "DRAMA"}
                 </span>
                 <h1>{selectedSeries.title}</h1>
@@ -666,7 +667,7 @@ export default function App() {
                         <strong>
                           {episode.title || `Episódio ${index + 1}`}
                         </strong>
-                        <small>
+                        <small style={{ color: "#fca5a5" }}>
                           {episode.video_url ? "Pronto para reprodução" : "Em breve"}
                         </small>
                       </span>
@@ -709,9 +710,9 @@ export default function App() {
                 <span className="dv-style-cat-icon">🎬</span>
                 <span>Filmes</span>
               </div>
-              <div className="dv-style-cat-card" onClick={() => { setCategory("Séries"); setPage("explorar"); }}>
+              <div className="dv-style-cat-card" onClick={() => { setCategory("Séries"); setPage("series-tv"); }}>
                 <span className="dv-style-cat-icon">📺</span>
-                <span>Séries</span>
+                <span>Séries/TV</span>
               </div>
               <div className="dv-style-cat-card" onClick={() => { setCategory("Animes"); setPage("explorar"); }}>
                 <span className="dv-style-cat-icon">⚡</span>
@@ -740,7 +741,7 @@ export default function App() {
                 </div>
                 <button
                   className="dv-description-toggle"
-                  onClick={() => goToPage("explorar")}
+                  onClick={() => goToPage("series-tv")}
                 >
                   Ver todos →
                 </button>
@@ -751,18 +752,46 @@ export default function App() {
               ) : (
                 renderGrid(
                   [
-                    ...liveChannels.slice(0, 4),
+                    ...liveChannels,
                     ...(liveChannels.some(
                       (item) => normalize(item.title) === normalize("Z Nation")
                     )
                       ? []
                       : [LIVE_SERIES]),
-                  ].slice(0, 4),
+                  ],
                   "live"
                 )
               )}
             </section>
           </>
+        )}
+
+        {/* Aba Séries/TV contendo os canais e conteúdos ao vivo */}
+        {page === "series-tv" && (
+          <section className="dv-section">
+            <div className="dv-section-heading">
+              <div>
+                <h2>Séries & TV Online (Ao Vivo)</h2>
+                <p>Assista aos canais de TV e transmissões disponíveis.</p>
+              </div>
+            </div>
+
+            {liveChannelsLoading ? (
+              <p className="dv-message">Carregando canais ao vivo...</p>
+            ) : (
+              renderGrid(
+                [
+                  ...liveChannels,
+                  ...(liveChannels.some(
+                    (item) => normalize(item.title) === normalize("Z Nation")
+                  )
+                    ? []
+                    : [LIVE_SERIES]),
+                ],
+                "live"
+              )
+            )}
+          </section>
         )}
 
         {page === "explorar" && (
@@ -868,7 +897,6 @@ export default function App() {
         DRAMOVIX+ · Diversão sem limites no seu celular.
       </footer>
 
-      {/* Player com Opção de Gaveta de Episódios (Setinha) e Próximo Episódio */}
       {playerOpen && (
         <div
           className="dv-player-overlay"
@@ -887,7 +915,7 @@ export default function App() {
                 <strong>
                   {selectedEpisode?.title || selectedSeries?.title || "Reproduzindo"}
                 </strong>
-                <small>
+                <small style={{ color: "#fca5a5" }}>
                   {selectedEpisode?.isLive
                     ? "Ao vivo"
                     : selectedEpisode?.isMovie
@@ -929,7 +957,7 @@ export default function App() {
               </div>
             )}
 
-            {/* Gaveta de Episódios suspensa caso clique na setinha */}
+            {/* Gaveta de Episódios (Setinha para cima) */}
             {episodeDrawerOpen && episodes.length > 0 && (
               <div style={{
                 position: "absolute",
@@ -977,7 +1005,7 @@ export default function App() {
                   <span>{episodeDrawerOpen ? "⌄" : "∧"}</span>
                 </div>
               ) : (
-                <span>
+                <span style={{ color: "#9ca3af" }}>
                   {selectedEpisode?.isLive ? "Transmissão ao vivo" : "Filme · DRAMOVIX+"}
                 </span>
               )}
