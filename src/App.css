@@ -225,7 +225,7 @@ button, input {
   font-size: 12px;
 }
 
-/* Grade de Categorias em Bloco */
+/* Grade de Categorias em Bloco (Tudo em Maiúsculo) */
 .dv-style-categories-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -304,7 +304,7 @@ button, input {
 }
 
 /* ========================================
-   CATÁLOGO / GRID DE CARDS
+   CATÁLOGO / GRID DE CARDS (APENAS CAPA E NOME NA TELA PRINCIPAL)
 ======================================== */
 .dv-grid {
   display: grid !important;
@@ -390,7 +390,7 @@ button, input {
 }
 
 .dv-card-content {
-  padding: 11px 10px 10px;
+  padding: 10px 8px;
   min-width: 0;
 }
 
@@ -403,7 +403,7 @@ button, input {
 }
 
 .dv-card h3 {
-  margin: 5px 0 4px;
+  margin: 4px 0 8px;
   font-family: 'Outfit', sans-serif !important;
   font-size: 13px !important;
   font-weight: 700 !important;
@@ -411,16 +411,6 @@ button, input {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.dv-card p {
-  color: #9ca3af;
-  font-size: 11px;
-  margin: 0 0 10px;
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 
 .dv-card-actions {
@@ -473,7 +463,6 @@ button, input {
   font-size: 13px;
 }
 
-/* Estrutura vertical limpa: Capa em cima, Informações e Botões abaixo em linha reta */
 .dv-detail-header {
   display: flex;
   flex-direction: column;
@@ -517,7 +506,6 @@ button, input {
   max-width: 600px;
 }
 
-/* Informações em linha reta logo abaixo da capa */
 .dv-detail-actions {
   display: flex;
   flex-direction: row;
