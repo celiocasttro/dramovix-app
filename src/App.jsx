@@ -56,6 +56,7 @@ export default function App() {
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerError, setPlayerError] = useState("");
   const [showDescription, setShowDescription] = useState(false);
+  const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false); // Estado para abrir a gaveta de episódios no player
 
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -365,6 +366,7 @@ export default function App() {
     setSelectedEpisode(episode);
     setPlayerError("");
     setPlayerOpen(true);
+    setEpisodeDrawerOpen(false);
   }
 
   function openEpisode(episode) {
@@ -396,6 +398,7 @@ export default function App() {
     setPlayerOpen(false);
     setSelectedEpisode(null);
     setPlayerError("");
+    setEpisodeDrawerOpen(false);
   }
 
   function playNextEpisode() {
@@ -697,7 +700,7 @@ export default function App() {
               </div>
             </section>
 
-            {/* Blocos de categorias visuais (Filmes, Séries, Animes, Doramas) idênticos à imagem[span_2](start_span)[span_2](end_span) */}
+            {/* Categorias visuais (Filmes, Séries, Animes, Doramas) */}
             <div className="dv-section-heading" style={{ marginTop: "15px" }}>
               <h2>Categorias</h2>
             </div>
@@ -865,6 +868,7 @@ export default function App() {
         DRAMOVIX+ · Diversão sem limites no seu celular.
       </footer>
 
+      {/* Player com Opção de Gaveta de Episódios (Setinha) e Próximo Episódio */}
       {playerOpen && (
         <div
           className="dv-player-overlay"
@@ -925,16 +929,58 @@ export default function App() {
               </div>
             )}
 
+            {/* Gaveta de Episódios suspensa caso clique na setinha */}
+            {episodeDrawerOpen && episodes.length > 0 && (
+              <div style={{
+                position: "absolute",
+                bottom: "70px",
+                left: "10px",
+                right: "10px",
+                background: "rgba(10, 4, 4, 0.95)",
+                border: "1px solid rgba(229, 9, 20, 0.4)",
+                borderRadius: "12px",
+                padding: "12px",
+                maxHeight: "200px",
+                overflowY: "auto",
+                zIndex: 30
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "12px", fontWeight: "bold", color: "#fca5a5" }}>
+                  <span>Selecionar Episódio</span>
+                  <span onClick={() => setEpisodeDrawerOpen(false)} style={{ cursor: "pointer" }}>✕</span>
+                </div>
+                {episodes.map((ep, idx) => (
+                  <div
+                    key={ep.id || idx}
+                    onClick={() => openEpisode(ep)}
+                    style={{
+                      padding: "8px 10px",
+                      borderRadius: "6px",
+                      background: selectedEpisode?.id === ep.id ? "rgba(229, 9, 20, 0.3)" : "transparent",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      marginBottom: "4px"
+                    }}
+                  >
+                    Episódio {ep.episode_number || idx + 1}: {ep.title || "Assistir"}
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="dv-player-bottom">
-              <span>
-                {selectedEpisode?.isLive
-                  ? "Transmissão ao vivo"
-                  : selectedEpisode?.isMovie
-                    ? "Filme · DRAMOVIX+"
-                    : selectedEpisode?.episode_number
-                      ? `Episódio ${selectedEpisode.episode_number}`
-                      : "DRAMOVIX+"}
-              </span>
+              {!selectedEpisode?.isLive && !selectedEpisode?.isMovie && episodes.length > 0 ? (
+                <div
+                  onClick={() => setEpisodeDrawerOpen(!episodeDrawerOpen)}
+                  style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "12px", color: "#fca5a5", background: "rgba(229,9,20,0.15)", padding: "6px 10px", borderRadius: "8px", border: "1px solid rgba(229,9,20,0.3)" }}
+                >
+                  <span>📦 EP.{selectedEpisode?.episode_number || 1} / EP.{episodes.length}</span>
+                  <span>{episodeDrawerOpen ? "⌄" : "∧"}</span>
+                </div>
+              ) : (
+                <span>
+                  {selectedEpisode?.isLive ? "Transmissão ao vivo" : "Filme · DRAMOVIX+"}
+                </span>
+              )}
 
               {!selectedEpisode?.isLive && !selectedEpisode?.isMovie && (
                 <button
