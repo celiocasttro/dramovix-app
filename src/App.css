@@ -1,899 +1,227 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
-
-:root {
-  font-family: 'DM Sans', sans-serif;
-  color: #f7f5fc;
-  background: #0b0811;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  font-weight: 400;
-  --bg: #0b0811;
-  --surface: #15101e;
-  --surface-light: #21172e;
-  --purple: #a855f7;
-  --purple-light: #c084fc;
-  --text-muted: #aaa0b8;
-  --border: #ffffff12;
-  --bottom-nav-height: 68px;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html {
-  min-width: 320px;
-  min-height: 100%;
-  scroll-behavior: smooth;
-  background: var(--bg);
-  scrollbar-color: #493354 var(--bg);
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background: var(--bg);
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-button, input, select, textarea {
-  font: inherit;
-}
-
-button {
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-img {
-  max-width: 100%;
-}
-
-button, input {
-  -webkit-appearance: none;
-  appearance: none;
-}
-
 /* ========================================
-   APLICATIVO
-======================================== */
-.dv-app {
-  min-height: 100vh !important;
-  padding-bottom: 90px !important;
-  overflow-x: clip;
-  background: radial-gradient(ellipse at 50% -15%, #35134d55, transparent 45%), var(--bg) !important;
-  color: #fff !important;
-  font-family: 'DM Sans', sans-serif !important;
-}
-
-.dv-app button {
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
-}
-
-.dv-app button:focus-visible,
-.dv-app input:focus-visible {
-  outline: 2px solid var(--purple-light);
-  outline-offset: 3px;
-}
-
-/* ========================================
-   CABEÇALHO
-======================================== */
-.dv-header {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 16px;
-  background: rgba(11, 8, 17, 0.94) !important;
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-}
-
-.dv-logo {
-  flex-shrink: 0;
-  border: 0;
-  background: transparent;
-  color: white;
-  font-family: 'Outfit', sans-serif !important;
-  font-size: 24px !important;
-  font-weight: 800 !important;
-  letter-spacing: -1px;
-  cursor: pointer;
-  padding: 0;
-}
-
-.dv-logo span {
-  color: var(--purple-light);
-}
-
-.dv-header-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  min-width: 0;
-  flex: 1;
-  max-width: 320px;
-}
-
-.dv-search {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: 8px 14px;
-  border: 1px solid #ffffff18;
-  border-radius: 999px;
-  outline: none;
-  background: #171122;
-  color: white;
-}
-
-.dv-search span {
-  color: #94879f;
-  margin-right: 8px;
-}
-
-.dv-search input {
-  width: 100%;
-  border: 0;
-  background: transparent;
-  color: white;
-  outline: none;
-  font-size: 13px;
-}
-
-.dv-search input::placeholder {
-  color: #94879f;
-}
-
-/* ========================================
-   BOTÕES E NAVEGAÇÃO SUPERIOR (DESKTOP)
-======================================== */
-.dv-button, .dv-button-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  min-height: 38px;
-  padding: 8px 16px;
-  border: 1px solid transparent;
-  border-radius: 9px !important;
-  background: linear-gradient(110deg, #9333ea, #b832d8) !important;
-  color: white !important;
-  font-size: 12px;
-  font-weight: 700 !important;
-  text-decoration: none;
-}
-
-.dv-button:hover, .dv-button-primary:hover {
-  filter: brightness(1.12);
-  transform: translateY(-1px);
-}
-
-.dv-button.secondary, .dv-button-secondary {
-  background: #ffffff0b !important;
-  border-color: #ffffff1c;
-  color: #f2eafa !important;
-}
-
-.dv-nav {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  background: #0f0a17;
-  border-bottom: 1px solid var(--border);
-}
-
-.dv-nav::-webkit-scrollbar {
-  display: none;
-}
-
-.dv-nav button {
-  flex-shrink: 0;
-  border: 1px solid #ffffff10;
-  border-radius: 999px;
-  padding: 7px 15px;
-  background: #15101e;
-  color: #bcb1c9;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.dv-nav button:hover {
-  background: #ffffff0b;
-  color: white;
-}
-
-.dv-nav button.active {
-  border-color: var(--purple);
-  background: rgba(168, 85, 247, 0.18);
-  color: var(--purple-light);
-}
-
-/* ========================================
-   CONTEÚDO PRINCIPAL
-======================================== */
-.dv-main {
-  width: 92%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding-top: 15px;
-}
-
-.dv-section-title {
-  margin: 0 0 6px;
-  font-family: 'Outfit', sans-serif !important;
-  font-size: clamp(20px, 3vw, 26px);
-  font-weight: 700 !important;
-  letter-spacing: -0.5px;
-}
-
-.dv-subtitle {
-  margin: 0 0 15px;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-.dv-eyebrow {
-  display: inline-block;
-  color: var(--purple-light);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-}
-
-.dv-section-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 25px 0 12px;
-}
-
-.dv-section-heading h2 {
-  margin: 0;
-  font-family: 'Outfit', sans-serif !important;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.dv-section-heading p {
-  margin: 3px 0 0;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-/* ========================================
-   BANNER (HERO)
-======================================== */
-.dv-hero {
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  align-items: flex-end;
-  min-height: 280px !important;
-  margin: 15px 0 30px !important;
-  padding: 24px !important;
-  overflow: hidden;
-  border: 1px solid #ffffff18 !important;
-  border-radius: 18px !important;
-  background: linear-gradient(120deg, #281237, #140c20);
-  box-shadow: 0 12px 40px #00000044 !important;
-}
-
-.dv-hero-content {
-  width: 100%;
-  max-width: 550px;
-}
-
-.dv-hero h1 {
-  margin: 10px 0;
-  font-family: 'Outfit', sans-serif !important;
-  font-size: clamp(26px, 4vw, 42px) !important;
-  font-weight: 800 !important;
-  line-height: 1.1;
-  letter-spacing: -1px;
-}
-
-.dv-hero p {
-  max-width: 440px;
-  color: #e0d7e9;
-  font-size: 13px;
-  line-height: 1.6;
-  margin-bottom: 16px;
-}
-
-/* ========================================
-   CATEGORIAS (HORIZONTAIS)
-======================================== */
-.dv-categories {
-  display: flex;
-  gap: 8px;
-  margin: 15px 0 22px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.dv-categories::-webkit-scrollbar {
-  display: none;
-}
-
-.dv-category-button {
-  flex: 0 0 auto;
-  padding: 8px 15px;
-  border: 1px solid #ffffff12;
-  border-radius: 999px;
-  background: #15101e;
-  color: #c9bfd3;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.dv-category-button:hover {
-  border-color: #a855f777;
-  color: white;
-}
-
-.dv-category-button.active {
-  border-color: var(--purple) !important;
-  background: linear-gradient(110deg, #792bc0, #982bd0) !important;
-  color: white !important;
-  box-shadow: 0 4px 15px rgba(147, 51, 234, 0.25);
-}
-
-/* ========================================
-   CATÁLOGO / GRID DE CARDS (ESTILO TRENDING/SHORTS)
-======================================== */
-.dv-grid {
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 14px !important;
-  padding-bottom: 25px;
-}
-
-@media (min-width: 768px) {
-  .dv-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    gap: 18px !important;
-  }
-}
-
-@media (min-width: 1100px) {
-  .dv-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  }
-}
-
-.dv-card {
-  position: relative;
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid #ffffff14 !important;
-  border-radius: 12px !important;
-  background: #140f1d !important;
-  box-shadow: 0 6px 20px #00000025;
-  transition: transform 0.2s, border-color 0.2s;
-}
-
-.dv-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(168, 85, 247, 0.4) !important;
-}
-
-.dv-card-image-button {
-  position: relative;
-  display: block;
-  width: 100%;
-  padding: 0;
-  overflow: hidden;
-  border: 0;
-  background: #1d152a;
-  text-align: left;
-}
-
-.dv-card-image {
-  display: block;
-  width: 100% !important;
-  aspect-ratio: 3 / 4 !important;
-  object-fit: cover !important;
-}
-
-.dv-card-play {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  display: grid;
-  width: 36px;
-  height: 36px;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  background: rgba(139, 40, 217, 0.88);
-  color: white;
-  font-size: 13px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-}
-
-.dv-live-badge {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  padding: 4px 7px;
-  border-radius: 4px;
-  background: #e11d48;
-  color: white;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-}
-
-.dv-card-content {
-  padding: 11px 10px 10px;
-  min-width: 0;
-}
-
-.dv-card-category {
-  display: inline-block;
-  color: var(--purple-light);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-}
-
-.dv-card h3 {
-  margin: 5px 0 4px;
-  font-family: 'Outfit', sans-serif !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dv-card p {
-  color: #9d92aa;
-  font-size: 11px;
-  line-height: 1.4;
-  margin: 0 0 10px;
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.dv-card-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.dv-card-actions .dv-button-primary {
-  flex: 1;
-  min-width: 0;
-  padding: 7px 6px;
-  font-size: 10px;
-  min-height: 32px;
-}
-
-.dv-favorite-button {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  place-items: center;
-  border: 1px solid #ffffff1c;
-  border-radius: 8px;
-  background: #1d1629;
-  color: white;
-  font-size: 16px;
-}
-
-.dv-favorite-button.active {
-  color: #fb7185;
-  border-color: rgba(251, 113, 133, 0.4);
-}
-
-/* ========================================
-   AVISO DE DESENVOLVIMENTO
-======================================== */
-.dv-development-notice {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  width: 92%;
-  max-width: 1400px;
-  margin: 15px auto 0;
-  padding: 14px 16px;
-  border: 1px solid rgba(168, 85, 247, 0.3);
-  border-radius: 14px;
-  background: linear-gradient(110deg, rgba(124, 58, 237, 0.15), rgba(236, 72, 153, 0.08)), #110d1a;
-}
-
-.dv-development-icon {
-  display: grid;
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  place-items: center;
-  border-radius: 10px;
-  background: rgba(168, 85, 247, 0.2);
-  font-size: 18px;
-}
-
-.dv-development-content h2 {
-  margin: 0 0 4px;
-  color: #f5d0fe;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.dv-development-content p {
-  margin: 0;
-  color: #c7c8d5;
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-/* ========================================
-   TELA DE DETALHES
-======================================== */
-.dv-detail {
-  max-width: 950px;
-  margin: 10px auto 40px;
-}
-
-.dv-back {
-  margin-bottom: 14px;
-  padding: 6px 0;
-  color: var(--purple-light);
-  border: 0;
-  background: transparent;
-  font-weight: 600;
-  font-size: 13px;
-}
-
-.dv-detail-header {
-  display: grid;
-  grid-template-columns: minmax(160px, 240px) minmax(0, 1fr);
-  gap: 22px;
-  align-items: start;
-  padding: 18px;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: #140f1d;
-}
-
-@media (max-width: 650px) {
-  .dv-detail-header {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-  .dv-detail-cover {
-    width: min(200px, 70%);
-    margin: 0 auto;
-  }
-  .dv-detail-actions {
-    justify-content: center;
-  }
-}
-
-.dv-detail-cover {
-  display: block;
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  object-fit: cover;
-  border-radius: 12px;
-  background: #1d152a;
-}
-
-.dv-detail-info h1 {
-  margin: 8px 0 12px;
-  font-size: clamp(22px, 3.5vw, 32px);
-  line-height: 1.15;
-}
-
-.dv-detail-info p {
-  color: #b8bac9;
-  font-size: 13px;
-  line-height: 1.7;
-  margin-bottom: 14px;
-}
-
-.dv-detail-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.dv-description-toggle {
-  padding: 9px 14px;
-  color: white;
-  border: 1px solid #ffffff18;
-  border-radius: 9px;
-  background: #1e172b;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-/* ========================================
-   EPISÓDIOS
-======================================== */
-.dv-episodes {
-  margin-top: 24px;
-}
-
-.dv-episode-list {
-  display: grid;
-  gap: 8px;
-}
-
-.dv-episode {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 11px 14px;
-  text-align: left;
-  color: white;
-  border: 1px solid #ffffff10;
-  border-radius: 11px;
-  background: #140f1d;
-}
-
-.dv-episode:hover {
-  border-color: var(--purple);
-  background: #1c1428;
-}
-
-.dv-episode-number {
-  display: grid;
-  width: 38px;
-  height: 38px;
-  flex-shrink: 0;
-  place-items: center;
-  border-radius: 9px;
-  background: rgba(168, 85, 247, 0.15);
-  color: #d8b4fe;
-  font-weight: 800;
-  font-size: 13px;
-}
-
-.dv-episode-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.dv-episode-info strong {
-  display: block;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dv-episode-info small {
-  display: block;
-  margin-top: 3px;
-  color: var(--text-muted);
-  font-size: 11px;
-}
-
-.dv-episode-play {
-  color: var(--purple-light);
-  font-size: 16px;
-}
-
-/* ========================================
-   PLAYER MODAL
+   PLAYER ESTILO TIKTOK / SHORTS
 ======================================== */
 .dv-player-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px;
-  background: rgba(4, 3, 7, 0.96);
-  backdrop-filter: blur(14px);
+  background: #000000;
+  overflow: hidden;
 }
 
 .dv-player-modal {
   position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  max-width: 480px; /* Mantém proporção de celular no desktop */
+  background: #000;
   display: flex;
   flex-direction: column;
-  width: min(100%, 850px);
-  max-height: calc(100vh - 20px);
-  border: 1px solid #ffffff18;
-  border-radius: 16px;
-  background: #0b0811;
-  box-shadow: 0 25px 80px rgba(0,0,0,0.7);
-  overflow: hidden;
-}
-
-.dv-player-top {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  background: #110d1a;
-}
-
-.dv-player-heading strong {
-  display: block;
-  font-size: 13px;
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 260px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.8);
 }
 
-.dv-player-heading small {
-  color: var(--text-muted);
-  font-size: 11px;
+@media (min-width: 768px) {
+  .dv-player-modal {
+    border-radius: 20px;
+    height: 92vh;
+  }
 }
 
-.dv-player-close {
-  display: grid;
-  width: 36px;
-  height: 36px;
-  place-items: center;
-  color: white;
-  border: 1px solid #ffffff1c;
-  border-radius: 50%;
-  background: #1c152a;
-  font-size: 20px;
-}
-
+/* Vídeo preenchendo o fundo (Vertical 9:16) */
 .dv-video-wrap {
-  position: relative;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #000;
-  width: 100%;
+  z-index: 1;
 }
 
-.dv-video-wrap--portrait {
-  aspect-ratio: 9 / 16;
-  max-height: 68vh;
-}
-
-.dv-video-wrap--landscape {
-  aspect-ratio: 16 / 9;
-  max-height: 68vh;
-}
-
-.dv-video {
+.dv-video-wrap video, .dv-video {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  background: #000;
+  object-fit: cover; /* Preenche igualzinho ao Shorts/TikTok */
 }
 
-.dv-player-error {
-  padding: 12px 16px;
-  color: #fecaca;
-  font-size: 12px;
-  text-align: center;
-  background: rgba(239, 68, 68, 0.1);
+/* Camada de Controles Flutuantes sobre o Vídeo */
+.dv-shorts-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+  background: linear-gradient(
+    180deg,
+    rgba(0,0,0,0.4) 0%,
+    transparent 20%,
+    transparent 60%,
+    rgba(0,0,0,0.85) 100%
+  );
+  pointer-events: none; /* Permite clicar no vídeo para pausar se nativo */
 }
 
-.dv-player-bottom {
+.dv-shorts-ui > * {
+  pointer-events: auto; /* Reativa cliques nos botões */
+}
+
+/* Topo do Player (Botão Fechar e Velocidade) */
+.dv-shorts-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 12px 16px;
-  border-top: 1px solid var(--border);
-  background: #110d1a;
+  padding-top: env(safe-area-inset-top);
 }
 
-.dv-player-bottom span {
-  color: var(--text-muted);
-  font-size: 11px;
-}
-
-.dv-player-next {
-  padding: 8px 14px;
+.dv-shorts-back, .dv-shorts-speed {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: white;
-  border: 0;
-  border-radius: 8px;
-  background: #8b28d9;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Lado Direito (Curtir, Favoritar, etc) */
+.dv-shorts-sidebar {
+  position: absolute;
+  right: 16px;
+  bottom: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  z-index: 10;
+}
+
+.dv-shorts-action-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
   font-size: 11px;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+  cursor: pointer;
+}
+
+.dv-shorts-action-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+}
+
+.dv-shorts-action-btn.liked .dv-shorts-action-icon {
+  color: #fb7185;
+  border-color: rgba(251, 113, 133, 0.5);
+}
+
+/* Parte Inferior (Tags, Título, Descrição e Seletor de Episódios) */
+.dv-shorts-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 10px;
+}
+
+.dv-shorts-tags {
+  display: flex;
+  gap: 6px;
+}
+
+.dv-shorts-tag {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(6px);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+}
+
+.dv-shorts-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+  font-size: 15px;
   font-weight: 700;
 }
 
-/* ========================================
-   RODAPÉ E BARRA INFERIOR FLUTUANTE (MOBILE NAVIGATION)
-======================================== */
-.dv-footer {
-  padding: 30px 16px 90px;
-  border-top: 1px solid #ffffff0a;
-  color: var(--text-muted);
-  text-align: center;
-  font-size: 11px;
+.dv-shorts-desc {
+  color: #d1d5db;
+  font-size: 12px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
 }
 
-/* Barra de Navegação Estilo Aplicativo (Fixa na parte inferior em celulares) */
-@media (max-width: 768px) {
-  .dv-nav {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 50 !important;
-    display: flex !important;
-    justify-content: space-around !important;
-    align-items: center !important;
-    height: var(--bottom-nav-height) !important;
-    margin: 0 !important;
-    padding: 0 8px calc(0px + env(safe-area-inset-bottom)) !important;
-    background: rgba(11, 8, 17, 0.96) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
-  }
-
-  .dv-nav button {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    height: 100%;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    color: #9b8fa8;
-    font-size: 10px;
-    font-weight: 500;
-  }
-
-  .dv-nav button.active {
-    color: var(--purple-light) !important;
-    background: transparent !important;
-  }
-}
-
-.dv-empty, .dv-message {
-  padding: 40px 15px;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
-.dv-empty span {
-  color: var(--purple-light);
-  font-size: 32px;
-  display: block;
-  margin-bottom: 8px;
-}
-
-.dv-empty h3 {
+/* Barra de Episódios Estilo Gaveta Inferior (como na imagem) */
+.dv-shorts-episodes-bar {
+  background: rgba(30, 30, 35, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   color: white;
-  margin: 0 0 6px;
-  font-size: 16px;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: background 0.2s;
+}
+
+.dv-shorts-episodes-bar:hover {
+  background: rgba(45, 45, 52, 0.9);
+}
+
+.dv-shorts-episodes-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Erro no player */
+.dv-player-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.85);
+  padding: 16px;
+  border-radius: 12px;
+  color: #fca5a5;
+  text-align: center;
+  z-index: 20;
+  max-width: 80%;
 }
