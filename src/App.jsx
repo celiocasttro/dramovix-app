@@ -39,7 +39,7 @@ export default function App() {
   const [selectedEpisode, setSelectedEpisode] = useState(null);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
-  const [page, setPage] = useState("inicio");
+  const [page, setPage] = useState("filmes"); // Inicia na aba Filmes / Início
 
   const [favorites, setFavorites] = useState(() => {
     try {
@@ -467,6 +467,7 @@ export default function App() {
           )}
         </button>
 
+        {/* Mostra apenas Categoria e Nome do Conteúdo na Tela Principal (sem sinopse) */}
         <div className="dv-card-content">
           <span className="dv-card-category">
             {type === "live" ? "AO VIVO" : item.category}
@@ -533,7 +534,7 @@ export default function App() {
       <header className="dv-header">
         <button
           className="dv-logo"
-          onClick={() => goToPage("inicio")}
+          onClick={() => goToPage("filmes")}
           aria-label="DRAMOVIX início"
         >
           DRAMOVIX<span>+</span>
@@ -548,21 +549,21 @@ export default function App() {
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value);
-                if (page === "inicio") setPage("explorar");
+                if (page === "filmes") setPage("explorar");
               }}
             />
           </label>
         </div>
       </header>
 
-      {/* Barra de Navegação Inferior (Início, Séries/TV, Explorar, Favoritos, Mais) */}
+      {/* Barra Inferior Exata: FILMES - TV - SERIES - ANIMES - DORAMAS */}
       <nav className="dv-nav" aria-label="Navegação principal">
         {[
-          ["inicio", "🏠", "Início"],
-          ["series-tv", "📺", "Séries/TV"],
-          ["explorar", "🗂️", "Explorar"],
-          ["favoritos", "♥", "Favoritos"],
-          ["mais", "⚙️", "Mais"],
+          ["filmes", "🎬", "FILMES"],
+          ["tv", "📡", "TV"],
+          ["series", "📺", "SÉRIES"],
+          ["animes", "⚡", "ANIMES"],
+          ["doramas", "⛩️", "DORAMAS"],
         ].map(([key, icon, label]) => (
           <button
             key={key}
@@ -580,7 +581,7 @@ export default function App() {
           <section className="dv-detail">
             <button
               className="dv-back"
-              onClick={() => goToPage("explorar")}
+              onClick={() => goToPage("filmes")}
             >
               ← Voltar ao catálogo
             </button>
@@ -682,7 +683,7 @@ export default function App() {
           </section>
         )}
 
-        {page === "inicio" && (
+        {page === "filmes" && (
           <>
             <section className="dv-hero">
               <div className="dv-hero-content">
@@ -691,85 +692,53 @@ export default function App() {
                 <p>Conteúdo variado para todos os gostos. Lançamentos e clássicos atualizados.</p>
                 <button
                   className="dv-button-primary"
-                  onClick={() => goToPage("explorar")}
+                  onClick={() => goToPage("filmes")}
                 >
-                  Explorar catálogo →
+                  Explorar Filmes →
                 </button>
               </div>
             </section>
 
-            {/* Categorias visuais TUDO EM MAIÚSCULO (FILMES, SÉRIES/TV, ANIMES, DORAMAS) */}
+            {/* Categorias visuais em Maiúsculo */}
             <div className="dv-section-heading" style={{ marginTop: "15px" }}>
               <h2>CATEGORIAS</h2>
             </div>
             <div className="dv-style-categories-grid">
-              <div className="dv-style-cat-card" onClick={() => { setCategory("Filmes"); setPage("explorar"); }}>
+              <div className="dv-style-cat-card" onClick={() => goToPage("filmes")}>
                 <span className="dv-style-cat-icon">🎬</span>
                 <span>FILMES</span>
               </div>
-              <div className="dv-style-cat-card" onClick={() => { setCategory("Séries"); setPage("series-tv"); }}>
-                <span className="dv-style-cat-icon">📺</span>
-                <span>SÉRIES/TV</span>
+              <div className="dv-style-cat-card" onClick={() => goToPage("tv")}>
+                <span className="dv-style-cat-icon">📡</span>
+                <span>TV</span>
               </div>
-              <div className="dv-style-cat-card" onClick={() => { setCategory("Animes"); setPage("explorar"); }}>
+              <div className="dv-style-cat-card" onClick={() => goToPage("series")}>
+                <span className="dv-style-cat-icon">📺</span>
+                <span>SÉRIES</span>
+              </div>
+              <div className="dv-style-cat-card" onClick={() => goToPage("animes")}>
                 <span className="dv-style-cat-icon">⚡</span>
                 <span>ANIMES</span>
-              </div>
-              <div className="dv-style-cat-card" onClick={() => { setCategory("Doramas"); setPage("explorar"); }}>
-                <span className="dv-style-cat-icon">⛩️</span>
-                <span>DORAMAS</span>
               </div>
             </div>
 
             <section className="dv-section">
               <div className="dv-section-heading">
                 <div>
-                  <h2>EM ALTA / LANÇAMENTOS</h2>
+                  <h2>FILMES EM DESTAQUE</h2>
                 </div>
               </div>
-
-              {renderGrid(filteredSeries.slice(0, 8))}
-            </section>
-
-            <section className="dv-section">
-              <div className="dv-section-heading">
-                <div>
-                  <h2>TV ONLINE / CANAIS AO VIVO</h2>
-                </div>
-                <button
-                  className="dv-description-toggle"
-                  onClick={() => goToPage("series-tv")}
-                >
-                  Ver todos →
-                </button>
-              </div>
-
-              {liveChannelsLoading ? (
-                <p className="dv-message">Carregando canais...</p>
-              ) : (
-                renderGrid(
-                  [
-                    ...liveChannels,
-                    ...(liveChannels.some(
-                      (item) => normalize(item.title) === normalize("Z Nation")
-                    )
-                      ? []
-                      : [LIVE_SERIES]),
-                  ].slice(0, 4),
-                  "live"
-                )
-              )}
+              {renderGrid(filteredMovies, "movie")}
             </section>
           </>
         )}
 
-        {/* Aba Séries/TV contendo os canais e conteúdos ao vivo */}
-        {page === "series-tv" && (
+        {page === "tv" && (
           <section className="dv-section">
             <div className="dv-section-heading">
               <div>
-                <h2>SÉRIES & TV ONLINE (AO VIVO)</h2>
-                <p>Assista aos canais de TV e transmissões disponíveis.</p>
+                <h2>TV ONLINE / CANAIS AO VIVO</h2>
+                <p>Assista às transmissões de TV e canais disponíveis.</p>
               </div>
             </div>
 
@@ -791,101 +760,39 @@ export default function App() {
           </section>
         )}
 
-        {page === "explorar" && (
+        {page === "series" && (
           <section className="dv-section">
             <div className="dv-section-heading">
               <div>
-                <h2>EXPLORAR</h2>
-                <p>Navegue por todas as categorias e títulos.</p>
+                <h2>SÉRIES</h2>
+                <p>Maratone as melhores minisséries e séries.</p>
               </div>
             </div>
-
-            <div className="dv-categories">
-              {categories.map((item) => (
-                <button
-                  key={item}
-                  className={`dv-category-button ${
-                    category === item ? "active" : ""
-                  }`}
-                  onClick={() => setCategory(item)}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-
             {renderGrid(filteredSeries)}
           </section>
         )}
 
-        {page === "favoritos" && (
-          <>
-            <section className="dv-section">
-              <div className="dv-section-heading">
-                <div>
-                  <h2>FAVORITOS</h2>
-                  <p>Conteúdos salvos no seu dispositivo.</p>
-                </div>
-              </div>
-
-              {renderGrid(favoriteSeries)}
-            </section>
-
-            {favoriteMovies.length > 0 && (
-              <section className="dv-section">
-                <div className="dv-section-heading">
-                  <div>
-                    <h2>FILMES FAVORITOS</h2>
-                  </div>
-                </div>
-
-                {renderGrid(favoriteMovies, "movie")}
-              </section>
-            )}
-          </>
-        )}
-
-        {page === "downloads" && (
+        {page === "animes" && (
           <section className="dv-section">
             <div className="dv-section-heading">
               <div>
-                <h2>DOWNLOADS</h2>
-                <p>Seus conteúdos baixados.</p>
+                <h2>ANIMES</h2>
+                <p>As melhores animações japonesas.</p>
               </div>
             </div>
-            <div className="dv-empty">
-              <span>📥</span>
-              <h3>Sem downloads</h3>
-              <p>Não há itens salvos offline.</p>
-            </div>
+            {renderGrid(filteredSeries.filter(i => normalize(i.category).includes("anime")))}
           </section>
         )}
 
-        {page === "mais" && (
+        {page === "doramas" && (
           <section className="dv-section">
             <div className="dv-section-heading">
               <div>
-                <h2>MAIS OPÇÕES</h2>
+                <h2>DORAMAS</h2>
+                <p>Séries asiáticas de sucesso.</p>
               </div>
             </div>
-
-            <div style={{ display: "grid", gap: "12px", maxWidth: "500px", margin: "20px auto" }}>
-              <div className="dv-episode" style={{ justifyContent: "space-between" }}>
-                <span>Idioma do Aplicativo</span>
-                <span>›</span>
-              </div>
-              <div className="dv-episode" style={{ justifyContent: "space-between" }}>
-                <span>Limpar Cache</span>
-                <span>›</span>
-              </div>
-              <div className="dv-episode" style={{ justifyContent: "space-between" }}>
-                <span>Canal Oficial / Ajuda</span>
-                <span>›</span>
-              </div>
-              <p style={{ textAlign: "center", color: "var(--text-muted)", marginTop: "20px", fontSize: "12px" }}>
-                DRAMOVIX+ · 100% Grátis e Seguro
-              </p>
-            </div>
+            {renderGrid(filteredSeries.filter(i => normalize(i.category).includes("dorama")))}
           </section>
         )}
       </main>
@@ -954,7 +861,7 @@ export default function App() {
               </div>
             )}
 
-            {/* Gaveta de Episódios (Setinha para cima) */}
+            {/* Gaveta de Episódios */}
             {episodeDrawerOpen && episodes.length > 0 && (
               <div style={{
                 position: "absolute",
