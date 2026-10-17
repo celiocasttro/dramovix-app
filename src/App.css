@@ -155,52 +155,13 @@ button, input {
 }
 
 /* ========================================
-   CONTEÚDO PRINCIPAL E NAVEGAÇÃO SUPERIOR
+   CONTEÚDO PRINCIPAL E NAVEGAÇÃO
 ======================================== */
 .dv-main {
   width: 92%;
   max-width: 1400px;
   margin: 0 auto;
   padding-top: 15px;
-}
-
-.dv-nav {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  background: #080505;
-  border-bottom: 1px solid var(--border);
-}
-
-.dv-nav::-webkit-scrollbar {
-  display: none;
-}
-
-.dv-nav button {
-  flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 999px;
-  padding: 7px 15px;
-  background: #110808;
-  color: #9ca3af;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.dv-nav button:hover {
-  background: rgba(229, 9, 20, 0.1);
-  color: white;
-  border-color: var(--border);
-}
-
-.dv-nav button.active {
-  border-color: var(--red-primary);
-  background: rgba(229, 9, 20, 0.2);
-  color: #fca5a5;
-  box-shadow: 0 0 10px rgba(229, 9, 20, 0.25);
 }
 
 .dv-section-heading {
@@ -304,7 +265,7 @@ button, input {
 }
 
 /* ========================================
-   CATÁLOGO / GRID DE CARDS (APENAS CAPA E NOME NA TELA PRINCIPAL)
+   CATÁLOGO / GRID DE CARDS (APENAS CAPA E NOME)
 ======================================== */
 .dv-grid {
   display: grid !important;
@@ -446,7 +407,7 @@ button, input {
 }
 
 /* ========================================
-   TELA DE DETALHES (INFORMAÇÕES EM LINHA RETA ABAIXO DA CAPA)
+   TELA DE DETALHES
 ======================================== */
 .dv-detail {
   max-width: 950px;
@@ -583,7 +544,7 @@ button, input {
 }
 
 /* ========================================
-   PLAYER CORRETO (VÍDEO INTEIRO SEM ESTICAR)
+   PLAYER
 ======================================== */
 .dv-player-overlay {
   position: fixed;
