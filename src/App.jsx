@@ -523,6 +523,11 @@ export default function App() {
   const favoriteSeries = series.filter((item) => isFavorite(item));
   const favoriteMovies = movies.filter((item) => isFavorite(item));
 
+  const isLandscapePlayer =
+    Boolean(selectedEpisode?.isMovie) ||
+    Boolean(selectedEpisode?.isLive) ||
+    Boolean(selectedSeries?.isLive);
+
   return (
     <div className="dv-app">
       <header className="dv-header">
@@ -550,7 +555,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* Barra de Navegação Inferior */}
+      {/* Barra de Navegação Inferior (Estilo App / Imagens de Referência) */}
       <nav className="dv-nav" aria-label="Navegação principal">
         {[
           ["inicio", "⚡ Curtas", "Início"],
@@ -874,28 +879,56 @@ export default function App() {
         DRAMOVIX+ · Sempre tem uma nova história.
       </footer>
 
-      {/* Player Estilo TikTok / Shorts */}
       {playerOpen && (
-        <div className="dv-player-overlay">
+        <div
+          className="dv-player-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closePlayer();
+          }}
+        >
           <div
             className="dv-player-modal"
             role="dialog"
             aria-modal="true"
-            aria-label="Player de Vídeo"
+            aria-label="Player"
           >
-            <div className="dv-video-wrap">
+            <div className="dv-player-top">
+              <div className="dv-player-heading">
+                <strong>
+                  {selectedEpisode?.title || selectedSeries?.title || "Reproduzindo"}
+                </strong>
+                <small>
+                  {selectedEpisode?.isLive
+                    ? "Ao vivo"
+                    : selectedEpisode?.isMovie
+                    ? "Filme"
+                    : selectedSeries?.title || "DRAMOVIX+"}
+                </small>
+              </div>
+
+              <button
+                className="dv-player-close"
+                onClick={closePlayer}
+                aria-label="Fechar"
+              >
+                ×
+              </button>
+            </div>
+
+            <div
+              className={`dv-video-wrap ${
+                isLandscapePlayer
+                  ? "dv-video-wrap--landscape"
+                  : "dv-video-wrap--portrait"
+              }`}
+            >
               <video
                 key={selectedEpisode?.id || "video-player"}
                 ref={videoRef}
                 className="dv-video"
-                controls={false}
+                controls
                 playsInline
-                autoPlay
-                preload="auto"
-                onClick={(e) => {
-                  if (e.target.paused) e.target.play();
-                  else e.target.pause();
-                }}
+                preload="metadata"
                 onEnded={handleVideoEnded}
               />
             </div>
@@ -906,84 +939,32 @@ export default function App() {
               </div>
             )}
 
-            <div className="dv-shorts-ui">
-              <div className="dv-shorts-top">
-                <button className="dv-shorts-back" onClick={closePlayer}>
-                  ❮ Voltar
-                </button>
-                <button
-                  className="dv-shorts-speed"
-                  onClick={() => {
-                    if (videoRef.current) {
-                      const speeds = [1, 1.25, 1.5, 2];
-                      const next = speeds[(speeds.indexOf(videoRef.current.playbackRate) + 1) % speeds.length];
-                      videoRef.current.playbackRate = next;
-                    }
-                  }}
-                >
-                  ⏱️ Velocidade
-                </button>
-              </div>
+            <div className="dv-player-bottom">
+              <span>
+                {selectedEpisode?.isLive
+                  ? "Transmissão ao vivo"
+                  : selectedEpisode?.isMovie
+                  ? "Filme · DRAMOVIX+"
+                  : selectedEpisode?.episode_number
+                  ? `Episódio ${selectedEpisode.episode_number}`
+                  : "DRAMOVIX+"}
+              </span>
 
-              <div className="dv-shorts-sidebar">
+              {!selectedEpisode?.isLive && !selectedEpisode?.isMovie && (
                 <button
-                  className={`dv-shorts-action-btn ${
-                    isFavorite(selectedSeries || {}) ? "liked" : ""
-                  }`}
-                  onClick={() => selectedSeries && toggleFavorite(selectedSeries)}
-                >
-                  <div className="dv-shorts-action-icon">
-                    {isFavorite(selectedSeries || {}) ? "♥" : "♡"}
-                  </div>
-                  <span>Favorito</span>
-                </button>
-
-                <button
-                  className="dv-shorts-action-btn"
+                  className="dv-player-next"
                   onClick={playNextEpisode}
+                  disabled={
+                    !episodes.length ||
+                    episodes.findIndex(
+                      (ep) => ep.id === selectedEpisode?.id
+                    ) >=
+                      episodes.length - 1
+                  }
                 >
-                  <div className="dv-shorts-action-icon">⏭️</div>
-                  <span>Próximo</span>
+                  Próximo episódio →
                 </button>
-              </div>
-
-              <div className="dv-shorts-bottom">
-                <div className="dv-shorts-tags">
-                  <span className="dv-shorts-tag">
-                    {selectedSeries?.category || "Dramovix"}
-                  </span>
-                  <span className="dv-shorts-tag">Dublado / HD</span>
-                </div>
-
-                <div className="dv-shorts-title-row">
-                  <span>
-                    {selectedSeries?.title || "Dramovix+"}
-                  </span>
-                </div>
-
-                <p className="dv-shorts-desc">
-                  {selectedEpisode?.title ||
-                    selectedSeries?.description ||
-                    "Assista agora com alta qualidade e sem travar."}
-                </p>
-
-                {!selectedEpisode?.isLive && !selectedEpisode?.isMovie && episodes.length > 0 && (
-                  <div
-                    className="dv-shorts-episodes-bar"
-                    onClick={() => {
-                      playNextEpisode();
-                    }}
-                  >
-                    <div className="dv-shorts-episodes-left">
-                      <span>📦</span>
-                      <span>
-                        EP.{selectedEpisode?.episode_number || 1} / EP.{episodes.length}
-                      </span>
-                    </div>
-                    <span>∧</span>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
         </div>
