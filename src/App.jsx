@@ -1,1034 +1,770 @@
-import { useState, useEffect, useRef } from "react";
-import { supabase } from "./supabase";
-import Hls from "hls.js";
-import "./App.css";
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
-const ZNATION_URL =
-  "https://epg.provider.plex.tv/library/parts/646546f35db8ada4c8edd7e5-67d1be3696c7b08c26c19d64.m3u8?includeAllStreams=1&x-plex-product=Plex+Mediaverse&x-plex-token=MZFkHw1Atc9c9bZLRyWw&auto=0";
+:root {
+  font-family: 'DM Sans', sans-serif;
+  color: #f7f5fc;
+  background: #050505;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  font-weight: 400;
+  --bg: #050505;
+  --surface: #0e0707;
+  --surface-light: #180c0c;
+  --red-primary: #e50914;
+  --red-glow: rgba(229, 9, 20, 0.4);
+  --text-muted: #9ca3af;
+  --border: rgba(229, 9, 20, 0.3);
+  --bottom-nav-height: 68px;
+}
 
-const DEFAULT_COVER =
-  "https://svinrjrlrlitipleiccb.supabase.co/storage/v1/object/public/dramovix-videos/Capas/Znation.PNG";
+* {
+  box-sizing: border-box;
+}
 
-const DEFAULT_MOVIE_COVER = DEFAULT_COVER;
+html {
+  min-width: 320px;
+  min-height: 100%;
+  scroll-behavior: smooth;
+  background: var(--bg);
+  scrollbar-color: var(--red-primary) var(--bg);
+}
 
-const LIVE_SERIES = {
-  id: "live-znation",
-  title: "Z Nation",
-  category: "Ao vivo",
-  description: "Assista à transmissão de Z Nation.",
-  image: DEFAULT_COVER,
-  video_url: ZNATION_URL,
-  isLive: true,
-};
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--bg);
+  padding-bottom: env(safe-area-inset-bottom);
+}
 
-const normalize = (value = "") =>
-  String(value)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
+button, input, select, textarea {
+  font: inherit;
+}
 
-export default function App() {
-  const [series, setSeries] = useState([]);
-  const [movies, setMovies] = useState([]);
-  const [liveChannels, setLiveChannels] = useState([]);
-  const [liveChannelsLoading, setLiveChannelsLoading] = useState(true);
+button {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
 
-  const [selectedSeries, setSelectedSeries] = useState(null);
-  const [episodes, setEpisodes] = useState([]);
-  const [selectedEpisode, setSelectedEpisode] = useState(null);
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("Todas");
-  const [page, setPage] = useState("inicio");
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
-  const [favorites, setFavorites] = useState(() => {
-    try {
-      return JSON.parse(
-        localStorage.getItem("dramovix-favorites") || "[]"
-      );
-    } catch {
-      return [];
-    }
-  });
+img {
+  max-width: 100%;
+}
 
-  const [loading, setLoading] = useState(true);
-  const [episodesLoading, setEpisodesLoading] = useState(false);
-  const [playerOpen, setPlayerOpen] = useState(false);
-  const [playerError, setPlayerError] = useState("");
-  const [showDescription, setShowDescription] = useState(false);
-  const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false);
+button, input {
+  -webkit-appearance: none;
+  appearance: none;
+}
 
-  const videoRef = useRef(null);
-  const hlsRef = useRef(null);
+/* ========================================
+   APLICATIVO (TEMA VERMELHO E PRETO)
+======================================== */
+.dv-app {
+  min-height: 100vh !important;
+  padding-bottom: 90px !important;
+  overflow-x: clip;
+  background: 
+    radial-gradient(circle at 50% -10%, rgba(229, 9, 20, 0.22), transparent 45%), 
+    var(--bg) !important;
+  color: #fff !important;
+  font-family: 'DM Sans', sans-serif !important;
+}
 
-  useEffect(() => {
-    localStorage.setItem(
-      "dramovix-favorites",
-      JSON.stringify(favorites)
-    );
-  }, [favorites]);
+.dv-app button {
+  transition: all 0.2s ease;
+}
 
-  useEffect(() => {
-    let cancelled = false;
+/* ========================================
+   CABEÇALHO
+======================================== */
+.dv-header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  background: rgba(5, 5, 5, 0.95) !important;
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(18px);
+}
 
-    async function loadCatalog() {
-      setLoading(true);
-      setLiveChannelsLoading(true);
+.dv-logo {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: white;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  letter-spacing: -1px;
+  cursor: pointer;
+  padding: 0;
+  text-shadow: 0 0 15px rgba(229, 9, 20, 0.7);
+}
 
-      try {
-        const [
-          seriesResult,
-          moviesResult,
-          liveChannelsResult,
-        ] = await Promise.all([
-          supabase
-            .from("series")
-            .select("*")
-            .eq("published", true)
-            .order("created_at", { ascending: false }),
+.dv-logo span {
+  color: var(--red-primary);
+}
 
-          supabase
-            .from("movies")
-            .select("*")
-            .order("created_at", { ascending: false }),
+.dv-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  max-width: 320px;
+}
 
-          supabase
-            .from("movie_live_channels")
-            .select("*")
-            .eq("is_active", true)
-            .order("id", { ascending: true }),
-        ]);
+.dv-search {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  outline: none;
+  background: #120505;
+  color: white;
+}
 
-        const loadedSeries = (seriesResult.data || [])
-          .filter(
-            (item) =>
-              normalize(item.title) !==
-              normalize("Todo Mundo Odeia o Chris")
-          )
-          .map((item) => ({
-            id: `db-${item.id}`,
-            dbId: item.id,
-            title: item.title || "Sem título",
-            category: item.genre || "Romance",
-            description: item.description || "",
-            image: item.cover_url || DEFAULT_COVER,
-            isLive: false,
-          }));
+.dv-search span {
+  color: #fca5a5;
+  margin-right: 8px;
+}
 
-        const loadedMovies = (moviesResult.data || []).map(
-          (item) => ({
-            id: `movie-${item.id}`,
-            dbId: item.id,
-            title: item.title || "Sem título",
-            category: item.genre || "Filme",
-            description: item.description || "",
-            image: item.cover_url || DEFAULT_MOVIE_COVER,
-            video_url: item.video_url || "",
-          })
-        );
+.dv-search input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: white;
+  outline: none;
+  font-size: 13px;
+}
 
-        const loadedLiveChannels = (
-          liveChannelsResult.data || []
-        ).map((item) => ({
-          id: `live-channel-${item.id}`,
-          dbId: item.id,
-          title: item.name || "Canal ao vivo",
-          category: item.category || "Ao vivo",
-          description: `Assista ao canal ${
-            item.name || "ao vivo"
-          }.`,
-          image: item.cover_url || DEFAULT_COVER,
-          video_url: item.stream_url || "",
-          isLive: true,
-        }));
+.dv-search input::placeholder {
+  color: #991b1b;
+}
 
-        if (!cancelled) {
-          setSeries(loadedSeries);
-          setMovies(loadedMovies);
-          setLiveChannels(
-            liveChannelsResult.error ? [] : loadedLiveChannels
-          );
-        }
-      } catch (error) {
-        console.error("Erro ao carregar catálogo:", error);
-        if (!cancelled) {
-          setSeries([]);
-          setMovies([]);
-          setLiveChannels([]);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-          setLiveChannelsLoading(false);
-        }
-      }
-    }
+/* ========================================
+   CONTEÚDO PRINCIPAL E NAVEGAÇÃO SUPERIOR
+======================================== */
+.dv-main {
+  width: 92%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding-top: 15px;
+}
 
-    loadCatalog();
+.dv-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: #080505;
+  border-bottom: 1px solid var(--border);
+}
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+.dv-nav::-webkit-scrollbar {
+  display: none;
+}
 
-  useEffect(() => {
-    if (!selectedSeries) {
-      setEpisodes([]);
-      setEpisodesLoading(false);
-      return;
-    }
+.dv-nav button {
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  padding: 7px 15px;
+  background: #110808;
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 600;
+}
 
-    let cancelled = false;
+.dv-nav button:hover {
+  background: rgba(229, 9, 20, 0.1);
+  color: white;
+  border-color: var(--border);
+}
 
-    async function loadEpisodes() {
-      setEpisodesLoading(true);
+.dv-nav button.active {
+  border-color: var(--red-primary);
+  background: rgba(229, 9, 20, 0.2);
+  color: #fca5a5;
+  box-shadow: 0 0 10px rgba(229, 9, 20, 0.25);
+}
 
-      try {
-        if (!selectedSeries.dbId) {
-          if (!cancelled) setEpisodes([]);
-          return;
-        }
+.dv-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 25px 0 12px;
+}
 
-        const { data, error } = await supabase
-          .from("episodes")
-          .select("*")
-          .eq("series_id", selectedSeries.dbId)
-          .order("episode_number", { ascending: true });
+.dv-section-heading h2 {
+  margin: 0;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+}
 
-        if (error) throw error;
+.dv-section-heading p {
+  margin: 3px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
 
-        if (!cancelled) {
-          setEpisodes(
-            (data || []).map((episode) => ({
-              ...episode,
-              title:
-                episode.title ||
-                `Episódio ${
-                  episode.episode_number || ""
-                }`.trim(),
-              video_url: episode.video_url || "",
-            }))
-          );
-        }
-      } catch (error) {
-        console.error("Erro ao carregar episódios:", error);
-        if (!cancelled) setEpisodes([]);
-      } finally {
-        if (!cancelled) setEpisodesLoading(false);
-      }
-    }
+/* Grade de Categorias em Bloco (Tudo em Maiúsculo) */
+.dv-style-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 15px 0 25px;
+}
 
-    loadEpisodes();
+.dv-style-cat-card {
+  background: linear-gradient(135deg, #120606, #080303);
+  border: 1px solid rgba(229, 9, 20, 0.35);
+  border-radius: 12px;
+  padding: 14px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s;
+}
 
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedSeries]);
+.dv-style-cat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--red-primary);
+}
 
-  useEffect(() => {
-    if (!playerOpen || !selectedEpisode || !videoRef.current) {
-      return;
-    }
+.dv-style-cat-icon {
+  font-size: 24px;
+  margin-bottom: 6px;
+  display: block;
+}
 
-    const video = videoRef.current;
-    const url = selectedEpisode.video_url || "";
+.dv-style-cat-card span:last-child {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f3f4f6;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
 
-    let hls = null;
-    let cancelled = false;
+/* ========================================
+   BANNER (HERO)
+======================================== */
+.dv-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  min-height: 260px !important;
+  margin: 15px 0 25px !important;
+  padding: 22px !important;
+  overflow: hidden;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  background: linear-gradient(135deg, #1f0608, #0a0404);
+  box-shadow: 0 10px 35px rgba(229, 9, 20, 0.3) !important;
+}
 
-    setPlayerError("");
+.dv-hero-content {
+  width: 100%;
+  max-width: 550px;
+}
 
-    if (!url) {
-      setPlayerError(
-        "Este episódio ainda não possui um link de vídeo."
-      );
-      return;
-    }
+.dv-hero h1 {
+  margin: 10px 0;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: clamp(24px, 4vw, 38px) !important;
+  font-weight: 800 !important;
+  line-height: 1.1;
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
 
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
+.dv-hero p {
+  max-width: 440px;
+  color: #d1d5db;
+  font-size: 12px;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
 
-    video.pause();
-    video.removeAttribute("src");
-    video.load();
+/* ========================================
+   CATÁLOGO / GRID DE CARDS (APENAS CAPA E NOME NA TELA PRINCIPAL)
+======================================== */
+.dv-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  padding-bottom: 25px;
+}
 
-    const isHls = /\.m3u8(?:$|\?)/i.test(url);
+@media (min-width: 768px) {
+  .dv-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+  }
+}
 
-    const handleVideoError = () => {
-      if (cancelled) return;
-      setPlayerError(
-        "Não foi possível reproduzir este vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução."
-      );
-    };
+@media (min-width: 1100px) {
+  .dv-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+}
 
-    video.addEventListener("error", handleVideoError);
+.dv-card {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(229, 9, 20, 0.25) !important;
+  border-radius: 12px !important;
+  background: #0a0404 !important;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+  transition: transform 0.2s, border-color 0.2s;
+}
 
-    if (isHls && Hls.isSupported()) {
-      hls = new Hls({ enableWorker: true, lowLatencyMode: true });
-      hlsRef.current = hls;
+.dv-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--red-primary) !important;
+}
 
-      hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-        if (!cancelled) hls.loadSource(url);
-      });
+.dv-card-image-button {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: #180c0c;
+  text-align: left;
+}
 
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        if (!cancelled) {
-          video.play().catch(() => {});
-        }
-      });
+.dv-card-image {
+  display: block;
+  width: 100% !important;
+  aspect-ratio: 3 / 4 !important;
+  object-fit: cover !important;
+}
 
-      hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (cancelled || !data.fatal) return;
-        setPlayerError(
-          "Não foi possível carregar a transmissão."
-        );
-      });
+.dv-card-play {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  background: rgba(229, 9, 20, 0.9);
+  color: white;
+  font-size: 13px;
+  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.6);
+}
 
-      hls.attachMedia(video);
-    } else if (
-      isHls &&
-      video.canPlayType("application/vnd.apple.mpegurl")
-    ) {
-      video.src = url;
-      video.load();
-      video.play().catch(() => {});
-    } else {
-      video.src = url;
-      video.load();
-      video.play().catch(() => {});
-    }
+.dv-live-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 4px 7px;
+  border-radius: 4px;
+  background: #e50914;
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  box-shadow: 0 0 10px rgba(229, 9, 20, 0.8);
+}
 
-    return () => {
-      cancelled = true;
-      video.removeEventListener("error", handleVideoError);
-      if (hls) {
-        hls.destroy();
-        if (hlsRef.current === hls) hlsRef.current = null;
-      }
-      video.pause();
-      video.removeAttribute("src");
-      video.load();
-    };
-  }, [playerOpen, selectedEpisode]);
+.dv-card-content {
+  padding: 10px 8px;
+  min-width: 0;
+}
 
-  const categories = [
-    "Todas",
-    ...new Set(
-      series
-        .filter((item) => !item.isLive)
-        .map((item) => item.category)
-        .filter(Boolean)
-    ),
-  ];
+.dv-card-category {
+  display: inline-block;
+  color: #fca5a5;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
 
-  const filteredSeries = series.filter((item) => {
-    const matchesSearch =
-      normalize(item.title).includes(normalize(search)) ||
-      normalize(item.description).includes(normalize(search));
+.dv-card h3 {
+  margin: 4px 0 8px;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-    const matchesCategory =
-      category === "Todas" || item.category === category;
+.dv-card-actions {
+  display: flex;
+  gap: 6px;
+}
 
-    return matchesSearch && matchesCategory;
-  });
+.dv-card-actions .dv-button-primary {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 6px;
+  font-size: 10px;
+  min-height: 32px;
+}
 
-  const filteredMovies = movies.filter((item) =>
-    normalize(item.title).includes(normalize(search))
-  );
+.dv-favorite-button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  background: #180c0c;
+  color: white;
+  font-size: 16px;
+}
 
-  const filteredLiveChannels = liveChannels.filter((item) =>
-    normalize(item.title).includes(normalize(search))
-  );
+.dv-favorite-button.active {
+  color: #e50914;
+  border-color: rgba(229, 9, 20, 0.6);
+  background: rgba(229, 9, 20, 0.15);
+}
 
-  function toggleFavorite(item) {
-    setFavorites((previous) =>
-      previous.includes(item.id)
-        ? previous.filter((id) => id !== item.id)
-        : [...previous, item.id]
-    );
+/* ========================================
+   TELA DE DETALHES (INFORMAÇÕES EM LINHA RETA ABAIXO DA CAPA)
+======================================== */
+.dv-detail {
+  max-width: 950px;
+  margin: 10px auto 40px;
+}
+
+.dv-back {
+  margin-bottom: 14px;
+  padding: 6px 0;
+  color: #fca5a5;
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.dv-detail-header {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #0d0404;
+  text-align: center;
+  align-items: center;
+}
+
+.dv-detail-cover {
+  display: block;
+  width: min(220px, 70%);
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #180c0c;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
+.dv-detail-info {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dv-detail-info h1 {
+  margin: 8px 0 10px;
+  font-size: 24px;
+  color: #ffffff;
+}
+
+.dv-detail-info p {
+  color: #9ca3af;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 15px;
+  max-width: 600px;
+}
+
+.dv-detail-actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.dv-button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 10px 20px;
+  border: 1px solid rgba(229, 9, 20, 0.5);
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #e50914, #991b1b) !important;
+  color: white !important;
+  font-size: 13px;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
+}
+
+.dv-description-toggle {
+  padding: 10px 18px;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  background: #180c0c;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dv-episodes {
+  margin-top: 24px;
+}
+
+.dv-episode-list {
+  display: grid;
+  gap: 8px;
+}
+
+.dv-episode {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 14px;
+  text-align: left;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 11px;
+  background: #0d0404;
+}
+
+.dv-episode:hover {
+  border-color: var(--red-primary);
+  background: #1a0808;
+}
+
+.dv-episode-number {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 9px;
+  background: rgba(229, 9, 20, 0.2);
+  color: #fca5a5;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+/* ========================================
+   PLAYER CORRETO (VÍDEO INTEIRO SEM ESTICAR)
+======================================== */
+.dv-player-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(14px);
+}
+
+.dv-player-modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 900px);
+  max-height: calc(100vh - 24px);
+  border: 1px solid rgba(229, 9, 20, 0.4);
+  border-radius: 16px;
+  background: #0d0404;
+  box-shadow: 0 25px 80px rgba(0,0,0,0.9);
+  overflow: hidden;
+}
+
+.dv-player-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: #120505;
+}
+
+.dv-player-close {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  background: #180c0c;
+  font-size: 20px;
+}
+
+.dv-video-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  width: 100%;
+  overflow: hidden;
+}
+
+.dv-video-wrap--portrait {
+  width: min(100%, 420px);
+  aspect-ratio: 9 / 16;
+  max-height: 70vh;
+  margin: 0 auto;
+}
+
+.dv-video-wrap--portrait .dv-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain !important;
+}
+
+.dv-video-wrap--landscape {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 75vh;
+  margin: 0 auto;
+}
+
+.dv-video-wrap--landscape .dv-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain !important;
+}
+
+.dv-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+.dv-player-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: #120505;
+}
+
+.dv-player-next {
+  padding: 8px 14px;
+  color: white;
+  border: 0;
+  border-radius: 8px;
+  background: #e50914;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(229, 9, 20, 0.5);
+}
+
+/* ========================================
+   RODAPÉ E BARRA DE NAVEGAÇÃO INFERIOR FIXA
+======================================== */
+.dv-footer {
+  padding: 30px 16px 90px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 11px;
+}
+
+@media (max-width: 768px) {
+  .dv-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 50 !important;
+    display: flex !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    height: var(--bottom-nav-height) !important;
+    margin: 0 !important;
+    padding: 0 8px calc(0px + env(safe-area-inset-bottom)) !important;
+    background: rgba(6, 3, 3, 0.98) !important;
+    border-top: 1px solid rgba(229, 9, 20, 0.3) !important;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.9);
   }
 
-  function isFavorite(item) {
-    return favorites.includes(item.id);
+  .dv-nav button {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 100%;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #9ca3af;
+    font-size: 10px;
+    font-weight: 500;
   }
 
-  function openSeries(item) {
-    setSelectedSeries(item);
-    setSelectedEpisode(null);
-    setShowDescription(false);
-    setPage("detalhes");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  .dv-nav button.active {
+    color: #e50914 !important;
+    background: transparent !important;
+    text-shadow: 0 0 12px rgba(229, 9, 20, 0.7);
   }
+}
 
-  function openPlayer(episode) {
-    setSelectedEpisode(episode);
-    setPlayerError("");
-    setPlayerOpen(true);
-    setEpisodeDrawerOpen(false);
-  }
+.dv-empty, .dv-message {
+  padding: 40px 15px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
 
-  function openEpisode(episode) {
-    openPlayer(episode);
-  }
+.dv-empty span {
+  color: var(--red-primary);
+  font-size: 32px;
+  display: block;
+  margin-bottom: 8px;
+}
 
-  function openLive(item) {
-    setSelectedSeries(item);
-    setSelectedEpisode({
-      id: `${item.id}-stream`,
-      title: item.title,
-      video_url: item.video_url,
-      isLive: true,
-    });
-    setPlayerError("");
-    setPlayerOpen(true);
-  }
-
-  function closePlayer() {
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.removeAttribute("src");
-      videoRef.current.load();
-    }
-    setPlayerOpen(false);
-    setSelectedEpisode(null);
-    setPlayerError("");
-    setEpisodeDrawerOpen(false);
-  }
-
-  function playNextEpisode() {
-    if (!selectedEpisode || !episodes.length) return;
-    const currentIndex = episodes.findIndex(
-      (episode) => episode.id === selectedEpisode.id
-    );
-    if (currentIndex >= 0 && currentIndex < episodes.length - 1) {
-      openPlayer(episodes[currentIndex + 1]);
-    }
-  }
-
-  function handleVideoEnded() {
-    if (selectedEpisode?.isLive) return;
-    playNextEpisode();
-  }
-
-  function goToPage(nextPage) {
-    setPage(nextPage);
-    setSelectedSeries(null);
-    setSelectedEpisode(null);
-    setSearch("");
-    setCategory("Todas");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function renderCard(item, type = "series") {
-    const favorite = isFavorite(item);
-
-    const openItem = () => {
-      if (type === "live") {
-        openLive(item);
-      } else if (type === "movie") {
-        setSelectedSeries(null);
-        openPlayer({
-          id: item.id,
-          title: item.title,
-          video_url: item.video_url,
-          isMovie: true,
-        });
-      } else {
-        openSeries(item);
-      }
-    };
-
-    return (
-      <article className="dv-card" key={item.id}>
-        <button
-          className="dv-card-image-button"
-          onClick={openItem}
-          aria-label={`Abrir ${item.title}`}
-        >
-          <img
-            className="dv-card-image"
-            src={item.image || DEFAULT_COVER}
-            alt={item.title}
-            loading="lazy"
-            onError={(event) => {
-              event.currentTarget.onerror = null;
-              event.currentTarget.src = DEFAULT_COVER;
-            }}
-          />
-          <span className="dv-card-play">▶</span>
-          {type === "live" && (
-            <span className="dv-live-badge">AO VIVO</span>
-          )}
-        </button>
-
-        <div className="dv-card-content">
-          <span className="dv-card-category">
-            {type === "live" ? "AO VIVO" : item.category}
-          </span>
-          <h3>{item.title}</h3>
-          <p>
-            {item.description || "Uma nova história espera por você."}
-          </p>
-
-          <div className="dv-card-actions">
-            <button
-              className="dv-button-primary"
-              onClick={openItem}
-            >
-              ▶ {type === "live" ? "Assistir" : "Detalhes"}
-            </button>
-
-            {type !== "live" && (
-              <button
-                className={`dv-favorite-button ${
-                  favorite ? "active" : ""
-                }`}
-                onClick={() => toggleFavorite(item)}
-                aria-label="Favoritar"
-              >
-                {favorite ? "♥" : "♡"}
-              </button>
-            )}
-          </div>
-        </div>
-      </article>
-    );
-  }
-
-  function renderGrid(items, type = "series") {
-    if (loading && type !== "live") {
-      return <p className="dv-message">Carregando catálogo...</p>;
-    }
-
-    if (!items.length) {
-      return (
-        <div className="dv-empty">
-          <span>✦</span>
-          <h3>Nenhum conteúdo encontrado</h3>
-          <p>Tente buscar por outro termo ou categoria.</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="dv-grid">
-        {items.map((item) => renderCard(item, type))}
-      </div>
-    );
-  }
-
-  const favoriteSeries = series.filter((item) => isFavorite(item));
-  const favoriteMovies = movies.filter((item) => isFavorite(item));
-
-  const isLandscapePlayer =
-    Boolean(selectedEpisode?.isMovie) ||
-    Boolean(selectedEpisode?.isLive) ||
-    Boolean(selectedSeries?.isLive);
-
-  return (
-    <div className="dv-app">
-      <header className="dv-header">
-        <button
-          className="dv-logo"
-          onClick={() => goToPage("inicio")}
-          aria-label="DRAMOVIX início"
-        >
-          DRAMOVIX<span>+</span>
-        </button>
-
-        <div className="dv-header-actions">
-          <label className="dv-search">
-            <span>⌕</span>
-            <input
-              type="search"
-              placeholder="Pesquisar..."
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                if (page === "inicio") setPage("explorar");
-              }}
-            />
-          </label>
-        </div>
-      </header>
-
-      {/* Barra de Navegação Inferior (Início, Séries/TV, Explorar, Favoritos, Mais) */}
-      <nav className="dv-nav" aria-label="Navegação principal">
-        {[
-          ["inicio", "🏠", "Início"],
-          ["series-tv", "📺", "Séries/TV"],
-          ["explorar", "🗂️", "Explorar"],
-          ["favoritos", "♥", "Favoritos"],
-          ["mais", "⚙️", "Mais"],
-        ].map(([key, icon, label]) => (
-          <button
-            key={key}
-            className={page === key ? "active" : ""}
-            onClick={() => goToPage(key)}
-          >
-            <span style={{ fontSize: "16px" }}>{icon}</span>
-            <span>{label}</span>
-          </button>
-        ))}
-      </nav>
-
-      <main className="dv-main">
-        {page === "detalhes" && selectedSeries && (
-          <section className="dv-detail">
-            <button
-              className="dv-back"
-              onClick={() => goToPage("explorar")}
-            >
-              ← Voltar ao catálogo
-            </button>
-
-            {/* Informações organizadas abaixo da capa em linha reta */}
-            <div className="dv-detail-header">
-              <img
-                className="dv-detail-cover"
-                src={selectedSeries.image || DEFAULT_COVER}
-                alt={selectedSeries.title}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = DEFAULT_COVER;
-                }}
-              />
-
-              <div className="dv-detail-info">
-                <span className="dv-eyebrow" style={{ color: "#fca5a5" }}>
-                  {selectedSeries.category || "DRAMA"}
-                </span>
-                <h1>{selectedSeries.title}</h1>
-                <p>
-                  {showDescription
-                    ? selectedSeries.description || "Descrição indisponível."
-                    : (selectedSeries.description || "Uma história incrível.").slice(0, 160) +
-                      ((selectedSeries.description || "").length > 160 ? "..." : "")}
-                </p>
-
-                {(selectedSeries.description || "").length > 160 && (
-                  <button
-                    className="dv-description-toggle"
-                    onClick={() => setShowDescription((v) => !v)}
-                  >
-                    {showDescription ? "Mostrar menos" : "Ler descrição completa"}
-                  </button>
-                )}
-
-                <div className="dv-detail-actions">
-                  <button
-                    className="dv-button-primary"
-                    onClick={() => {
-                      if (episodes.length) openEpisode(episodes[0]);
-                    }}
-                    disabled={episodesLoading || !episodes.length}
-                  >
-                    ▶ Assistir 1º Episódio
-                  </button>
-
-                  <button
-                    className="dv-description-toggle"
-                    onClick={() => toggleFavorite(selectedSeries)}
-                  >
-                    {isFavorite(selectedSeries) ? "♥ Favoritado" : "♡ Favoritar"}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <section className="dv-episodes">
-              <div className="dv-section-heading">
-                <div>
-                  <h2>Episódios</h2>
-                  <p>{episodes.length} episódio(s) disponível(is)</p>
-                </div>
-              </div>
-
-              {episodesLoading ? (
-                <p className="dv-message">Carregando episódios...</p>
-              ) : episodes.length ? (
-                <div className="dv-episode-list">
-                  {episodes.map((episode, index) => (
-                    <button
-                      className="dv-episode"
-                      key={episode.id || index}
-                      onClick={() => openEpisode(episode)}
-                    >
-                      <span className="dv-episode-number">
-                        {episode.episode_number || index + 1}
-                      </span>
-                      <span className="dv-episode-info">
-                        <strong>
-                          {episode.title || `Episódio ${index + 1}`}
-                        </strong>
-                        <small style={{ color: "#fca5a5" }}>
-                          {episode.video_url ? "Pronto para reprodução" : "Em breve"}
-                        </small>
-                      </span>
-                      <span className="dv-episode-play">▶</span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="dv-empty">
-                  <h3>Novos episódios em breve</h3>
-                  <p>Estamos preparando os capítulos desta série para você.</p>
-                </div>
-              )}
-            </section>
-          </section>
-        )}
-
-        {page === "inicio" && (
-          <>
-            <section className="dv-hero">
-              <div className="dv-hero-content">
-                <span className="dv-eyebrow">✦ DRAMOVIX+ CINEMA</span>
-                <h1>O melhor conteúdo sempre com você.</h1>
-                <p>Conteúdo variado para todos os gostos. Lançamentos e clássicos atualizados.</p>
-                <button
-                  className="dv-button-primary"
-                  onClick={() => goToPage("explorar")}
-                >
-                  Explorar catálogo →
-                </button>
-              </div>
-            </section>
-
-            {/* Categorias visuais (Filmes, Séries, Animes, Doramas) */}
-            <div className="dv-section-heading" style={{ marginTop: "15px" }}>
-              <h2>Categorias</h2>
-            </div>
-            <div className="dv-style-categories-grid">
-              <div className="dv-style-cat-card" onClick={() => { setCategory("Filmes"); setPage("explorar"); }}>
-                <span className="dv-style-cat-icon">🎬</span>
-                <span>Filmes</span>
-              </div>
-              <div className="dv-style-cat-card" onClick={() => { setCategory("Séries"); setPage("series-tv"); }}>
-                <span className="dv-style-cat-icon">📺</span>
-                <span>Séries/TV</span>
-              </div>
-              <div className="dv-style-cat-card" onClick={() => { setCategory("Animes"); setPage("explorar"); }}>
-                <span className="dv-style-cat-icon">⚡</span>
-                <span>Animes</span>
-              </div>
-              <div className="dv-style-cat-card" onClick={() => { setCategory("Doramas"); setPage("explorar"); }}>
-                <span className="dv-style-cat-icon">⛩️</span>
-                <span>Doramas</span>
-              </div>
-            </div>
-
-            <section className="dv-section">
-              <div className="dv-section-heading">
-                <div>
-                  <h2>Em Alta / Lançamentos</h2>
-                </div>
-              </div>
-
-              {renderGrid(filteredSeries.slice(0, 8))}
-            </section>
-
-            <section className="dv-section">
-              <div className="dv-section-heading">
-                <div>
-                  <h2>TV Online / Canais ao Vivo</h2>
-                </div>
-                <button
-                  className="dv-description-toggle"
-                  onClick={() => goToPage("series-tv")}
-                >
-                  Ver todos →
-                </button>
-              </div>
-
-              {liveChannelsLoading ? (
-                <p className="dv-message">Carregando canais...</p>
-              ) : (
-                renderGrid(
-                  [
-                    ...liveChannels,
-                    ...(liveChannels.some(
-                      (item) => normalize(item.title) === normalize("Z Nation")
-                    )
-                      ? []
-                      : [LIVE_SERIES]),
-                  ],
-                  "live"
-                )
-              )}
-            </section>
-          </>
-        )}
-
-        {/* Aba Séries/TV contendo os canais e conteúdos ao vivo */}
-        {page === "series-tv" && (
-          <section className="dv-section">
-            <div className="dv-section-heading">
-              <div>
-                <h2>Séries & TV Online (Ao Vivo)</h2>
-                <p>Assista aos canais de TV e transmissões disponíveis.</p>
-              </div>
-            </div>
-
-            {liveChannelsLoading ? (
-              <p className="dv-message">Carregando canais ao vivo...</p>
-            ) : (
-              renderGrid(
-                [
-                  ...liveChannels,
-                  ...(liveChannels.some(
-                    (item) => normalize(item.title) === normalize("Z Nation")
-                  )
-                    ? []
-                    : [LIVE_SERIES]),
-                ],
-                "live"
-              )
-            )}
-          </section>
-        )}
-
-        {page === "explorar" && (
-          <section className="dv-section">
-            <div className="dv-section-heading">
-              <div>
-                <h2>Explorar</h2>
-                <p>Navegue por todas as categorias e títulos.</p>
-              </div>
-            </div>
-
-            <div className="dv-categories">
-              {categories.map((item) => (
-                <button
-                  key={item}
-                  className={`dv-category-button ${
-                    category === item ? "active" : ""
-                  }`}
-                  onClick={() => setCategory(item)}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-
-            {renderGrid(filteredSeries)}
-          </section>
-        )}
-
-        {page === "favoritos" && (
-          <>
-            <section className="dv-section">
-              <div className="dv-section-heading">
-                <div>
-                  <h2>Favoritos</h2>
-                  <p>Conteúdos salvos no seu dispositivo.</p>
-                </div>
-              </div>
-
-              {renderGrid(favoriteSeries)}
-            </section>
-
-            {favoriteMovies.length > 0 && (
-              <section className="dv-section">
-                <div className="dv-section-heading">
-                  <div>
-                    <h2>Filmes Favoritos</h2>
-                  </div>
-                </div>
-
-                {renderGrid(favoriteMovies, "movie")}
-              </section>
-            )}
-          </>
-        )}
-
-        {page === "downloads" && (
-          <section className="dv-section">
-            <div className="dv-section-heading">
-              <div>
-                <h2>Downloads</h2>
-                <p>Seus conteúdos baixados.</p>
-              </div>
-            </div>
-            <div className="dv-empty">
-              <span>📥</span>
-              <h3>Sem downloads</h3>
-              <p>Não há itens salvos offline.</p>
-            </div>
-          </section>
-        )}
-
-        {page === "mais" && (
-          <section className="dv-section">
-            <div className="dv-section-heading">
-              <div>
-                <h2>Mais Opções</h2>
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gap: "12px", maxWidth: "500px", margin: "20px auto" }}>
-              <div className="dv-episode" style={{ justifyContent: "space-between" }}>
-                <span>Idioma do Aplicativo</span>
-                <span>›</span>
-              </div>
-              <div className="dv-episode" style={{ justifyContent: "space-between" }}>
-                <span>Limpar Cache</span>
-                <span>›</span>
-              </div>
-              <div className="dv-episode" style={{ justifyContent: "space-between" }}>
-                <span>Canal Oficial / Ajuda</span>
-                <span>›</span>
-              </div>
-              <p style={{ textAlign: "center", color: "var(--text-muted)", marginTop: "20px", fontSize: "12px" }}>
-                DRAMOVIX+ · 100% Grátis e Seguro
-              </p>
-            </div>
-          </section>
-        )}
-      </main>
-
-      <footer className="dv-footer">
-        DRAMOVIX+ · Diversão sem limites no seu celular.
-      </footer>
-
-      {playerOpen && (
-        <div
-          className="dv-player-overlay"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closePlayer();
-          }}
-        >
-          <div
-            className="dv-player-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Player"
-          >
-            <div className="dv-player-top">
-              <div className="dv-player-heading">
-                <strong>
-                  {selectedEpisode?.title || selectedSeries?.title || "Reproduzindo"}
-                </strong>
-                <small style={{ color: "#fca5a5" }}>
-                  {selectedEpisode?.isLive
-                    ? "Ao vivo"
-                    : selectedEpisode?.isMovie
-                      ? "Filme"
-                      : selectedSeries?.title || "DRAMOVIX+"}
-                </small>
-              </div>
-
-              <button
-                className="dv-player-close"
-                onClick={closePlayer}
-                aria-label="Fechar"
-              >
-                ×
-              </button>
-            </div>
-
-            <div
-              className={`dv-video-wrap ${
-                isLandscapePlayer
-                  ? "dv-video-wrap--landscape"
-                  : "dv-video-wrap--portrait"
-              }`}
-            >
-              <video
-                key={selectedEpisode?.id || "video-player"}
-                ref={videoRef}
-                className="dv-video"
-                controls
-                playsInline
-                preload="metadata"
-                onEnded={handleVideoEnded}
-              />
-            </div>
-
-            {playerError && (
-              <div className="dv-player-error" role="alert">
-                {playerError}
-              </div>
-            )}
-
-            {/* Gaveta de Episódios (Setinha para cima) */}
-            {episodeDrawerOpen && episodes.length > 0 && (
-              <div style={{
-                position: "absolute",
-                bottom: "70px",
-                left: "10px",
-                right: "10px",
-                background: "rgba(10, 4, 4, 0.95)",
-                border: "1px solid rgba(229, 9, 20, 0.4)",
-                borderRadius: "12px",
-                padding: "12px",
-                maxHeight: "200px",
-                overflowY: "auto",
-                zIndex: 30
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "12px", fontWeight: "bold", color: "#fca5a5" }}>
-                  <span>Selecionar Episódio</span>
-                  <span onClick={() => setEpisodeDrawerOpen(false)} style={{ cursor: "pointer" }}>✕</span>
-                </div>
-                {episodes.map((ep, idx) => (
-                  <div
-                    key={ep.id || idx}
-                    onClick={() => openEpisode(ep)}
-                    style={{
-                      padding: "8px 10px",
-                      borderRadius: "6px",
-                      background: selectedEpisode?.id === ep.id ? "rgba(229, 9, 20, 0.3)" : "transparent",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                      marginBottom: "4px"
-                    }}
-                  >
-                    Episódio {ep.episode_number || idx + 1}: {ep.title || "Assistir"}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="dv-player-bottom">
-              {!selectedEpisode?.isLive && !selectedEpisode?.isMovie && episodes.length > 0 ? (
-                <div
-                  onClick={() => setEpisodeDrawerOpen(!episodeDrawerOpen)}
-                  style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "12px", color: "#fca5a5", background: "rgba(229,9,20,0.15)", padding: "6px 10px", borderRadius: "8px", border: "1px solid rgba(229,9,20,0.3)" }}
-                >
-                  <span>📦 EP.{selectedEpisode?.episode_number || 1} / EP.{episodes.length}</span>
-                  <span>{episodeDrawerOpen ? "⌄" : "∧"}</span>
-                </div>
-              ) : (
-                <span style={{ color: "#9ca3af" }}>
-                  {selectedEpisode?.isLive ? "Transmissão ao vivo" : "Filme · DRAMOVIX+"}
-                </span>
-              )}
-
-              {!selectedEpisode?.isLive && !selectedEpisode?.isMovie && (
-                <button
-                  className="dv-player-next"
-                  onClick={playNextEpisode}
-                  disabled={
-                    !episodes.length ||
-                    episodes.findIndex(
-                      (ep) => ep.id === selectedEpisode?.id
-                    ) >=
-                      episodes.length - 1
-                  }
-                >
-                  Próximo episódio →
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+.dv-empty h3 {
+  color: white;
+  margin: 0 0 6px;
+  font-size: 16px;
 }
