@@ -155,7 +155,7 @@ button, input {
 }
 
 /* ========================================
-   CONTEÚDO PRINCIPAL E BLOCOS DE CATEGORIA (ESTILO IMAGEM)
+   CONTEÚDO PRINCIPAL E BLOCOS DE CATEGORIA
 ======================================== */
 .dv-main {
   width: 92%;
@@ -177,6 +177,7 @@ button, input {
   font-family: 'Outfit', sans-serif !important;
   font-size: 18px;
   font-weight: 700;
+  color: #ffffff;
 }
 
 .dv-section-heading p {
@@ -185,7 +186,7 @@ button, input {
   font-size: 12px;
 }
 
-/* Grade de Categorias em Bloco (Estilo Filmes, Séries, Animes, Doramas)[span_1](start_span)[span_1](end_span) */
+/* Grade de Categorias em Bloco (Filmes, Séries, Animes, Doramas) */
 .dv-style-categories-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -197,7 +198,7 @@ button, input {
   background: linear-gradient(135deg, #120606, #080303);
   border: 1px solid rgba(229, 9, 20, 0.35);
   border-radius: 12px;
-  padding: 12px 8px;
+  padding: 14px 8px;
   text-align: center;
   cursor: pointer;
   transition: transform 0.2s, border-color 0.2s;
@@ -209,7 +210,7 @@ button, input {
 }
 
 .dv-style-cat-icon {
-  font-size: 22px;
+  font-size: 24px;
   margin-bottom: 6px;
   display: block;
 }
@@ -251,6 +252,7 @@ button, input {
   font-size: clamp(24px, 4vw, 38px) !important;
   font-weight: 800 !important;
   line-height: 1.1;
+  color: #ffffff;
   text-shadow: 0 2px 10px rgba(0,0,0,0.8);
 }
 
@@ -366,6 +368,7 @@ button, input {
   font-family: 'Outfit', sans-serif !important;
   font-size: 13px !important;
   font-weight: 700 !important;
+  color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -518,7 +521,7 @@ button, input {
 }
 
 /* ========================================
-   PLAYER DINÂMICO
+   PLAYER CORRETO (SEM ESTICAR O VÍDEO DENTRO DO QUADRO)
 ======================================== */
 .dv-player-overlay {
   position: fixed;
@@ -584,10 +587,11 @@ button, input {
   margin: 0 auto;
 }
 
+/* object-fit: contain garante que o vídeo aparece INTEIRO sem ser esticado ou cortar fora do quadro */
 .dv-video-wrap--portrait .dv-video {
   width: 100%;
   height: 100%;
-  object-fit: cover !important;
+  object-fit: contain !important;
 }
 
 .dv-video-wrap--landscape {
