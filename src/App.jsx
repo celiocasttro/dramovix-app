@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase";
 import Hls from "hls.js";
@@ -28,6 +27,14 @@ const normalize = (value = "") =>
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
+
+const NAV_ITEMS = [
+  { key: "inicio", label: "Início", icon: "⌂" },
+  { key: "ao-vivo", label: "Ao vivo", icon: "◉" },
+  { key: "filmes", label: "Filmes", icon: "▣" },
+  { key: "favoritos", label: "Favoritos", icon: "♡" },
+  { key: "perfil", label: "Perfil", icon: "♙" },
+];
 
 export default function App() {
   const [series, setSeries] = useState([]);
@@ -120,8 +127,7 @@ export default function App() {
           );
         }
 
-        // Não exibe Todo Mundo Odeia o Chris, mesmo que
-        // ainda exista um registro publicado no Supabase.
+        // Mantém a exclusão já existente no catálogo.
         const loadedSeries = (seriesResult.data || [])
           .filter(
             (item) =>
@@ -196,7 +202,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!selectedSeries) {
+    if (!selectedSeries || selectedSeries.isLive) {
       setEpisodes([]);
       setEpisodesLoading(false);
       return;
@@ -430,9 +436,13 @@ export default function App() {
     return matchesSearch && matchesCategory;
   });
 
-  const filteredMovies = movies.filter((item) =>
-    normalize(item.title).includes(normalize(search))
-  );
+  const filteredMovies = movies.filter((item) => {
+    const matchesSearch =
+      normalize(item.title).includes(normalize(search)) ||
+      normalize(item.description).includes(normalize(search));
+
+    return matchesSearch;
+  });
 
   const filteredLiveChannels = liveChannels.filter((item) => {
     const matchesSearch =
@@ -523,7 +533,10 @@ export default function App() {
   }
 
   function handleVideoEnded() {
-    if (selectedEpisode?.isLive) return;
+    if (selectedEpisode?.isLive || selectedEpisode?.isMovie) {
+      return;
+    }
+
     playNextEpisode();
   }
 
@@ -533,6 +546,7 @@ export default function App() {
     setSelectedEpisode(null);
     setSearch("");
     setCategory("Todas");
+    setShowDescription(false);
 
     window.scrollTo({
       top: 0,
@@ -602,7 +616,7 @@ export default function App() {
               className="dv-button-primary"
               onClick={openItem}
             >
-              ▶ {type === "live" ? "Assistir" : "Ver detalhes"}
+              ▶ {type === "live" ? "Assistir" : type === "movie" ? "Assistir" : "Ver detalhes"}
             </button>
 
             {type !== "live" && (
@@ -660,7 +674,8 @@ export default function App() {
     isFavorite(item)
   );
 
-  // Minisséries em 9:16; filmes e transmissões em 16:9.
+  const favoriteCount = favoriteSeries.length + favoriteMovies.length;
+
   const isLandscapePlayer =
     Boolean(selectedEpisode?.isMovie) ||
     Boolean(selectedEpisode?.isLive) ||
@@ -697,6 +712,7 @@ export default function App() {
 
         .dv-app {
           min-height: 100vh;
+          padding-bottom: 0;
           background:
             radial-gradient(ellipse at top left, rgba(124,58,237,.11), transparent 38%),
             var(--dv-bg);
@@ -760,6 +776,10 @@ export default function App() {
         }
 
         .dv-nav button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
           padding: 9px 15px;
           color: #c5c6d1;
           border: 1px solid transparent;
@@ -774,6 +794,9 @@ export default function App() {
           border-color: rgba(168,85,247,.35);
           background: rgba(168,85,247,.14);
         }
+
+        .dv-nav-icon { font-size: 18px; line-height: 1; }
+        .dv-nav-label { font-size: 12px; font-weight: 750; }
 
         .dv-development-notice {
           display: flex;
@@ -908,7 +931,12 @@ export default function App() {
           background: rgba(168,85,247,.17);
         }
 
-        .dv-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 19px; }
+        .dv-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 19px;
+          width: 100%;
+        }
 
         .dv-card {
           min-width: 0;
@@ -964,7 +992,7 @@ export default function App() {
 
         .dv-card-content { padding: 15px; }
         .dv-card-category { color: #c084fc; font-size: 10px; font-weight: 850; letter-spacing: 1.2px; text-transform: uppercase; }
-        .dv-card h3 { margin: 8px 0; font-size: 16px; line-height: 1.4; }
+        .dv-card h3 { margin: 8px 0; font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; }
 
         .dv-card p {
           display: -webkit-box;
@@ -979,7 +1007,7 @@ export default function App() {
         }
 
         .dv-card-actions { display: flex; align-items: center; gap: 8px; }
-        .dv-card-actions .dv-button-primary { flex: 1; padding: 10px 8px; font-size: 12px; }
+        .dv-card-actions .dv-button-primary { flex: 1; min-width: 0; padding: 10px 8px; font-size: 12px; }
 
         .dv-favorite-button {
           display: grid;
@@ -1080,6 +1108,90 @@ export default function App() {
         .dv-episode-info strong { display: block; overflow-wrap: anywhere; }
         .dv-episode-info small { display: block; margin-top: 5px; color: var(--dv-muted); }
         .dv-episode-play { flex-shrink: 0; color: #d8b4fe; font-size: 20px; }
+
+        /* Perfil */
+        .dv-profile {
+          max-width: 900px;
+          margin: 10px auto;
+        }
+
+        .dv-profile-hero {
+          display: flex;
+          align-items: center;
+          gap: 18px;
+          padding: 25px;
+          border: 1px solid var(--dv-border);
+          border-radius: 20px;
+          background:
+            radial-gradient(ellipse at top right, rgba(236,72,153,.15), transparent 40%),
+            linear-gradient(135deg, #171321, #11131b);
+        }
+
+        .dv-profile-avatar {
+          display: grid;
+          width: 76px;
+          height: 76px;
+          flex-shrink: 0;
+          place-items: center;
+          border: 1px solid rgba(192,132,252,.4);
+          border-radius: 50%;
+          background: rgba(168,85,247,.18);
+          color: #e9d5ff;
+          font-size: 32px;
+        }
+
+        .dv-profile-hero h1 { margin: 0 0 8px; font-size: clamp(23px, 4vw, 32px); }
+        .dv-profile-hero p { margin: 0; color: var(--dv-muted); line-height: 1.6; }
+
+        .dv-profile-stats {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px;
+          margin: 20px 0;
+        }
+
+        .dv-profile-stat {
+          padding: 20px;
+          border: 1px solid var(--dv-border);
+          border-radius: 15px;
+          background: var(--dv-panel);
+        }
+
+        .dv-profile-stat strong {
+          display: block;
+          margin-bottom: 6px;
+          color: #d8b4fe;
+          font-size: 28px;
+        }
+
+        .dv-profile-stat span { color: var(--dv-muted); font-size: 13px; }
+
+        .dv-profile-panel {
+          margin-top: 18px;
+          padding: 20px;
+          border: 1px solid var(--dv-border);
+          border-radius: 15px;
+          background: var(--dv-panel);
+        }
+
+        .dv-profile-panel h2 { margin-top: 0; font-size: 18px; }
+        .dv-profile-panel p { color: var(--dv-muted); font-size: 14px; line-height: 1.7; }
+
+        .dv-profile-action {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          width: 100%;
+          padding: 14px 0;
+          color: white;
+          text-align: left;
+          border: 0;
+          border-top: 1px solid var(--dv-border);
+          background: transparent;
+        }
+
+        .dv-profile-action span:last-child { color: #c084fc; font-size: 20px; }
 
         .dv-player-overlay {
           position: fixed;
@@ -1256,13 +1368,36 @@ export default function App() {
           .dv-search { order: 3; width: 100%; }
 
           .dv-nav {
-            justify-content: flex-start;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            padding: 10px 12px;
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 90;
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            justify-content: stretch;
+            gap: 0;
+            padding: 7px 5px calc(7px + env(safe-area-inset-bottom));
+            overflow: visible;
+            border-top: 1px solid rgba(255,255,255,.1);
+            border-bottom: 0;
+            background: rgba(12,12,19,.97);
+            backdrop-filter: blur(18px);
           }
 
-          .dv-nav button { flex-shrink: 0; font-size: 12px; }
+          .dv-nav button {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 7px 2px;
+            border-radius: 10px;
+          }
+
+          .dv-nav-icon { font-size: 21px; }
+          .dv-nav-label { font-size: 10px; }
 
           .dv-development-notice {
             width: calc(100% - 24px);
@@ -1274,20 +1409,35 @@ export default function App() {
           .dv-development-icon { width: 36px; height: 36px; font-size: 19px; }
           .dv-development-content h2 { font-size: 13px; line-height: 1.5; }
           .dv-development-content p { font-size: 12px; }
-          .dv-main { padding: 18px 15px 50px; }
+          .dv-main { padding: 18px 15px 95px; }
 
           .dv-hero { min-height: 255px; margin-top: 3px; border-radius: 18px; }
-          .dv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-          .dv-card { border-radius: 13px; }
-          .dv-card-content { padding: 11px; }
-          .dv-card h3 { font-size: 14px; }
-          .dv-card p { font-size: 11px; }
-          .dv-card-actions .dv-button-primary { font-size: 11px; }
+          .dv-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 10px;
+          }
+
+          .dv-card { border-radius: 10px; }
+          .dv-card-content { padding: 9px; }
+          .dv-card h3 { font-size: 12px; line-height: 1.4; }
+          .dv-card p { min-height: 0; margin-bottom: 10px; font-size: 10px; }
+          .dv-card-actions { gap: 5px; }
+          .dv-card-actions .dv-button-primary { padding: 9px 5px; font-size: 10px; }
+          .dv-favorite-button { width: 32px; height: 34px; font-size: 17px; }
+          .dv-card-play { width: 32px; height: 32px; right: 7px; bottom: 7px; }
+          .dv-card-category { font-size: 8px; letter-spacing: .6px; }
 
           .dv-detail-header { grid-template-columns: 1fr; gap: 18px; padding: 15px; }
           .dv-detail-cover { width: min(100%, 260px); margin: 0 auto; }
           .dv-detail-info h1 { font-size: 27px; }
           .dv-episode { gap: 10px; padding: 10px; }
+
+          .dv-profile-hero { padding: 18px; gap: 13px; }
+          .dv-profile-avatar { width: 60px; height: 60px; font-size: 26px; }
+          .dv-profile-stats { gap: 10px; }
+          .dv-profile-stat { padding: 15px; }
+          .dv-profile-stat strong { font-size: 24px; }
+          .dv-profile-panel { padding: 16px; }
 
           .dv-player-overlay {
             align-items: center;
@@ -1312,20 +1462,12 @@ export default function App() {
           }
         }
 
-        @media (max-width: 520px) {
-          .dv-grid { gap: 10px; }
-          .dv-card-play { width: 35px; height: 35px; right: 9px; bottom: 9px; }
-          .dv-card-category { font-size: 9px; }
-          .dv-card h3 { font-size: 13px; }
-          .dv-card-actions { gap: 5px; }
-          .dv-favorite-button { width: 34px; height: 36px; }
-          .dv-section-heading h2 { font-size: 22px; }
-          .dv-episode-number { width: 38px; height: 38px; }
-
-          .dv-player-top { min-height: 52px; padding: 7px 10px; }
-          .dv-player-close { width: 40px; height: 40px; }
-          .dv-player-bottom { min-height: 54px; padding: 7px 9px; }
-          .dv-player-next { min-height: 38px; padding: 8px 10px; }
+        @media (max-width: 360px) {
+          .dv-grid { gap: 7px; }
+          .dv-card-content { padding: 7px; }
+          .dv-card h3 { font-size: 11px; }
+          .dv-card-actions .dv-button-primary { font-size: 9px; }
+          .dv-nav-label { font-size: 9px; }
         }
 
         @media (max-height: 520px) {
@@ -1361,30 +1503,40 @@ export default function App() {
             value={search}
             onChange={(event) => {
               setSearch(event.target.value);
-              if (page === "inicio") setPage("minisseries");
+
+              if (page === "inicio" || page === "perfil") {
+                setPage("minisseries");
+              }
             }}
           />
         </label>
       </header>
 
-      <nav className="dv-nav">
-        {[
-          ["inicio", "Início"],
-          ["minisseries", "Minisséries"],
-          ["filmes", "Filmes"],
-          ["ao-vivo", "Ao vivo"],
-          ["favoritos", `♥ Favoritos (${favorites.length})`],
-        ].map(([key, label]) => (
+      <nav className="dv-nav" aria-label="Navegação principal">
+        {NAV_ITEMS.map((item) => (
           <button
-            key={key}
-            className={page === key ? "active" : ""}
-            onClick={() => goToPage(key)}
+            key={item.key}
+            className={page === item.key ? "active" : ""}
+            onClick={() => goToPage(item.key)}
+            aria-label={item.label}
+            aria-current={page === item.key ? "page" : undefined}
           >
-            {label}
+            <span className="dv-nav-icon" aria-hidden="true">
+              {item.key === "favoritos" && favoriteCount > 0
+                ? "♥"
+                : item.icon}
+            </span>
+
+            <span className="dv-nav-label">
+              {item.key === "favoritos"
+                ? `${item.label}${favoriteCount ? ` (${favoriteCount})` : ""}`
+                : item.label}
+            </span>
           </button>
         ))}
       </nav>
 
+      {/* AVISO DE DESENVOLVIMENTO — MANTIDO INTENCIONALMENTE */}
       <aside
         className="dv-development-notice"
         role="status"
@@ -1396,6 +1548,7 @@ export default function App() {
 
         <div className="dv-development-content">
           <h2>O DRAMOVIX AINDA ESTÁ EM DESENVOLVIMENTO</h2>
+
           <p>
             Estamos preparando muitas novidades para você!
             Algumas séries ainda não possuem episódios disponíveis,
@@ -1522,6 +1675,7 @@ export default function App() {
                           {episode.title ||
                             `Episódio ${index + 1}`}
                         </strong>
+
                         <small>
                           {episode.video_url
                             ? "▶ Pronto para assistir"
@@ -1554,11 +1708,14 @@ export default function App() {
                 <span className="dv-eyebrow">
                   ✦ DRAMOVIX+ ORIGINAL
                 </span>
+
                 <h1>Sempre tem uma nova história.</h1>
+
                 <p>
                   Romance, vingança, suspense e histórias que prendem
                   você do primeiro ao último episódio.
                 </p>
+
                 <button
                   className="dv-button-primary"
                   onClick={() => goToPage("minisseries")}
@@ -1586,6 +1743,7 @@ export default function App() {
                     onClick={() => {
                       setCategory(item);
                       setPage("minisseries");
+                      window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
                   >
                     {item}
@@ -1600,6 +1758,13 @@ export default function App() {
                   <h2>Em destaque</h2>
                   <p>Descubra sua próxima história favorita.</p>
                 </div>
+
+                <button
+                  className="dv-description-toggle"
+                  onClick={() => goToPage("minisseries")}
+                >
+                  Ver catálogo →
+                </button>
               </div>
 
               {renderGrid(filteredSeries.slice(0, 8))}
@@ -1648,6 +1813,13 @@ export default function App() {
                     <h2>Filmes para você</h2>
                     <p>Escolha e comece a assistir.</p>
                   </div>
+
+                  <button
+                    className="dv-description-toggle"
+                    onClick={() => goToPage("filmes")}
+                  >
+                    Ver filmes →
+                  </button>
                 </div>
 
                 {renderGrid(
@@ -1756,6 +1928,86 @@ export default function App() {
             )}
           </>
         )}
+
+        {page === "perfil" && (
+          <section className="dv-profile">
+            <div className="dv-profile-hero">
+              <div className="dv-profile-avatar" aria-hidden="true">
+                ♙
+              </div>
+
+              <div>
+                <span className="dv-eyebrow">SUA EXPERIÊNCIA</span>
+                <h1>Meu perfil</h1>
+                <p>
+                  Seu espaço no DRAMOVIX. Personalização de conta
+                  estará disponível em uma próxima atualização.
+                </p>
+              </div>
+            </div>
+
+            <div className="dv-profile-stats">
+              <div className="dv-profile-stat">
+                <strong>{favoriteSeries.length}</strong>
+                <span>Minisséries favoritas</span>
+              </div>
+
+              <div className="dv-profile-stat">
+                <strong>{favoriteMovies.length}</strong>
+                <span>Filmes favoritos</span>
+              </div>
+            </div>
+
+            <div className="dv-profile-panel">
+              <h2>Minha biblioteca</h2>
+
+              <button
+                className="dv-profile-action"
+                onClick={() => goToPage("favoritos")}
+              >
+                <span>♡ Meus favoritos</span>
+                <span>›</span>
+              </button>
+
+              <button
+                className="dv-profile-action"
+                onClick={() => goToPage("minisseries")}
+              >
+                <span>▤ Explorar minisséries</span>
+                <span>›</span>
+              </button>
+
+              <button
+                className="dv-profile-action"
+                onClick={() => goToPage("filmes")}
+              >
+                <span>▣ Explorar filmes</span>
+                <span>›</span>
+              </button>
+
+              <button
+                className="dv-profile-action"
+                onClick={() => goToPage("ao-vivo")}
+              >
+                <span>◉ Assistir ao vivo</span>
+                <span>›</span>
+              </button>
+            </div>
+
+            <div className="dv-profile-panel">
+              <h2>Sobre o DRAMOVIX</h2>
+              <p>
+                O DRAMOVIX ainda está em desenvolvimento. Novos recursos,
+                incluindo personalização de perfil, poderão ser adicionados
+                futuramente.
+              </p>
+              <p>
+                Seus favoritos atuais ficam salvos neste dispositivo.
+                Esta tela ainda não representa uma conta com login.
+              </p>
+            </div>
+          </section>
+        )}
       </main>
 
       <footer className="dv-footer">
@@ -1787,6 +2039,7 @@ export default function App() {
                     selectedSeries?.title ||
                     "Reproduzindo"}
                 </strong>
+
                 <small>
                   {selectedEpisode?.isLive
                     ? "Transmissão ao vivo"
