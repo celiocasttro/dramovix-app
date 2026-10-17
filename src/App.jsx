@@ -39,7 +39,7 @@ export default function App() {
   const [selectedEpisode, setSelectedEpisode] = useState(null);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
-  const [page, setPage] = useState("filmes"); // Inicia na aba Filmes / Início
+  const [page, setPage] = useState("filmes");
 
   const [favorites, setFavorites] = useState(() => {
     try {
@@ -461,13 +461,12 @@ export default function App() {
               event.currentTarget.src = DEFAULT_COVER;
             }}
           />
-          <span className="dv-card-play">▶</span>
           {type === "live" && (
             <span className="dv-live-badge">AO VIVO</span>
           )}
         </button>
 
-        {/* Mostra apenas Categoria e Nome do Conteúdo na Tela Principal (sem sinopse) */}
+        {/* Exibe APENAS Categoria e Nome do Conteúdo (sem sinopse nem botão play de fora) */}
         <div className="dv-card-content">
           <span className="dv-card-category">
             {type === "live" ? "AO VIVO" : item.category}
@@ -479,7 +478,7 @@ export default function App() {
               className="dv-button-primary"
               onClick={openItem}
             >
-              ▶ Detalhes
+              Detalhes
             </button>
 
             {type !== "live" && (
@@ -556,7 +555,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* Barra Inferior Exata: FILMES - TV - SERIES - ANIMES - DORAMAS */}
+      {/* Barra Inferior Exata: FILMES - TV - SERIES - ANIMES - DORAMAS (Sem favoritos embaixo) */}
       <nav className="dv-nav" aria-label="Navegação principal">
         {[
           ["filmes", "🎬", "FILMES"],
