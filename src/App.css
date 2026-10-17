@@ -3,18 +3,18 @@
 :root {
   font-family: 'DM Sans', sans-serif;
   color: #f7f5fc;
-  background: #0b0811;
+  background: #050505;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   font-weight: 400;
-  --bg: #0b0811;
-  --surface: #15101e;
-  --surface-light: #21172e;
-  --purple: #a855f7;
-  --purple-light: #c084fc;
-  --text-muted: #aaa0b8;
-  --border: #ffffff12;
+  --bg: #050505;
+  --surface: #0f0a0a;
+  --surface-light: #1a0f0f;
+  --red-primary: #e50914;
+  --red-glow: rgba(229, 9, 20, 0.4);
+  --text-muted: #9ca3af;
+  --border: rgba(229, 9, 20, 0.2);
   --bottom-nav-height: 68px;
 }
 
@@ -27,7 +27,7 @@ html {
   min-height: 100%;
   scroll-behavior: smooth;
   background: var(--bg);
-  scrollbar-color: #493354 var(--bg);
+  scrollbar-color: var(--red-primary) var(--bg);
 }
 
 body {
@@ -62,24 +62,26 @@ button, input {
 }
 
 /* ========================================
-   APLICATIVO
+   APLICATIVO (TEMA VERMELHO & PRETO)
 ======================================== */
 .dv-app {
   min-height: 100vh !important;
   padding-bottom: 90px !important;
   overflow-x: clip;
-  background: radial-gradient(ellipse at 50% -15%, #35134d55, transparent 45%), var(--bg) !important;
+  background: 
+    radial-gradient(circle at 50% -10%, rgba(229, 9, 20, 0.18), transparent 50%), 
+    var(--bg) !important;
   color: #fff !important;
   font-family: 'DM Sans', sans-serif !important;
 }
 
 .dv-app button {
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .dv-app button:focus-visible,
 .dv-app input:focus-visible {
-  outline: 2px solid var(--purple-light);
+  outline: 2px solid var(--red-primary);
   outline-offset: 3px;
 }
 
@@ -95,7 +97,7 @@ button, input {
   justify-content: space-between;
   gap: 16px;
   padding: 14px 16px;
-  background: rgba(11, 8, 17, 0.94) !important;
+  background: rgba(5, 5, 5, 0.95) !important;
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -112,10 +114,11 @@ button, input {
   letter-spacing: -1px;
   cursor: pointer;
   padding: 0;
+  text-shadow: 0 0 15px rgba(229, 9, 20, 0.6);
 }
 
 .dv-logo span {
-  color: var(--purple-light);
+  color: var(--red-primary);
 }
 
 .dv-header-actions {
@@ -133,15 +136,15 @@ button, input {
   align-items: center;
   width: 100%;
   padding: 8px 14px;
-  border: 1px solid #ffffff18;
+  border: 1px solid var(--border);
   border-radius: 999px;
   outline: none;
-  background: #171122;
+  background: #120808;
   color: white;
 }
 
 .dv-search span {
-  color: #94879f;
+  color: #fca5a5;
   margin-right: 8px;
 }
 
@@ -155,11 +158,11 @@ button, input {
 }
 
 .dv-search input::placeholder {
-  color: #94879f;
+  color: #7f1d1d;
 }
 
 /* ========================================
-   BOTÕES E NAVEGAÇÃO SUPERIOR (DESKTOP)
+   BOTÕES E NAVEGAÇÃO SUPERIOR
 ======================================== */
 .dv-button, .dv-button-primary {
   display: inline-flex;
@@ -168,24 +171,26 @@ button, input {
   gap: 7px;
   min-height: 38px;
   padding: 8px 16px;
-  border: 1px solid transparent;
-  border-radius: 9px !important;
-  background: linear-gradient(110deg, #9333ea, #b832d8) !important;
+  border: 1px solid rgba(229, 9, 20, 0.4);
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #e50914, #b91c1c) !important;
   color: white !important;
   font-size: 12px;
   font-weight: 700 !important;
   text-decoration: none;
+  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
 }
 
 .dv-button:hover, .dv-button-primary:hover {
-  filter: brightness(1.12);
+  filter: brightness(1.15);
   transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(229, 9, 20, 0.5);
 }
 
 .dv-button.secondary, .dv-button-secondary {
-  background: #ffffff0b !important;
-  border-color: #ffffff1c;
-  color: #f2eafa !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f3f4f6 !important;
 }
 
 .dv-nav {
@@ -195,7 +200,7 @@ button, input {
   padding: 10px 16px;
   overflow-x: auto;
   scrollbar-width: none;
-  background: #0f0a17;
+  background: #080505;
   border-bottom: 1px solid var(--border);
 }
 
@@ -205,24 +210,26 @@ button, input {
 
 .dv-nav button {
   flex-shrink: 0;
-  border: 1px solid #ffffff10;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 999px;
   padding: 7px 15px;
-  background: #15101e;
-  color: #bcb1c9;
+  background: #110808;
+  color: #9ca3af;
   font-size: 12px;
   font-weight: 600;
 }
 
 .dv-nav button:hover {
-  background: #ffffff0b;
+  background: rgba(229, 9, 20, 0.1);
   color: white;
+  border-color: var(--border);
 }
 
 .dv-nav button.active {
-  border-color: var(--purple);
-  background: rgba(168, 85, 247, 0.18);
-  color: var(--purple-light);
+  border-color: var(--red-primary);
+  background: rgba(229, 9, 20, 0.2);
+  color: #fca5a5;
+  box-shadow: 0 0 10px rgba(229, 9, 20, 0.25);
 }
 
 /* ========================================
@@ -251,7 +258,7 @@ button, input {
 
 .dv-eyebrow {
   display: inline-block;
-  color: var(--purple-light);
+  color: #fca5a5;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 1.5px;
@@ -291,10 +298,10 @@ button, input {
   margin: 15px 0 30px !important;
   padding: 24px !important;
   overflow: hidden;
-  border: 1px solid #ffffff18 !important;
+  border: 1px solid var(--border) !important;
   border-radius: 18px !important;
-  background: linear-gradient(120deg, #281237, #140c20);
-  box-shadow: 0 12px 40px #00000044 !important;
+  background: linear-gradient(135deg, #1a0507, #0a0505);
+  box-shadow: 0 12px 40px rgba(229, 9, 20, 0.25) !important;
 }
 
 .dv-hero-content {
@@ -309,18 +316,19 @@ button, input {
   font-weight: 800 !important;
   line-height: 1.1;
   letter-spacing: -1px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
 }
 
 .dv-hero p {
   max-width: 440px;
-  color: #e0d7e9;
+  color: #d1d5db;
   font-size: 13px;
   line-height: 1.6;
   margin-bottom: 16px;
 }
 
 /* ========================================
-   CATEGORIAS (HORIZONTAIS)
+   CATEGORIAS
 ======================================== */
 .dv-categories {
   display: flex;
@@ -336,30 +344,31 @@ button, input {
 
 .dv-category-button {
   flex: 0 0 auto;
-  padding: 8px 15px;
-  border: 1px solid #ffffff12;
-  border-radius: 999px;
-  background: #15101e;
-  color: #c9bfd3;
+  padding: 8px 16px;
+  border: 1px solid rgba(229, 9, 20, 0.25);
+  border-radius: 10px;
+  background: #0f0a0a;
+  color: #d1d5db;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
 }
 
 .dv-category-button:hover {
-  border-color: #a855f777;
+  border-color: var(--red-primary);
   color: white;
+  background: rgba(229, 9, 20, 0.15);
 }
 
 .dv-category-button.active {
-  border-color: var(--purple) !important;
-  background: linear-gradient(110deg, #792bc0, #982bd0) !important;
+  border-color: var(--red-primary) !important;
+  background: linear-gradient(135deg, #e50914, #991b1b) !important;
   color: white !important;
-  box-shadow: 0 4px 15px rgba(147, 51, 234, 0.25);
+  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
 }
 
 /* ========================================
-   CATÁLOGO / GRID DE CARDS (ESTILO TRENDING/SHORTS)
+   CATÁLOGO / GRID DE CARDS
 ======================================== */
 .dv-grid {
   display: grid !important;
@@ -385,16 +394,17 @@ button, input {
   position: relative;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #ffffff14 !important;
+  border: 1px solid rgba(229, 9, 20, 0.2) !important;
   border-radius: 12px !important;
-  background: #140f1d !important;
-  box-shadow: 0 6px 20px #00000025;
-  transition: transform 0.2s, border-color 0.2s;
+  background: #0d0808 !important;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
 .dv-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(168, 85, 247, 0.4) !important;
+  border-color: var(--red-primary) !important;
+  box-shadow: 0 8px 25px rgba(229, 9, 20, 0.3);
 }
 
 .dv-card-image-button {
@@ -404,7 +414,7 @@ button, input {
   padding: 0;
   overflow: hidden;
   border: 0;
-  background: #1d152a;
+  background: #1a0f0f;
   text-align: left;
 }
 
@@ -423,12 +433,12 @@ button, input {
   width: 36px;
   height: 36px;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
-  background: rgba(139, 40, 217, 0.88);
+  background: rgba(229, 9, 20, 0.9);
   color: white;
   font-size: 13px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.5);
 }
 
 .dv-live-badge {
@@ -437,11 +447,12 @@ button, input {
   left: 8px;
   padding: 4px 7px;
   border-radius: 4px;
-  background: #e11d48;
+  background: #e50914;
   color: white;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.5px;
+  box-shadow: 0 0 10px rgba(229, 9, 20, 0.8);
 }
 
 .dv-card-content {
@@ -451,7 +462,7 @@ button, input {
 
 .dv-card-category {
   display: inline-block;
-  color: var(--purple-light);
+  color: #fca5a5;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.8px;
@@ -470,7 +481,7 @@ button, input {
 }
 
 .dv-card p {
-  color: #9d92aa;
+  color: #9ca3af;
   font-size: 11px;
   line-height: 1.4;
   margin: 0 0 10px;
@@ -499,16 +510,17 @@ button, input {
   height: 32px;
   flex-shrink: 0;
   place-items: center;
-  border: 1px solid #ffffff1c;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  background: #1d1629;
+  background: #1a0f0f;
   color: white;
   font-size: 16px;
 }
 
 .dv-favorite-button.active {
-  color: #fb7185;
-  border-color: rgba(251, 113, 133, 0.4);
+  color: #e50914;
+  border-color: rgba(229, 9, 20, 0.5);
+  background: rgba(229, 9, 20, 0.1);
 }
 
 /* ========================================
@@ -522,9 +534,9 @@ button, input {
   max-width: 1400px;
   margin: 15px auto 0;
   padding: 14px 16px;
-  border: 1px solid rgba(168, 85, 247, 0.3);
+  border: 1px solid rgba(229, 9, 20, 0.35);
   border-radius: 14px;
-  background: linear-gradient(110deg, rgba(124, 58, 237, 0.15), rgba(236, 72, 153, 0.08)), #110d1a;
+  background: linear-gradient(135deg, rgba(229, 9, 20, 0.15), rgba(10, 5, 5, 0.9)), #0d0808;
 }
 
 .dv-development-icon {
@@ -534,20 +546,20 @@ button, input {
   flex-shrink: 0;
   place-items: center;
   border-radius: 10px;
-  background: rgba(168, 85, 247, 0.2);
+  background: rgba(229, 9, 20, 0.25);
   font-size: 18px;
 }
 
 .dv-development-content h2 {
   margin: 0 0 4px;
-  color: #f5d0fe;
+  color: #fca5a5;
   font-size: 13px;
   font-weight: 800;
 }
 
 .dv-development-content p {
   margin: 0;
-  color: #c7c8d5;
+  color: #d1d5db;
   font-size: 12px;
   line-height: 1.6;
 }
@@ -563,7 +575,7 @@ button, input {
 .dv-back {
   margin-bottom: 14px;
   padding: 6px 0;
-  color: var(--purple-light);
+  color: #fca5a5;
   border: 0;
   background: transparent;
   font-weight: 600;
@@ -578,7 +590,7 @@ button, input {
   padding: 18px;
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: #140f1d;
+  background: #0d0808;
 }
 
 @media (max-width: 650px) {
@@ -601,7 +613,7 @@ button, input {
   aspect-ratio: 3 / 4;
   object-fit: cover;
   border-radius: 12px;
-  background: #1d152a;
+  background: #1a0f0f;
 }
 
 .dv-detail-info h1 {
@@ -611,7 +623,7 @@ button, input {
 }
 
 .dv-detail-info p {
-  color: #b8bac9;
+  color: #9ca3af;
   font-size: 13px;
   line-height: 1.7;
   margin-bottom: 14px;
@@ -626,9 +638,9 @@ button, input {
 .dv-description-toggle {
   padding: 9px 14px;
   color: white;
-  border: 1px solid #ffffff18;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 9px;
-  background: #1e172b;
+  background: #1a0f0f;
   font-size: 12px;
   font-weight: 600;
 }
@@ -653,14 +665,14 @@ button, input {
   padding: 11px 14px;
   text-align: left;
   color: white;
-  border: 1px solid #ffffff10;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 11px;
-  background: #140f1d;
+  background: #0d0808;
 }
 
 .dv-episode:hover {
-  border-color: var(--purple);
-  background: #1c1428;
+  border-color: var(--red-primary);
+  background: #170a0a;
 }
 
 .dv-episode-number {
@@ -670,8 +682,8 @@ button, input {
   flex-shrink: 0;
   place-items: center;
   border-radius: 9px;
-  background: rgba(168, 85, 247, 0.15);
-  color: #d8b4fe;
+  background: rgba(229, 9, 20, 0.15);
+  color: #fca5a5;
   font-weight: 800;
   font-size: 13px;
 }
@@ -697,12 +709,12 @@ button, input {
 }
 
 .dv-episode-play {
-  color: var(--purple-light);
+  color: #fca5a5;
   font-size: 16px;
 }
 
 /* ========================================
-   PLAYER MODAL (AJUSTADO PARA PREENCHIMENTO TOTAL SEM BORDAS)
+   PLAYER MODAL (ESTILO SHORTS / VERTICAL SEM BORDAS)
 ======================================== */
 .dv-player-overlay {
   position: fixed;
@@ -712,7 +724,7 @@ button, input {
   align-items: center;
   justify-content: center;
   padding: 0;
-  background: rgba(4, 3, 7, 0.96);
+  background: rgba(0, 0, 0, 0.98);
   backdrop-filter: blur(14px);
 }
 
@@ -728,7 +740,7 @@ button, input {
   border: 0;
   border-radius: 0;
   background: #000;
-  box-shadow: 0 25px 80px rgba(0,0,0,0.8);
+  box-shadow: 0 25px 80px rgba(0,0,0,0.9);
   overflow: hidden;
 }
 
@@ -736,7 +748,7 @@ button, input {
   .dv-player-modal {
     height: 90vh;
     border-radius: 16px;
-    border: 1px solid #ffffff18;
+    border: 1px solid rgba(229, 9, 20, 0.3);
   }
 }
 
@@ -753,14 +765,6 @@ button, input {
   z-index: 1;
 }
 
-.dv-video-wrap--portrait,
-.dv-video-wrap--landscape {
-  width: 100%;
-  height: 100%;
-  max-height: none;
-  aspect-ratio: auto;
-}
-
 .dv-video {
   width: 100% !important;
   height: 100% !important;
@@ -768,93 +772,179 @@ button, input {
   background: #000;
 }
 
+.dv-shorts-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+  background: linear-gradient(
+    180deg,
+    rgba(0,0,0,0.5) 0%,
+    transparent 20%,
+    transparent 60%,
+    rgba(0,0,0,0.9) 100%
+  );
+  pointer-events: none;
+}
+
+.dv-shorts-ui > * {
+  pointer-events: auto;
+}
+
+.dv-shorts-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: env(safe-area-inset-top);
+}
+
+.dv-shorts-back, .dv-shorts-speed {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+}
+
+.dv-shorts-sidebar {
+  position: absolute;
+  right: 16px;
+  bottom: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  z-index: 10;
+}
+
+.dv-shorts-action-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dv-shorts-action-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+}
+
+.dv-shorts-action-btn.liked .dv-shorts-action-icon {
+  color: #e50914;
+  border-color: rgba(229, 9, 20, 0.6);
+}
+
+.dv-shorts-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 10px;
+}
+
+.dv-shorts-tags {
+  display: flex;
+  gap: 6px;
+}
+
+.dv-shorts-tag {
+  background: rgba(229, 9, 20, 0.3);
+  backdrop-filter: blur(6px);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fca5a5;
+  border: 1px solid rgba(229, 9, 20, 0.4);
+}
+
+.dv-shorts-title-row {
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.dv-shorts-desc {
+  color: #d1d5db;
+  font-size: 12px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+
+.dv-shorts-episodes-bar {
+  background: rgba(20, 10, 10, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(229, 9, 20, 0.3);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.dv-shorts-episodes-bar:hover {
+  background: rgba(35, 12, 12, 0.9);
+}
+
+.dv-shorts-episodes-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .dv-player-error {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(0,0,0,0.85);
+  background: rgba(0,0,0,0.9);
   padding: 16px;
   border-radius: 12px;
   color: #fca5a5;
   text-align: center;
   z-index: 20;
   max-width: 80%;
-}
-
-.dv-player-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  background: #110d1a;
-}
-
-.dv-player-heading strong {
-  display: block;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 260px;
-}
-
-.dv-player-heading small {
-  color: var(--text-muted);
-  font-size: 11px;
-}
-
-.dv-player-close {
-  display: grid;
-  width: 36px;
-  height: 36px;
-  place-items: center;
-  color: white;
-  border: 1px solid #ffffff1c;
-  border-radius: 50%;
-  background: #1c152a;
-  font-size: 20px;
-}
-
-.dv-player-bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 16px;
-  border-top: 1px solid var(--border);
-  background: #110d1a;
-}
-
-.dv-player-bottom span {
-  color: var(--text-muted);
-  font-size: 11px;
-}
-
-.dv-player-next {
-  padding: 8px 14px;
-  color: white;
-  border: 0;
-  border-radius: 8px;
-  background: #8b28d9;
-  font-size: 11px;
-  font-weight: 700;
+  border: 1px solid var(--red-primary);
 }
 
 /* ========================================
-   RODAPÉ E BARRA INFERIOR FLUTUANTE (MOBILE NAVIGATION)
+   RODAPÉ E BARRA INFERIOR FIXA (MOBILE)
 ======================================== */
 .dv-footer {
   padding: 30px 16px 90px;
-  border-top: 1px solid #ffffff0a;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
   color: var(--text-muted);
   text-align: center;
   font-size: 11px;
 }
 
-/* Barra de Navegação Estilo Aplicativo (Fixa na parte inferior em celulares) */
 @media (max-width: 768px) {
   .dv-nav {
     position: fixed !important;
@@ -868,11 +958,11 @@ button, input {
     height: var(--bottom-nav-height) !important;
     margin: 0 !important;
     padding: 0 8px calc(0px + env(safe-area-inset-bottom)) !important;
-    background: rgba(11, 8, 17, 0.96) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: rgba(8, 5, 5, 0.97) !important;
+    border-top: 1px solid rgba(229, 9, 20, 0.25) !important;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.8);
   }
 
   .dv-nav button {
@@ -886,14 +976,15 @@ button, input {
     border: 0 !important;
     border-radius: 0 !important;
     background: transparent !important;
-    color: #9b8fa8;
+    color: #9ca3af;
     font-size: 10px;
     font-weight: 500;
   }
 
   .dv-nav button.active {
-    color: var(--purple-light) !important;
+    color: #e50914 !important;
     background: transparent !important;
+    text-shadow: 0 0 10px rgba(229, 9, 20, 0.5);
   }
 }
 
@@ -905,7 +996,7 @@ button, input {
 }
 
 .dv-empty span {
-  color: var(--purple-light);
+  color: var(--red-primary);
   font-size: 32px;
   display: block;
   margin-bottom: 8px;
