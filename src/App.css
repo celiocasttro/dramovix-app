@@ -62,7 +62,7 @@ button, input {
 }
 
 /* ========================================
-   APLICATIVO (ESTILO ONI CINE / VERMELHO E PRETO)
+   APLICATIVO (TEMA VERMELHO E PRETO)
 ======================================== */
 .dv-app {
   min-height: 100vh !important;
@@ -134,7 +134,6 @@ button, input {
   outline: none;
   background: #120505;
   color: white;
-  box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
 }
 
 .dv-search span {
@@ -156,7 +155,7 @@ button, input {
 }
 
 /* ========================================
-   CONTEÚDO PRINCIPAL E BLOCOS DE DESTAQUE
+   CONTEÚDO PRINCIPAL E BLOCOS DE CATEGORIA
 ======================================== */
 .dv-main {
   width: 92%;
@@ -176,9 +175,9 @@ button, input {
 .dv-section-heading h2 {
   margin: 0;
   font-family: 'Outfit', sans-serif !important;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  color: #ffffff;
 }
 
 .dv-section-heading p {
@@ -187,47 +186,41 @@ button, input {
   font-size: 12px;
 }
 
-/* Estilo de Caixas em Bloco (semelhantes aos banners da imagem do app) */
-.dv-info-boxes {
+/* Grade de Categorias em Bloco (Filmes, Séries, Animes, Doramas) */
+.dv-style-categories-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 12px;
-  margin: 20px 0;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 15px 0 25px;
 }
 
-.dv-info-box {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px;
-  background: linear-gradient(135deg, #150707, #0a0404);
+.dv-style-cat-card {
+  background: linear-gradient(135deg, #120606, #080303);
   border: 1px solid rgba(229, 9, 20, 0.35);
   border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+  padding: 14px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s;
 }
 
-.dv-info-box-icon {
+.dv-style-cat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--red-primary);
+}
+
+.dv-style-cat-icon {
   font-size: 24px;
-  background: rgba(229, 9, 20, 0.2);
-  width: 45px;
-  height: 45px;
-  display: grid;
-  place-items: center;
-  border-radius: 10px;
-  border: 1px solid rgba(229, 9, 20, 0.4);
+  margin-bottom: 6px;
+  display: block;
 }
 
-.dv-info-box-text h4 {
-  margin: 0 0 3px;
-  font-size: 14px;
-  color: #fff;
-  font-weight: 700;
-}
-
-.dv-info-box-text p {
-  margin: 0;
+.dv-style-cat-card span:last-child {
   font-size: 11px;
-  color: #9ca3af;
+  font-weight: 700;
+  color: #f3f4f6;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* ========================================
@@ -238,9 +231,9 @@ button, input {
   isolation: isolate;
   display: flex;
   align-items: flex-end;
-  min-height: 280px !important;
-  margin: 15px 0 30px !important;
-  padding: 24px !important;
+  min-height: 260px !important;
+  margin: 15px 0 25px !important;
+  padding: 22px !important;
   overflow: hidden;
   border: 1px solid var(--border) !important;
   border-radius: 16px !important;
@@ -256,53 +249,19 @@ button, input {
 .dv-hero h1 {
   margin: 10px 0;
   font-family: 'Outfit', sans-serif !important;
-  font-size: clamp(26px, 4vw, 42px) !important;
+  font-size: clamp(24px, 4vw, 38px) !important;
   font-weight: 800 !important;
   line-height: 1.1;
+  color: #ffffff;
   text-shadow: 0 2px 10px rgba(0,0,0,0.8);
 }
 
 .dv-hero p {
   max-width: 440px;
   color: #d1d5db;
-  font-size: 13px;
-  line-height: 1.6;
-  margin-bottom: 16px;
-}
-
-/* ========================================
-   CATEGORIAS
-======================================== */
-.dv-categories {
-  display: flex;
-  gap: 10px;
-  margin: 15px 0 22px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.dv-categories::-webkit-scrollbar {
-  display: none;
-}
-
-.dv-category-button {
-  flex: 0 0 auto;
-  padding: 10px 18px;
-  border: 1px solid rgba(229, 9, 20, 0.3);
-  border-radius: 12px;
-  background: #0f0707;
-  color: #d1d5db;
   font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.dv-category-button:hover,
-.dv-category-button.active {
-  border-color: var(--red-primary);
-  color: white;
-  background: linear-gradient(135deg, #e50914, #991b1b);
-  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
+  line-height: 1.6;
+  margin-bottom: 14px;
 }
 
 /* ========================================
@@ -409,6 +368,7 @@ button, input {
   font-family: 'Outfit', sans-serif !important;
   font-size: 13px !important;
   font-weight: 700 !important;
+  color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -435,9 +395,6 @@ button, input {
   padding: 7px 6px;
   font-size: 10px;
   min-height: 32px;
-  border: 1px solid rgba(229, 9, 20, 0.5);
-  border-radius: 8px !important;
-  background: linear-gradient(135deg, #e50914, #991b1b) !important;
 }
 
 .dv-favorite-button {
@@ -460,7 +417,7 @@ button, input {
 }
 
 /* ========================================
-   BOTÕES GERAIS
+   BOTÕES E DETALHES
 ======================================== */
 .dv-button-primary {
   display: inline-flex;
@@ -488,9 +445,6 @@ button, input {
   font-weight: 600;
 }
 
-/* ========================================
-   TELA DE DETALHES E EPISÓDIOS
-======================================== */
 .dv-detail {
   max-width: 950px;
   margin: 10px auto 40px;
@@ -567,7 +521,7 @@ button, input {
 }
 
 /* ========================================
-   PLAYER MODAL
+   PLAYER CORRETO (SEM ESTICAR O VÍDEO DENTRO DO QUADRO)
 ======================================== */
 .dv-player-overlay {
   position: fixed;
@@ -633,10 +587,11 @@ button, input {
   margin: 0 auto;
 }
 
+/* object-fit: contain garante que o vídeo aparece INTEIRO sem ser esticado ou cortar fora do quadro */
 .dv-video-wrap--portrait .dv-video {
   width: 100%;
   height: 100%;
-  object-fit: cover !important;
+  object-fit: contain !important;
 }
 
 .dv-video-wrap--landscape {
@@ -681,7 +636,7 @@ button, input {
 }
 
 /* ========================================
-   RODAPÉ E BARRA INFERIOR FIXA (MOBILE)
+   RODAPÉ E BARRA DE NAVEGAÇÃO INFERIOR FIXA
 ======================================== */
 .dv-footer {
   padding: 30px 16px 90px;
