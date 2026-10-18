@@ -101,27 +101,6 @@ export default function App() {
             .order("id", { ascending: true }),
         ]);
 
-        if (seriesResult.error) {
-          console.error(
-            "Erro ao carregar séries:",
-            seriesResult.error
-          );
-        }
-
-        if (moviesResult.error) {
-          console.error(
-            "Erro ao carregar filmes:",
-            moviesResult.error
-          );
-        }
-
-        if (liveChannelsResult.error) {
-          console.error(
-            "Erro ao carregar canais:",
-            liveChannelsResult.error
-          );
-        }
-
         const loadedSeries = (seriesResult.data || [])
           .filter(
             (item) =>
@@ -175,7 +154,6 @@ export default function App() {
         }
       } catch (error) {
         console.error("Erro ao carregar catálogo:", error);
-
         if (!cancelled) {
           setSeries([]);
           setMovies([]);
@@ -237,7 +215,6 @@ export default function App() {
         }
       } catch (error) {
         console.error("Erro ao carregar episódios:", error);
-
         if (!cancelled) setEpisodes([]);
       } finally {
         if (!cancelled) setEpisodesLoading(false);
@@ -284,7 +261,6 @@ export default function App() {
 
     const handleVideoError = () => {
       if (cancelled) return;
-
       setPlayerError(
         "Não foi possível reproduzir este vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução."
       );
@@ -312,7 +288,6 @@ export default function App() {
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (cancelled || !data.fatal) return;
-
         setPlayerError(
           "Não foi possível carregar a transmissão."
         );
@@ -334,12 +309,10 @@ export default function App() {
 
     return () => {
       cancelled = true;
-
       video.removeEventListener("error", handleVideoError);
 
       if (hls) {
         hls.destroy();
-
         if (hlsRef.current === hls) {
           hlsRef.current = null;
         }
@@ -350,16 +323,6 @@ export default function App() {
       video.load();
     };
   }, [playerOpen, selectedEpisode]);
-
-  const categories = [
-    "Todas",
-    ...new Set(
-      series
-        .filter((item) => !item.isLive)
-        .map((item) => item.category)
-        .filter(Boolean)
-    ),
-  ];
 
   const filteredSeries = series.filter((item) => {
     const matchesSearch =
@@ -530,15 +493,6 @@ export default function App() {
           className="dv-card-image-button"
           onClick={openItem}
           aria-label={`Abrir ${item.title}`}
-          style={{
-            display: "block",
-            width: "100%",
-            padding: 0,
-            border: "none",
-            background: "transparent",
-            cursor: "pointer",
-            textAlign: "left",
-          }}
         >
           <img
             className="dv-card-image"
@@ -554,19 +508,13 @@ export default function App() {
           {type === "live" && (
             <span className="dv-live-badge">AO VIVO</span>
           )}
+        </button>
 
-          <h3
-            style={{
-              margin: "8px 0 12px",
-              fontSize: "14px",
-              lineHeight: 1.4,
-              fontWeight: 600,
-              color: "#ffffff",
-            }}
-          >
+        <div className="dv-card-content">
+          <h3 onClick={openItem} style={{ cursor: "pointer" }}>
             {item.title}
           </h3>
-        </button>
+        </div>
       </article>
     );
   }
@@ -612,58 +560,64 @@ export default function App() {
     Boolean(selectedEpisode?.isLive) ||
     Boolean(selectedSeries?.isLive);
 
-  const detailItem = selectedSeries || selectedMovie;
+  const heroItem = series[0] || movies[0];
 
   return (
     <div className="dv-app">
+      {/* Cabeçalho superior igual à referência com logo e botões de busca/perfil */}
       <header className="dv-header">
         <button
           className="dv-logo"
           onClick={() => goToPage("filmes")}
           aria-label="DRAMOVIX início"
         >
-          DRAMOVIX<span>+</span>
+          DRAMOVIX
         </button>
 
-        <div className="dv-header-actions">
-          <label className="dv-search">
-            <span>⌕</span>
-
-            <input
-              type="search"
-              placeholder="Pesquisar..."
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-
-                if (page === "filmes") {
-                  setPage("explorar");
-                }
-              }}
-            />
-          </label>
+        <div className="dv-header-right-icons">
+          <button 
+            className="dv-icon-btn" 
+            onClick={() => { setPage("explorar"); }}
+            aria-label="Pesquisar"
+          >
+            ⌕
+          </button>
+          <button 
+            className="dv-icon-btn" 
+            onClick={() => { goToPage("favoritos"); }}
+            aria-label="Perfil/Favoritos"
+          >
+            ♙
+          </button>
         </div>
       </header>
 
+      {/* Menu de Abas Estilo Netflix / Referência no topo */}
       <nav
         className="dv-nav"
         aria-label="Navegação principal"
       >
         {[
-          ["filmes", "⌂", "INÍCIO"],
-          ["filmes", "🎬", "FILMES"],
-          ["series", "▣", "SÉRIES"],
-          ["animes", "✦", "ANIME"],
-          ["doramas", "◇", "DORAMAS"],
-        ].map(([key, icon, label]) => (
+          ["filmes", "Início"],
+          ["filmes-tab", "Filmes"],
+          ["series", "Séries"],
+          ["desenhos", "Desenhos"],
+          ["animes", "Anime"],
+          ["doramas", "Doramas"],
+          ["tv", "TV Ao Vivo"],
+        ].map(([key, label]) => (
           <button
             key={key}
-            className={page === key ? "active" : ""}
-            onClick={() => goToPage(key)}
+            className={page === key || (key === "filmes-tab" && page === "filmes") ? "active" : ""}
+            onClick={() => {
+              if (key === "desenhos") {
+                setCategory("Desenho");
+                setPage("series");
+              } else {
+                goToPage(key === "filmes-tab" ? "filmes" : key);
+              }
+            }}
           >
-            <span style={{ fontSize: "16px" }}>
-              {icon}
-            </span>
             <span>{label}</span>
           </button>
         ))}
@@ -674,7 +628,7 @@ export default function App() {
           <section className="dv-detail">
             <button
               className="dv-back"
-              onClick={() => goToPage("series")}
+              onClick={() => goToPage("filmes")}
             >
               ← Voltar ao catálogo
             </button>
@@ -904,37 +858,31 @@ export default function App() {
 
         {page === "filmes" && (
           <>
+            {/* Banner Principal idêntico ao modelo da imagem */}
             <section
               className="dv-hero"
               style={{
-                "--hero-image": `url("${(series[0]?.image || movies[0]?.image || DEFAULT_COVER).replace(/"/g, '\\"')}")`,
+                backgroundImage: `url("${(heroItem?.image || DEFAULT_COVER)}")`,
               }}
             >
+              <div className="dv-hero-overlay"></div>
               <div className="dv-hero-content">
-                <span className="dv-eyebrow">
-                  ✦ DRAMOVIX+ CINEMA
-                </span>
-
-                <h1>
-                  O melhor conteúdo sempre com você.
-                </h1>
-
+                <span className="dv-eyebrow">SÉRIE</span>
+                <h1>{heroItem?.title || "O LEGADO DO CAOS"}</h1>
                 <p>
-                  Conteúdo variado para todos os gostos.
-                  Lançamentos e clássicos atualizados.
+                  {heroItem?.description
+                    ? heroItem.description.slice(0, 120) + "..."
+                    : "Um jovem descobre que carrega um poder antigo e precisa escolher entre o dever e o que sente."}
                 </p>
 
                 <button
                   className="dv-button-primary"
                   onClick={() => {
-                    setSearch("");
-                    window.scrollTo({
-                      top: 0,
-                      behavior: "smooth",
-                    });
+                    if (heroItem?.dbId) openSeries(heroItem);
+                    else if (heroItem) openMovieDetails(heroItem);
                   }}
                 >
-                  Explorar Filmes →
+                  ▶ Assistir
                 </button>
               </div>
             </section>
@@ -944,18 +892,18 @@ export default function App() {
                 <h2>Continue assistindo</h2>
                 <button className="dv-see-all" onClick={() => goToPage("series")}>Ver todos ›</button>
               </div>
-              {renderGrid(filteredSeries.slice(0, 4), "series")}
+              {renderGrid(filteredSeries.slice(0, 3), "series")}
             </section>
 
             <section className="dv-section dv-home-shelf">
               <div className="dv-section-heading">
                 <h2>Desenhos</h2>
-                <button className="dv-see-all" onClick={() => goToPage("series")}>Ver todos ›</button>
+                <button className="dv-see-all" onClick={() => { setCategory("Desenho"); setPage("series"); }}>Ver todos ›</button>
               </div>
               {renderGrid(filteredSeries.filter((item) => {
                 const value = normalize(item.category);
                 return value.includes("desenho") || value.includes("kids") || value.includes("infantil") || value.includes("cartoon");
-              }).slice(0, 8), "series")}
+              }).slice(0, 4), "series")}
             </section>
 
             <section className="dv-section dv-home-shelf">
@@ -963,7 +911,7 @@ export default function App() {
                 <h2>Animes</h2>
                 <button className="dv-see-all" onClick={() => goToPage("animes")}>Ver todos ›</button>
               </div>
-              {renderGrid(filteredSeries.filter((item) => normalize(item.category).includes("anime")).slice(0, 8), "series")}
+              {renderGrid(filteredSeries.filter((item) => normalize(item.category).includes("anime")).slice(0, 4), "series")}
             </section>
 
             <section className="dv-section dv-home-shelf">
@@ -971,7 +919,7 @@ export default function App() {
                 <h2>Filmes</h2>
                 <button className="dv-see-all" onClick={() => goToPage("filmes")}>Ver todos ›</button>
               </div>
-              {renderGrid(filteredMovies.slice(0, 8), "movie")}
+              {renderGrid(filteredMovies.slice(0, 4), "movie")}
             </section>
 
             <section className="dv-section dv-home-shelf">
@@ -979,7 +927,7 @@ export default function App() {
                 <h2>Séries</h2>
                 <button className="dv-see-all" onClick={() => goToPage("series")}>Ver todos ›</button>
               </div>
-              {renderGrid(filteredSeries.slice(0, 8), "series")}
+              {renderGrid(filteredSeries.slice(0, 4), "series")}
             </section>
           </>
         )}
@@ -989,24 +937,28 @@ export default function App() {
             <div className="dv-section-heading">
               <div>
                 <h2>RESULTADOS DA PESQUISA</h2>
-                <p>
-                  Conteúdos encontrados no catálogo.
-                </p>
+                <p>Conteúdos encontrados no catálogo.</p>
               </div>
             </div>
 
+            <div style={{ margin: "15px 0" }}>
+              <input
+                type="search"
+                placeholder="O que deseja procurar?"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ width: "100%", padding: "12px 16px", borderRadius: "10px", background: "#120505", border: "1px solid var(--border)", color: "#fff" }}
+              />
+            </div>
+
             {loading ? (
-              <p className="dv-message">
-                Carregando catálogo...
-              </p>
+              <p className="dv-message">Carregando catálogo...</p>
             ) : (
               <>
-                <h3>Filmes</h3>
+                <h3 style={{ fontSize: "16px", margin: "15px 0 10px" }}>Filmes</h3>
                 {renderGrid(filteredMovies, "movie")}
 
-                <h3 style={{ marginTop: "24px" }}>
-                  Séries, animes e doramas
-                </h3>
+                <h3 style={{ fontSize: "16px", margin: "24px 0 10px" }}>Séries, animes e doramas</h3>
                 {renderGrid(filteredSeries, "series")}
               </>
             )}
@@ -1018,17 +970,12 @@ export default function App() {
             <div className="dv-section-heading">
               <div>
                 <h2>TV ONLINE / CANAIS AO VIVO</h2>
-                <p>
-                  Assista às transmissões de TV e canais
-                  disponíveis.
-                </p>
+                <p>Assista às transmissões de TV e canais disponíveis.</p>
               </div>
             </div>
 
             {liveChannelsLoading ? (
-              <p className="dv-message">
-                Carregando canais ao vivo...
-              </p>
+              <p className="dv-message">Carregando canais ao vivo...</p>
             ) : (
               renderGrid(
                 [
@@ -1055,9 +1002,7 @@ export default function App() {
             <div className="dv-section-heading">
               <div>
                 <h2>SÉRIES</h2>
-                <p>
-                  Maratone as melhores minisséries e séries.
-                </p>
+                <p>Maratone as melhores minisséries e séries.</p>
               </div>
             </div>
 
@@ -1070,9 +1015,7 @@ export default function App() {
             <div className="dv-section-heading">
               <div>
                 <h2>ANIMES</h2>
-                <p>
-                  As melhores animações japonesas.
-                </p>
+                <p>As melhores animações japonesas.</p>
               </div>
             </div>
 
@@ -1099,9 +1042,7 @@ export default function App() {
             <div className="dv-section-heading">
               <div>
                 <h2>DORAMAS</h2>
-                <p>
-                  Séries asiáticas de sucesso.
-                </p>
+                <p>Séries asiáticas de sucesso.</p>
               </div>
             </div>
 
@@ -1119,18 +1060,23 @@ export default function App() {
         DRAMOVIX+ · Diversão sem limites no seu celular.
       </footer>
 
+      {/* Barra de Navegação Inferior idêntica à referência (Início, Buscar, Favoritos, Perfil) */}
       <nav className="dv-bottom-nav" aria-label="Navegação inferior">
-        <button className={["filmes", "series", "animes", "doramas", "tv"].includes(page) ? "active" : ""} onClick={() => goToPage("filmes")}>
-          <span aria-hidden="true">⌂</span><small>Início</small>
+        <button className={page === "filmes" ? "active" : ""} onClick={() => goToPage("filmes")}>
+          <span aria-hidden="true">⌂</span>
+          <small>Início</small>
         </button>
         <button className={page === "explorar" ? "active" : ""} onClick={() => { setPage("explorar"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
-          <span aria-hidden="true">⌕</span><small>Buscar</small>
+          <span aria-hidden="true">⌕</span>
+          <small>Buscar</small>
         </button>
         <button className={page === "favoritos" ? "active" : ""} onClick={() => goToPage("favoritos")}>
-          <span aria-hidden="true">♡</span><small>Favoritos</small>
+          <span aria-hidden="true">♡</span>
+          <small>Favoritos</small>
         </button>
-        <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-          <span aria-hidden="true">♙</span><small>Perfil</small>
+        <button onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+          <span aria-hidden="true">♙</span>
+          <small>Perfil</small>
         </button>
       </nav>
 
