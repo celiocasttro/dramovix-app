@@ -650,11 +650,11 @@ export default function App() {
         aria-label="Navegação principal"
       >
         {[
+          ["filmes", "⌂", "INÍCIO"],
           ["filmes", "🎬", "FILMES"],
-          ["tv", "📡", "TV"],
-          ["series", "📺", "SÉRIES"],
-          ["animes", "⚡", "ANIMES"],
-          ["doramas", "⛩️", "DORAMAS"],
+          ["series", "▣", "SÉRIES"],
+          ["animes", "✦", "ANIME"],
+          ["doramas", "◇", "DORAMAS"],
         ].map(([key, icon, label]) => (
           <button
             key={key}
@@ -904,7 +904,12 @@ export default function App() {
 
         {page === "filmes" && (
           <>
-            <section className="dv-hero">
+            <section
+              className="dv-hero"
+              style={{
+                "--hero-image": `url("${(series[0]?.image || movies[0]?.image || DEFAULT_COVER).replace(/"/g, '\\"')}")`,
+              }}
+            >
               <div className="dv-hero-content">
                 <span className="dv-eyebrow">
                   ✦ DRAMOVIX+ CINEMA
@@ -934,63 +939,47 @@ export default function App() {
               </div>
             </section>
 
-            <div
-              className="dv-section-heading"
-              style={{ marginTop: "15px" }}
-            >
-              <h2>CATEGORIAS</h2>
-            </div>
-
-            <div className="dv-style-categories-grid">
-              <div
-                className="dv-style-cat-card"
-                onClick={() => goToPage("filmes")}
-              >
-                <span className="dv-style-cat-icon">
-                  🎬
-                </span>
-                <span>FILMES</span>
-              </div>
-
-              <div
-                className="dv-style-cat-card"
-                onClick={() => goToPage("tv")}
-              >
-                <span className="dv-style-cat-icon">
-                  📡
-                </span>
-                <span>TV</span>
-              </div>
-
-              <div
-                className="dv-style-cat-card"
-                onClick={() => goToPage("series")}
-              >
-                <span className="dv-style-cat-icon">
-                  📺
-                </span>
-                <span>SÉRIES</span>
-              </div>
-
-              <div
-                className="dv-style-cat-card"
-                onClick={() => goToPage("animes")}
-              >
-                <span className="dv-style-cat-icon">
-                  ⚡
-                </span>
-                <span>ANIMES</span>
-              </div>
-            </div>
-
-            <section className="dv-section">
+            <section className="dv-section dv-home-shelf">
               <div className="dv-section-heading">
-                <div>
-                  <h2>FILMES EM DESTAQUE</h2>
-                </div>
+                <h2>Continue assistindo</h2>
+                <button className="dv-see-all" onClick={() => goToPage("series")}>Ver todos ›</button>
               </div>
+              {renderGrid(filteredSeries.slice(0, 4), "series")}
+            </section>
 
-              {renderGrid(filteredMovies, "movie")}
+            <section className="dv-section dv-home-shelf">
+              <div className="dv-section-heading">
+                <h2>Desenhos</h2>
+                <button className="dv-see-all" onClick={() => goToPage("series")}>Ver todos ›</button>
+              </div>
+              {renderGrid(filteredSeries.filter((item) => {
+                const value = normalize(item.category);
+                return value.includes("desenho") || value.includes("kids") || value.includes("infantil") || value.includes("cartoon");
+              }).slice(0, 8), "series")}
+            </section>
+
+            <section className="dv-section dv-home-shelf">
+              <div className="dv-section-heading">
+                <h2>Animes</h2>
+                <button className="dv-see-all" onClick={() => goToPage("animes")}>Ver todos ›</button>
+              </div>
+              {renderGrid(filteredSeries.filter((item) => normalize(item.category).includes("anime")).slice(0, 8), "series")}
+            </section>
+
+            <section className="dv-section dv-home-shelf">
+              <div className="dv-section-heading">
+                <h2>Filmes</h2>
+                <button className="dv-see-all" onClick={() => goToPage("filmes")}>Ver todos ›</button>
+              </div>
+              {renderGrid(filteredMovies.slice(0, 8), "movie")}
+            </section>
+
+            <section className="dv-section dv-home-shelf">
+              <div className="dv-section-heading">
+                <h2>Séries</h2>
+                <button className="dv-see-all" onClick={() => goToPage("series")}>Ver todos ›</button>
+              </div>
+              {renderGrid(filteredSeries.slice(0, 8), "series")}
             </section>
           </>
         )}
@@ -1096,6 +1085,15 @@ export default function App() {
           </section>
         )}
 
+        {page === "favoritos" && (
+          <section className="dv-section">
+            <div className="dv-section-heading"><h2>Favoritos</h2></div>
+            {renderGrid(favoriteSeries, "series")}
+            <div className="dv-section-heading"><h2>Filmes favoritos</h2></div>
+            {renderGrid(favoriteMovies, "movie")}
+          </section>
+        )}
+
         {page === "doramas" && (
           <section className="dv-section">
             <div className="dv-section-heading">
@@ -1120,6 +1118,21 @@ export default function App() {
       <footer className="dv-footer">
         DRAMOVIX+ · Diversão sem limites no seu celular.
       </footer>
+
+      <nav className="dv-bottom-nav" aria-label="Navegação inferior">
+        <button className={["filmes", "series", "animes", "doramas", "tv"].includes(page) ? "active" : ""} onClick={() => goToPage("filmes")}>
+          <span aria-hidden="true">⌂</span><small>Início</small>
+        </button>
+        <button className={page === "explorar" ? "active" : ""} onClick={() => { setPage("explorar"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+          <span aria-hidden="true">⌕</span><small>Buscar</small>
+        </button>
+        <button className={page === "favoritos" ? "active" : ""} onClick={() => goToPage("favoritos")}>
+          <span aria-hidden="true">♡</span><small>Favoritos</small>
+        </button>
+        <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+          <span aria-hidden="true">♙</span><small>Perfil</small>
+        </button>
+      </nav>
 
       {playerOpen && (
         <div
