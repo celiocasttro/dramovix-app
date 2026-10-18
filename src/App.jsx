@@ -62,6 +62,7 @@ export default function App() {
   const [episodes, setEpisodes] = useState([]);
   const [selectedEpisode, setSelectedEpisode] = useState(null);
   const [search, setSearch] = useState("");
+  const [genreFilter, setGenreFilter] = useState("Todas");
   const [page, setPage] = useState("filmes");
   const [profileOpen, setProfileOpen] = useState(false);
   const [language, setLanguage] = useState(() => localStorage.getItem("dramovix-language") || "Português");
@@ -84,6 +85,12 @@ export default function App() {
   useEffect(() => { localStorage.setItem("dramovix-favorites", JSON.stringify(favorites)); }, [favorites]);
   useEffect(() => { localStorage.setItem("dramovix-history", JSON.stringify(watchHistory)); }, [watchHistory]);
   useEffect(() => { localStorage.setItem("dramovix-language", language); }, [language]);
+
+  const translations = {
+    English: { "Início":"Home", "Filmes":"Movies", "Séries":"Series", "Desenhos":"Cartoons", "Anime":"Anime", "Doramas":"Dramas", "TV Ao Vivo":"Live TV", "Buscar":"Search", "Minha Lista":"My List", "Perfil":"Profile", "Meu perfil":"My profile", "Visitante DRAMOVIX":"DRAMOVIX Guest", "Seu ID de visitante":"Your visitor ID", "Copiar ID":"Copy ID", "Mudança de linguagem":"Language", "Veja o histórico":"Watch history", "Limpar cache":"Clear local data", "Você pode assistir sem criar uma conta.":"You can watch without creating an account.", "EM DESTAQUE":"FEATURED", "Continue assistindo":"Continue watching", "Ver histórico ›":"Watch history ›", "FILMES":"MOVIES", "SÉRIES":"SERIES", "DESENHOS":"CARTOONS", "TV AO VIVO":"LIVE TV", "Episódios":"Episodes", "Assistir filme":"Watch movie", "Assistir 1º Episódio":"Watch first episode", "Nenhum conteúdo encontrado":"No content found", "Carregando catálogo...":"Loading catalog...", "Sempre tem uma nova história.":"There's always a new story.", "Vingança":"Revenge", "Bilionários":"Billionaires", "Casamento":"Marriage", "Ação":"Action", "Aventura":"Adventure", "Comédia":"Comedy", "Drama":"Drama", "Fantasia":"Fantasy", "Mistério":"Mystery", "Ficção Científica":"Science Fiction", "Categorias":"Categories", "Desenhos e animações para curtir.":"Cartoons and animation to enjoy.", "Animações japonesas.":"Japanese animation.", "Séries asiáticas de sucesso.":"Popular Asian dramas.", "Filmes disponíveis no catálogo.":"Movies available in the catalog.", "Maratone as melhores séries e minisséries.":"Binge the best series and miniseries.", "Buscar conteúdo":"Search content", "Pesquise filmes, séries, desenhos, animes e doramas.":"Search movies, series, cartoons, anime, and dramas.", "O que deseja assistir?":"What do you want to watch?", "Séries, desenhos, animes e doramas":"Series, cartoons, anime, and dramas", "Histórico":"History", "Conteúdos reproduzidos neste navegador.":"Content played in this browser.", "Limpar histórico":"Clear history", "Seu histórico está vazio":"Your history is empty", "Quando você assistir a algo, aparecerá aqui.":"When you watch something, it will appear here.", "Novos episódios em breve":"New episodes coming soon", "Estamos preparando os capítulos desta série para você.":"We are preparing this series episodes for you.", "Ler descrição completa":"Read full description", "Mostrar menos":"Show less", "Pronto para reprodução":"Ready to play", "Em breve":"Coming soon", "Selecionar episódio":"Select episode", "Próximo episódio":"Next episode", "Transmissão ao vivo":"Live stream", "Filme · DRAMOVIX":"Movie · DRAMOVIX", "Assistir":"Watch", "Ver todos ›":"See all ›", "Desenhos":"Cartoons", "Animes":"Anime", "Filmes":"Movies", "Séries":"Series", "Voltar ao catálogo":"Back to catalog", "Descrição indisponível.":"Description unavailable.", "Uma história incrível.":"An amazing story.", "Minha lista":"My list", "Na minha lista":"In my list", "Série":"Series", "Episódio":"Episode", "Ao vivo":"Live", "Reproduzindo":"Now playing", "Nenhum canal disponível":"No channels available", "Assista às transmissões disponíveis.":"Watch available live streams.", "O ID fica salvo neste navegador. Para sincronizar seus dados entre dispositivos, futuramente será necessário criar uma conta.":"Your ID is saved in this browser. To sync your data across devices, an account will be needed in the future.", "Séries e animações":"Series and animation", "Filmes disponíveis no catálogo.":"Movies available in the catalog.", "Ver todos ›":"See all ›", "Assistir às transmissões disponíveis.":"Watch available live streams.", "Voltar ao catálogo":"Back to catalog", "O catálogo está vazio.":"The catalog is empty.", "Ainda não há episódios cadastrados para esta série.":"No episodes have been added for this series yet.", "Episódios disponíveis":"Available episodes", "Aguarde, carregando episódios...":"Please wait, loading episodes...", "Não foi possível reproduzir este vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução.":"This video could not be played. The link may have expired or the server may block playback.", "Este conteúdo ainda não possui um link de vídeo.":"This content does not have a video link yet." },
+    Español: { "Início":"Inicio", "Filmes":"Películas", "Séries":"Series", "Desenhos":"Dibujos", "Anime":"Anime", "Doramas":"Doramas", "TV Ao Vivo":"TV en vivo", "Buscar":"Buscar", "Minha Lista":"Mi lista", "Perfil":"Perfil", "Meu perfil":"Mi perfil", "Visitante DRAMOVIX":"Visitante DRAMOVIX", "Seu ID de visitante":"Tu ID de visitante", "Copiar ID":"Copiar ID", "Mudança de linguagem":"Idioma", "Veja o histórico":"Ver historial", "Limpar cache":"Borrar datos locales", "Você pode assistir sem criar uma conta.":"Puedes ver contenido sin crear una cuenta.", "EM DESTAQUE":"DESTACADO", "Continue assistindo":"Seguir viendo", "Ver histórico ›":"Ver historial ›", "FILMES":"PELÍCULAS", "SÉRIES":"SERIES", "DESENHOS":"DIBUJOS", "TV AO VIVO":"TV EN VIVO", "Episódios":"Episodios", "Assistir filme":"Ver película", "Assistir 1º Episódio":"Ver primer episodio", "Nenhum conteúdo encontrado":"No se encontró contenido", "Carregando catálogo...":"Cargando catálogo...", "Sempre tem uma nova história.":"Siempre hay una nueva historia.", "Vingança":"Venganza", "Bilionários":"Multimillonarios", "Casamento":"Matrimonio", "Ação":"Acción", "Aventura":"Aventura", "Comédia":"Comedia", "Drama":"Drama", "Fantasia":"Fantasía", "Mistério":"Misterio", "Ficção Científica":"Ciencia ficción", "Categorias":"Categorías", "Desenhos e animações para curtir.":"Dibujos y animaciones para disfrutar.", "Animações japonesas.":"Animación japonesa.", "Séries asiáticas de sucesso.":"Dramas asiáticos populares.", "Filmes disponíveis no catálogo.":"Películas disponibles en el catálogo.", "Maratone as melhores séries e minisséries.":"Maratonea las mejores series y miniseries.", "Buscar conteúdo":"Buscar contenido", "Pesquise filmes, séries, desenhos, animes e doramas.":"Busca películas, series, dibujos, anime y doramas.", "O que deseja assistir?":"¿Qué quieres ver?", "Séries, desenhos, animes e doramas":"Series, dibujos, anime y doramas", "Histórico":"Historial", "Conteúdos reproduzidos neste navegador.":"Contenido reproducido en este navegador.", "Limpar histórico":"Borrar historial", "Seu histórico está vazio":"Tu historial está vacío", "Quando você assistir a algo, aparecerá aqui.":"Cuando veas algo, aparecerá aquí.", "Novos episódios em breve":"Nuevos episodios pronto", "Estamos preparando os capítulos desta série para você.":"Estamos preparando los episodios de esta serie para ti.", "Ler descrição completa":"Leer descripción completa", "Mostrar menos":"Mostrar menos", "Pronto para reprodução":"Listo para reproducir", "Em breve":"Próximamente", "Selecionar episódio":"Seleccionar episodio", "Próximo episódio":"Siguiente episodio", "Transmissão ao vivo":"Transmisión en vivo", "Filme · DRAMOVIX":"Película · DRAMOVIX", "Assistir":"Ver", "Ver todos ›":"Ver todos ›", "Desenhos":"Dibujos", "Animes":"Anime", "Filmes":"Películas", "Séries":"Series", "Voltar ao catálogo":"Volver al catálogo", "Descrição indisponível.":"Descripción no disponible.", "Uma história incrível.":"Una historia increíble.", "Minha lista":"Mi lista", "Na minha lista":"En mi lista", "Série":"Serie", "Episódio":"Episodio", "Ao vivo":"En vivo", "Reproduzindo":"Reproduciendo", "Assista às transmissões disponíveis.":"Mira las transmisiones disponibles.", "O ID fica salvo neste navegador. Para sincronizar seus dados entre dispositivos, futuramente será necessário criar uma conta.":"Tu ID se guarda en este navegador. Para sincronizar tus datos entre dispositivos, necesitarás una cuenta en el futuro.", "Séries e animações":"Series y animación", "Ver todos ›":"Ver todos ›", "Assistir às transmissões disponíveis.":"Mira las transmisiones disponibles.", "Voltar ao catálogo":"Volver al catálogo", "O catálogo está vazio.":"El catálogo está vacío.", "Ainda não há episódios cadastrados para esta série.":"Todavía no hay episodios para esta serie.", "Episódios disponíveis":"Episodios disponibles", "Aguarde, carregando episódios...":"Espera, cargando episodios...", "Não foi possível reproduzir este vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução.":"No se pudo reproducir este video. El enlace puede haber expirado o el servidor puede bloquear la reproducción.", "Este conteúdo ainda não possui um link de vídeo.":"Este contenido aún no tiene un enlace de video." }
+  };
+  const tr = (text) => translations[language]?.[text] || text;
 
   useEffect(() => {
     let cancelled = false;
@@ -195,8 +202,9 @@ export default function App() {
 
   const matchesSearch = (item) =>
     !search.trim() || normalize(item.title).includes(normalize(search)) || normalize(item.description).includes(normalize(search));
-  const filteredSeries = series.filter(matchesSearch);
-  const filteredMovies = movies.filter(matchesSearch);
+  const genreCategories = ["Todas", "Romance", "Vingança", "Suspense", "Bilionários", "Casamento", "Ação", "Aventura", "Comédia", "Drama", "Fantasia", "Mistério", "Ficção Científica"];
+  const filteredSeries = series.filter(matchesSearch).filter((item) => genreFilter === "Todas" || normalize(item.genre || item.category).includes(normalize(genreFilter)) || normalize(item.title).includes(normalize(genreFilter)));
+  const filteredMovies = movies.filter(matchesSearch).filter((item) => genreFilter === "Todas" || normalize(item.category || item.genre).includes(normalize(genreFilter)) || normalize(item.title).includes(normalize(genreFilter)));
   const filteredLiveChannels = liveChannels.filter(matchesSearch);
   const cartoons = filteredSeries.filter((item) => getContentType(item) === "desenhos");
   const anime = filteredSeries.filter((item) => getContentType(item) === "animes");
@@ -255,7 +263,8 @@ export default function App() {
   }
   function handleVideoEnded() { if (!selectedEpisode?.isLive) playNextEpisode(); }
   function goToPage(nextPage) {
-    setPage(nextPage); setSelectedSeries(null); setSelectedMovie(null); setSelectedEpisode(null);
+    setPage(nextPage);
+    if (["filmes", "filmes-lista", "desenhos", "animes", "doramas", "tv"].includes(nextPage)) setGenreFilter("Todas"); setSelectedSeries(null); setSelectedMovie(null); setSelectedEpisode(null);
     setEpisodes([]); setSearch(""); setShowDescription(false); setProfileOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -270,8 +279,21 @@ export default function App() {
     setProfileOpen(false);
     window.alert("Cache local limpo.");
   }
+  function renderGenreFilters() {
+    return <div className="dv-genre-filters" aria-label="Filtrar por categoria">{genreCategories.map((category) => <button key={category} className={genreFilter === category ? "active" : ""} onClick={() => setGenreFilter(category)}>{category === "Todas" ? (language === "English" ? "All" : "Todas") : tr(category)}</button>)}</div>;
+  }
+
   function renderCard(item, type = "series") {
-    const openItem = () => type === "live" ? openLive(item) : type === "movie" ? openMovieDetails(item) : openSeries(item);
+    const openItem = () => {
+      if (type === "live") return openLive(item);
+      if (type === "movie") return openMovieDetails(item);
+      if (type === "history") {
+        const original = series.find((entry) => entry.title === (item.contentTitle || item.title)) || movies.find((entry) => entry.title === (item.contentTitle || item.title));
+        if (original) return original.isMovie ? openMovieDetails(original) : openSeries(original);
+        return;
+      }
+      return openSeries(item);
+    };
     return (
       <article className="dv-card" key={item.id}>
         <button className="dv-card-image-button" onClick={openItem} aria-label={`Abrir ${item.title}`}>
@@ -285,8 +307,8 @@ export default function App() {
     );
   }
   function renderGrid(items, type = "series") {
-    if (loading && type !== "live") return <p className="dv-message">Carregando catálogo...</p>;
-    if (!items.length) return <div className="dv-empty"><span>✦</span><h3>Nenhum conteúdo encontrado</h3><p>Tente novamente mais tarde ou escolha outra categoria.</p></div>;
+    if (loading && type !== "live") return <p className="dv-message">{tr("Carregando catálogo...")}</p>;
+    if (!items.length) return <div className="dv-empty"><span>✦</span><h3>{tr("Nenhum conteúdo encontrado")}</h3><p>Tente novamente mais tarde ou escolha outra categoria.</p></div>;
     return <div className="dv-grid">{items.map((item) => renderCard(item, type))}</div>;
   }
   const navItems = [
@@ -302,7 +324,6 @@ export default function App() {
   return (
     <div className="dv-app">
       <header className="dv-header">
-        <button className="dv-menu-toggle" onClick={() => setProfileOpen((v) => !v)} aria-label="Abrir perfil e opções">☰</button>
         <button className="dv-logo" onClick={() => goToPage("filmes")} aria-label="DRAMOVIX início">DRAMOVIX</button>
         <div className="dv-header-right-icons">
           <button className="dv-icon-btn" onClick={() => { setPage("explorar"); setProfileOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); }} aria-label="Pesquisar">⌕</button>
@@ -310,18 +331,27 @@ export default function App() {
         </div>
       </header>
 
+      <nav className="dv-mobile-categories" aria-label="Categorias principais">
+        {navItems.map(([key, icon, label]) => (
+          <button key={key} className={page === key || (key === "filmes-tab" && page === "filmes-lista") ? "active" : ""}
+            onClick={() => key === "filmes-tab" ? goToPage("filmes-lista") : goToPage(key)}>
+            <span>{icon}</span>{tr(label)}
+          </button>
+        ))}
+      </nav>
+
       <aside className="dv-sidebar">
-        <div className="dv-sidebar-label">MENU PRINCIPAL</div>
+        <div className="dv-sidebar-label">{language === "English" ? "MAIN MENU" : language === "Español" ? "MENÚ PRINCIPAL" : "MENU PRINCIPAL"}</div>
         {navItems.map(([key, icon, label]) => (
           <button key={key} className={`dv-side-link ${page === key || (key === "filmes-tab" && page === "filmes") ? "active" : ""}`}
             onClick={() => {
               if (key === "filmes-tab") goToPage("filmes-lista");
               else goToPage(key);
             }}>
-            <span className="dv-side-icon">{icon}</span><span>{label}</span>
+            <span className="dv-side-icon">{icon}</span><span>{tr(label)}</span>
           </button>
         ))}
-        <div className="dv-sidebar-note">Sempre tem uma nova história.</div>
+        <div className="dv-sidebar-note">{tr("Sempre tem uma nova história.")}</div>
       </aside>
 
       {profileOpen && (
@@ -330,20 +360,20 @@ export default function App() {
           <section className="dv-profile-menu" aria-label="Menu de perfil">
             <div className="dv-profile-top">
               <div className="dv-profile-avatar">♙</div>
-              <div><strong>Meu perfil</strong><small>Visitante DRAMOVIX</small></div>
+              <div><strong>{tr("Meu perfil")}</strong><small>{tr("Visitante DRAMOVIX")}</small></div>
               <button className="dv-profile-close" onClick={() => setProfileOpen(false)} aria-label="Fechar">×</button>
             </div>
-            <div className="dv-profile-id"><small>Seu ID de visitante</small><strong>{visitorId}</strong><button onClick={() => navigator.clipboard?.writeText(visitorId)}>Copiar ID</button></div>
-            <button className="dv-profile-item" onClick={() => { setProfileOpen(false); goToPage("perfil"); }}>♙ <span>Perfil</span><b>›</b></button>
-            <div className="dv-profile-item dv-language-item">🌐 <span>Mudança de linguagem</span>
+            <div className="dv-profile-id"><small>{tr("Seu ID de visitante")}</small><strong>{visitorId}</strong><button onClick={() => navigator.clipboard?.writeText(visitorId)}>{tr("Copiar ID")}</button></div>
+            <button className="dv-profile-item" onClick={() => { setProfileOpen(false); goToPage("perfil"); }}><span>♙</span><span>{tr("Perfil")}</span><b>›</b></button>
+            <div className="dv-profile-item dv-language-item"><span>🌐</span><span>{tr("Mudança de linguagem")}</span>
               <select aria-label="Idioma" value={language} onChange={(e) => setLanguage(e.target.value)}>
                 <option>Português</option><option>English</option><option>Español</option>
               </select>
             </div>
-            <button className="dv-profile-item" onClick={() => { setProfileOpen(false); goToPage("historico"); }}>◷ <span>Veja o histórico</span><b>›</b></button>
-            <button className="dv-profile-item" onClick={() => { setProfileOpen(false); goToPage("favoritos"); }}>♡ <span>Minha Lista</span><b>›</b></button>
-            <button className="dv-profile-item" onClick={clearCache}>⌫ <span>Limpar cache</span><b>›</b></button>
-            <div className="dv-profile-bottom">Você pode assistir sem criar uma conta.</div>
+            <button className="dv-profile-item" onClick={() => { setProfileOpen(false); goToPage("historico"); }}><span>◷</span><span>{tr("Veja o histórico")}</span><b>›</b></button>
+            <button className="dv-profile-item" onClick={() => { setProfileOpen(false); goToPage("favoritos"); }}><span>♡</span><span>{tr("Minha Lista")}</span><b>›</b></button>
+            <button className="dv-profile-item" onClick={clearCache}><span>⌫</span><span>{tr("Limpar cache")}</span><b>›</b></button>
+            <div className="dv-profile-bottom">{tr("Você pode assistir sem criar uma conta.")}</div>
           </section>
         </>
       )}
@@ -351,7 +381,7 @@ export default function App() {
       <main className="dv-main">
         {page === "detalhes" && selectedSeries && (
           <section className="dv-detail">
-            <button className="dv-back" onClick={() => goToPage("filmes")}>← Voltar ao catálogo</button>
+            <button className="dv-back" onClick={() => goToPage("filmes")}>← {tr("Voltar ao catálogo")}</button>
             <div className="dv-detail-header">
               <img className="dv-detail-cover" src={selectedSeries.image || DEFAULT_COVER} alt={selectedSeries.title}
                 onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_COVER; }} />
@@ -361,22 +391,22 @@ export default function App() {
                 <p>{showDescription ? selectedSeries.description || "Descrição indisponível." : (selectedSeries.description || "Uma história incrível.").slice(0, 160) + ((selectedSeries.description || "").length > 160 ? "..." : "")}</p>
                 {(selectedSeries.description || "").length > 160 && <button className="dv-description-toggle" onClick={() => setShowDescription((v) => !v)}>{showDescription ? "Mostrar menos" : "Ler descrição completa"}</button>}
                 <div className="dv-detail-actions">
-                  <button className="dv-button-primary" onClick={() => episodes.length && openEpisode(episodes[0])} disabled={episodesLoading || !episodes.length}>▶ Assistir 1º Episódio</button>
+                  <button className="dv-button-primary" onClick={() => episodes.length && openEpisode(episodes[0])} disabled={episodesLoading || !episodes.length}>{"▶ " + tr("Assistir 1º Episódio")}</button>
                   <button className="dv-description-toggle" onClick={() => toggleFavorite(selectedSeries)}>{isFavorite(selectedSeries) ? "♥ Na minha lista" : "♡ Minha lista"}</button>
                 </div>
               </div>
             </div>
             <section className="dv-episodes">
-              <div className="dv-section-heading"><div><h2>Episódios</h2><p>{episodes.length} episódio(s) disponível(is)</p></div></div>
+              <div className="dv-section-heading"><div><h2>{tr("Episódios")}</h2><p>{episodes.length} episódio(s) disponível(is)</p></div></div>
               {episodesLoading ? <p className="dv-message">Carregando episódios...</p> : episodes.length ? (
                 <div className="dv-episode-list">{episodes.map((ep, index) => (
                   <button className="dv-episode" key={ep.id || index} onClick={() => openEpisode(ep)}>
                     <span className="dv-episode-number">{ep.episode_number || index + 1}</span>
-                    <span className="dv-episode-info"><strong>{ep.title || `Episódio ${index + 1}`}</strong><small>{ep.video_url ? "Pronto para reprodução" : "Em breve"}</small></span>
+                    <span className="dv-episode-info"><strong>{ep.title || `Episódio ${index + 1}`}</strong><small>{ep.video_url ? tr("Pronto para reprodução") : tr("Em breve")}</small></span>
                     <span className="dv-episode-play">▶</span>
                   </button>
                 ))}</div>
-              ) : <div className="dv-empty"><h3>Novos episódios em breve</h3><p>Estamos preparando os capítulos desta série para você.</p></div>}
+              ) : <div className="dv-empty"><h3>{tr("Novos episódios em breve")}</h3><p>{tr("Estamos preparando os capítulos desta série para você.")}</p></div>}
             </section>
           </section>
         )}
@@ -390,7 +420,7 @@ export default function App() {
               <div className="dv-detail-info"><span className="dv-eyebrow">{selectedMovie.category || "FILME"}</span><h1>{selectedMovie.title}</h1>
                 <p>{showDescription ? selectedMovie.description || "Descrição indisponível." : (selectedMovie.description || "Prepare-se para descobrir esta história.").slice(0, 160) + ((selectedMovie.description || "").length > 160 ? "..." : "")}</p>
                 {(selectedMovie.description || "").length > 160 && <button className="dv-description-toggle" onClick={() => setShowDescription((v) => !v)}>{showDescription ? "Mostrar menos" : "Ler descrição completa"}</button>}
-                <div className="dv-detail-actions"><button className="dv-button-primary" onClick={() => playMovie(selectedMovie)}>▶ Assistir filme</button><button className="dv-description-toggle" onClick={() => toggleFavorite(selectedMovie)}>{isFavorite(selectedMovie) ? "♥ Na minha lista" : "♡ Minha lista"}</button></div>
+                <div className="dv-detail-actions"><button className="dv-button-primary" onClick={() => playMovie(selectedMovie)}>{"▶ " + tr("Assistir filme")}</button><button className="dv-description-toggle" onClick={() => toggleFavorite(selectedMovie)}>{isFavorite(selectedMovie) ? "♥ Na minha lista" : "♡ Minha lista"}</button></div>
               </div>
             </div>
           </section>
@@ -399,50 +429,52 @@ export default function App() {
         {page === "filmes" && (
           <>
             <section className="dv-hero" style={{ backgroundImage: `url("${heroItem?.image || DEFAULT_COVER}")` }}>
-              <div className="dv-hero-overlay" /><div className="dv-hero-content"><span className="dv-eyebrow">EM DESTAQUE</span>
+              <div className="dv-hero-overlay" /><div className="dv-hero-content"><span className="dv-eyebrow">{tr("EM DESTAQUE")}</span>
                 <h1>{heroItem?.title || "DRAMOVIX"}</h1><p>{heroItem?.description ? heroItem.description.slice(0, 140) : "Sempre tem uma nova história para descobrir."}</p>
-                <button className="dv-button-primary" onClick={() => heroItem && (heroItem.isMovie ? openMovieDetails(heroItem) : openSeries(heroItem))}>▶ Assistir</button>
+                <button className="dv-button-primary" onClick={() => heroItem && (heroItem.isMovie ? openMovieDetails(heroItem) : openSeries(heroItem))}>▶ {tr("Assistir")}</button>
               </div>
             </section>
-            <section className="dv-section"><div className="dv-section-heading"><h2>Continue assistindo</h2><button className="dv-see-all" onClick={() => goToPage("historico")}>Ver histórico ›</button></div>
+            <section className="dv-section"><div className="dv-section-heading"><h2>{tr("Categorias")}</h2></div>{renderGenreFilters()}</section>
+            <section className="dv-section"><div className="dv-section-heading"><h2>{tr("Continue assistindo")}</h2><button className="dv-see-all" onClick={() => goToPage("historico")}>{tr("Ver histórico ›")}</button></div>
               {renderGrid(watchHistory.slice(0, 4).map((entry) => ({ ...entry, id: `history-${entry.id}`, image: entry.image, title: entry.contentTitle || entry.title, _history: entry })), "history")}
             </section>
-            <section className="dv-section"><div className="dv-section-heading"><h2>Desenhos</h2><button className="dv-see-all" onClick={() => goToPage("desenhos")}>Ver todos ›</button></div>{renderGrid(cartoons.slice(0, 4))}</section>
-            <section className="dv-section"><div className="dv-section-heading"><h2>Animes</h2><button className="dv-see-all" onClick={() => goToPage("animes")}>Ver todos ›</button></div>{renderGrid(anime.slice(0, 4))}</section>
-            <section className="dv-section"><div className="dv-section-heading"><h2>Filmes</h2><button className="dv-see-all" onClick={() => goToPage("filmes-lista")}>Ver todos ›</button></div>{renderGrid(filteredMovies.slice(0, 4), "movie")}</section>
-            <section className="dv-section"><div className="dv-section-heading"><h2>Séries</h2><button className="dv-see-all" onClick={() => goToPage("series")}>Ver todos ›</button></div>{renderGrid(ordinarySeries.slice(0, 4))}</section>
+            <section className="dv-section"><div className="dv-section-heading"><h2>{tr("Desenhos")}</h2><button className="dv-see-all" onClick={() => goToPage("desenhos")}>{tr("Ver todos ›")}</button></div>{renderGrid(cartoons.slice(0, 4))}</section>
+            <section className="dv-section"><div className="dv-section-heading"><h2>{tr("Animes")}</h2><button className="dv-see-all" onClick={() => goToPage("animes")}>{tr("Ver todos ›")}</button></div>{renderGrid(anime.slice(0, 4))}</section>
+            <section className="dv-section"><div className="dv-section-heading"><h2>{tr("Filmes")}</h2><button className="dv-see-all" onClick={() => goToPage("filmes-lista")}>{tr("Ver todos ›")}</button></div>{renderGrid(filteredMovies.slice(0, 4), "movie")}</section>
+            <section className="dv-section"><div className="dv-section-heading"><h2>{tr("Séries")}</h2><button className="dv-see-all" onClick={() => goToPage("series")}>{tr("Ver todos ›")}</button></div>{renderGrid(ordinarySeries.slice(0, 4))}</section>
           </>
         )}
 
-        {page === "filmes-lista" && <section className="dv-section"><div className="dv-section-heading"><div><h2>FILMES</h2><p>Filmes disponíveis no catálogo.</p></div></div>{renderGrid(filteredMovies, "movie")}</section>}
-        {page === "series" && <section className="dv-section"><div className="dv-section-heading"><div><h2>SÉRIES</h2><p>Maratone as melhores séries e minisséries.</p></div></div>{renderGrid(ordinarySeries)}</section>}
-        {page === "desenhos" && <section className="dv-section"><div className="dv-section-heading"><div><h2>DESENHOS</h2><p>Desenhos e animações para curtir.</p></div></div>{renderGrid(cartoons)}</section>}
-        {page === "animes" && <section className="dv-section"><div className="dv-section-heading"><div><h2>ANIME</h2><p>Animações japonesas.</p></div></div>{renderGrid(anime)}</section>}
-        {page === "doramas" && <section className="dv-section"><div className="dv-section-heading"><div><h2>DORAMAS</h2><p>Séries asiáticas de sucesso.</p></div></div>{renderGrid(doramas)}</section>}
-        {page === "tv" && <section className="dv-section"><div className="dv-section-heading"><div><h2>TV AO VIVO</h2><p>Assista às transmissões disponíveis.</p></div></div>
+        {page === "filmes-lista" && <section className="dv-section"><div className="dv-section-heading"><div><h2>{tr("FILMES")}</h2><p>{tr("Filmes disponíveis no catálogo.")}</p></div></div>{renderGrid(filteredMovies, "movie")}</section>}
+        {page === "series" && <section className="dv-section"><div className="dv-section-heading"><div><h2>{tr("SÉRIES")}</h2><p>{tr("Maratone as melhores séries e minisséries.")}</p></div></div>{renderGenreFilters()}{renderGrid(ordinarySeries)}</section>}
+        {page === "desenhos" && <section className="dv-section"><div className="dv-section-heading"><div><h2>{tr("DESENHOS")}</h2><p>{tr("Desenhos e animações para curtir.")}</p></div></div>{renderGrid(cartoons)}</section>}
+        {page === "animes" && <section className="dv-section"><div className="dv-section-heading"><div><h2>ANIME</h2><p>{tr("Animações japonesas.")}</p></div></div>{renderGrid(anime)}</section>}
+        {page === "doramas" && <section className="dv-section"><div className="dv-section-heading"><div><h2>DORAMAS</h2><p>{tr("Séries asiáticas de sucesso.")}</p></div></div>{renderGrid(doramas)}</section>}
+        {page === "tv" && <section className="dv-section"><div className="dv-section-heading"><div><h2>{tr("TV AO VIVO")}</h2><p>{tr("Assista às transmissões disponíveis.")}</p></div></div>
           {liveChannelsLoading ? <p className="dv-message">Carregando canais ao vivo...</p> : renderGrid([...filteredLiveChannels, ...(!search && !liveChannels.some((item) => normalize(item.title) === "z nation") ? [LIVE_SERIES] : [])], "live")}
         </section>}
-        {page === "explorar" && <section className="dv-section"><div className="dv-section-heading"><div><h2>Buscar conteúdo</h2><p>Pesquise filmes, séries, desenhos, animes e doramas.</p></div></div>
-          <input className="dv-search-input" type="search" placeholder="O que deseja assistir?" value={search} onChange={(e) => setSearch(e.target.value)} autoFocus />
-          <h3 className="dv-subheading">Filmes</h3>{renderGrid(filteredMovies, "movie")}
-          <h3 className="dv-subheading">Séries, desenhos, animes e doramas</h3>{renderGrid(filteredSeries)}
+        {page === "explorar" && <section className="dv-section"><div className="dv-section-heading"><div><h2>{tr("Buscar conteúdo")}</h2><p>{tr("Pesquise filmes, séries, desenhos, animes e doramas.")}</p></div></div>
+          <input className="dv-search-input" type="search" placeholder={tr("O que deseja assistir?")} value={search} onChange={(e) => setSearch(e.target.value)} autoFocus />
+          <h3 className="dv-subheading">{tr("Filmes")}</h3>{renderGrid(filteredMovies, "movie")}
+          <h3 className="dv-subheading">{tr("Séries, desenhos, animes e doramas")}</h3>{renderGrid(filteredSeries)}
         </section>}
-        {page === "favoritos" && <section className="dv-section"><div className="dv-section-heading"><h2>Minha Lista</h2></div><h3 className="dv-subheading">Séries e animações</h3>{renderGrid(favoriteSeries)}<h3 className="dv-subheading">Filmes</h3>{renderGrid(favoriteMovies, "movie")}</section>}
-        {page === "historico" && <section className="dv-section"><div className="dv-section-heading"><div><h2>Histórico</h2><p>Conteúdos reproduzidos neste navegador.</p></div><button className="dv-see-all" onClick={() => { setWatchHistory([]); localStorage.removeItem("dramovix-history"); }}>Limpar histórico</button></div>
-          {!watchHistory.length ? <div className="dv-empty"><span>◷</span><h3>Seu histórico está vazio</h3><p>Quando você assistir a algo, aparecerá aqui.</p></div> : <div className="dv-history-list">{watchHistory.map((entry, i) => <button className="dv-history-item" key={`${entry.id}-${i}`} onClick={() => {
+        {page === "favoritos" && <section className="dv-section"><div className="dv-section-heading"><h2>{tr("Minha Lista")}</h2></div><h3 className="dv-subheading">{tr("Séries e animações")}</h3>{renderGrid(favoriteSeries)}<h3 className="dv-subheading">{tr("Filmes")}</h3>{renderGrid(favoriteMovies, "movie")}</section>}
+        {page === "historico" && <section className="dv-section"><div className="dv-section-heading"><div><h2>{tr("Histórico")}</h2><p>{tr("Conteúdos reproduzidos neste navegador.")}</p></div><button className="dv-see-all" onClick={() => { setWatchHistory([]); localStorage.removeItem("dramovix-history"); }}>{tr("Limpar histórico")}</button></div>
+          {!watchHistory.length ? <div className="dv-empty"><span>◷</span><h3>{tr("Seu histórico está vazio")}</h3><p>{tr("Quando você assistir a algo, aparecerá aqui.")}</p></div> : <div className="dv-history-list">{watchHistory.map((entry, i) => <button className="dv-history-item" key={`${entry.id}-${i}`} onClick={() => {
             const match = series.find((item) => item.title === entry.contentTitle) || movies.find((item) => item.title === entry.contentTitle);
             if (match) match.isMovie ? openMovieDetails(match) : openSeries(match);
           }}><img src={entry.image || DEFAULT_COVER} alt="" /><span><strong>{entry.contentTitle || entry.title}</strong><small>{new Date(entry.watchedAt).toLocaleString()}</small></span><b>›</b></button>)}</div>}
         </section>}
-        {page === "perfil" && <section className="dv-section dv-account-page"><div className="dv-section-heading"><h2>Perfil</h2></div><div className="dv-account-card"><div className="dv-profile-avatar">♙</div><h2>Visitante DRAMOVIX</h2><p>Você pode navegar e assistir sem criar uma conta.</p><small>Seu ID de visitante</small><strong>{visitorId}</strong><button className="dv-button-primary" onClick={() => navigator.clipboard?.writeText(visitorId)}>Copiar ID</button><p className="dv-muted">O ID fica salvo neste navegador. Para sincronizar seus dados entre dispositivos, futuramente será necessário criar uma conta.</p></div></section>}
+        {page === "perfil" && <section className="dv-section dv-account-page"><div className="dv-section-heading"><h2>{tr("Perfil")}</h2></div><div className="dv-account-card"><div className="dv-profile-avatar">♙</div><h2>{tr("Visitante DRAMOVIX")}</h2><p>{tr("Você pode assistir sem criar uma conta.")}</p><small>{tr("Seu ID de visitante")}</small><strong>{visitorId}</strong><button className="dv-button-primary" onClick={() => navigator.clipboard?.writeText(visitorId)}>{tr("Copiar ID")}</button><p className="dv-muted">{tr("O ID fica salvo neste navegador. Para sincronizar seus dados entre dispositivos, futuramente será necessário criar uma conta.")}</p></div></section>}
       </main>
 
       <footer className="dv-footer">DRAMOVIX · Sempre tem uma nova história.</footer>
       <nav className="dv-bottom-nav" aria-label="Navegação inferior">
-        <button className={page === "filmes" ? "active" : ""} onClick={() => goToPage("filmes")}><span>⌂</span><small>Início</small></button>
-        <button className={page === "explorar" ? "active" : ""} onClick={() => { setPage("explorar"); setProfileOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}><span>⌕</span><small>Buscar</small></button>
-        <button className={page === "favoritos" ? "active" : ""} onClick={() => goToPage("favoritos")}><span>♡</span><small>Minha Lista</small></button>
-        <button className={page === "perfil" ? "active" : ""} onClick={() => goToPage("perfil")}><span>♙</span><small>Perfil</small></button>
+        <button className={page === "filmes" ? "active" : ""} onClick={() => goToPage("filmes")}><span>⌂</span><small>{tr("Início")}</small></button>
+        <button className={page === "filmes-lista" ? "active" : ""} onClick={() => goToPage("filmes-lista")}><span>▣</span><small>{tr("Filmes")}</small></button>
+        <button className={page === "explorar" ? "active" : ""} onClick={() => { setPage("explorar"); setProfileOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}><span>⌕</span><small>{tr("Buscar")}</small></button>
+        <button className={page === "favoritos" ? "active" : ""} onClick={() => goToPage("favoritos")}><span>♡</span><small>{tr("Minha Lista")}</small></button>
+        <button className={page === "tv" ? "active" : ""} onClick={() => goToPage("tv")}><span>◉</span><small>{tr("TV Ao Vivo")}</small></button>
       </nav>
 
       {playerOpen && <div className="dv-player-overlay" onClick={(e) => { if (e.target === e.currentTarget) closePlayer(); }}>
@@ -450,9 +482,9 @@ export default function App() {
           <div className="dv-player-top"><div className="dv-player-heading"><strong>{selectedEpisode?.title || selectedSeries?.title || selectedMovie?.title || "Reproduzindo"}</strong><small>{selectedEpisode?.isLive ? "Ao vivo" : selectedEpisode?.isMovie ? "Filme" : selectedSeries?.title || "DRAMOVIX"}</small></div><button className="dv-player-close" onClick={closePlayer} aria-label="Fechar">×</button></div>
           <div className={`dv-video-wrap ${isLandscapePlayer ? "dv-video-wrap--landscape" : "dv-video-wrap--portrait"}`}><video key={selectedEpisode?.id || "video-player"} ref={videoRef} className="dv-video" controls playsInline preload="metadata" onEnded={handleVideoEnded} /></div>
           {playerError && <div className="dv-player-error" role="alert">{playerError}</div>}
-          {episodeDrawerOpen && episodes.length > 0 && <div className="dv-episode-drawer"><div><strong>Selecionar episódio</strong><button onClick={() => setEpisodeDrawerOpen(false)}>✕</button></div>{episodes.map((ep, i) => <button key={ep.id || i} className={String(selectedEpisode?.id) === String(ep.id) ? "selected" : ""} onClick={() => openEpisode(ep)}>Episódio {ep.episode_number || i + 1}: {ep.title || "Assistir"}</button>)}</div>}
-          <div className="dv-player-bottom">{!selectedEpisode?.isLive && !selectedEpisode?.isMovie && episodes.length > 0 ? <button className="dv-episode-picker" onClick={() => setEpisodeDrawerOpen((v) => !v)}>EP.{selectedEpisode?.episode_number || 1} / EP.{episodes.length} {episodeDrawerOpen ? "⌄" : "⌃"}</button> : <span>{selectedEpisode?.isLive ? "Transmissão ao vivo" : "Filme · DRAMOVIX"}</span>}
-            {!selectedEpisode?.isLive && !selectedEpisode?.isMovie && <button className="dv-player-next" onClick={playNextEpisode} disabled={!episodes.length || episodes.findIndex((ep) => String(ep.id) === String(selectedEpisode?.id)) >= episodes.length - 1}>Próximo episódio →</button>}
+          {episodeDrawerOpen && episodes.length > 0 && <div className="dv-episode-drawer"><div><strong>{tr("Selecionar episódio")}</strong><button onClick={() => setEpisodeDrawerOpen(false)}>✕</button></div>{episodes.map((ep, i) => <button key={ep.id || i} className={String(selectedEpisode?.id) === String(ep.id) ? "selected" : ""} onClick={() => openEpisode(ep)}>Episódio {ep.episode_number || i + 1}: {ep.title || "Assistir"}</button>)}</div>}
+          <div className="dv-player-bottom">{!selectedEpisode?.isLive && !selectedEpisode?.isMovie && episodes.length > 0 ? <button className="dv-episode-picker" onClick={() => setEpisodeDrawerOpen((v) => !v)}>EP.{selectedEpisode?.episode_number || 1} / EP.{episodes.length} {episodeDrawerOpen ? "⌄" : "⌃"}</button> : <span>{selectedEpisode?.isLive ? tr("Transmissão ao vivo") : tr("Filme · DRAMOVIX")}</span>}
+            {!selectedEpisode?.isLive && !selectedEpisode?.isMovie && <button className="dv-player-next" onClick={playNextEpisode} disabled={!episodes.length || episodes.findIndex((ep) => String(ep.id) === String(selectedEpisode?.id)) >= episodes.length - 1}>{tr("Próximo episódio")} →</button>}
           </div>
         </div>
       </div>}
