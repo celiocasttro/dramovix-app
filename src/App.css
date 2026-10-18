@@ -181,3 +181,39 @@ button, input { -webkit-appearance: none; appearance: none; }
   .dv-profile-menu { top: 64px; right: 8px; }
 }
 @media (max-width: 360px) { .dv-main { padding-left: 8px; padding-right: 8px; } .dv-grid { gap: 7px; } .dv-logo { font-size: 20px; } }
+
+/* Ajustes de navegação e filtros de categoria */
+.dv-header { gap: 12px; }
+.dv-logo { flex-shrink: 0; }
+.dv-genre-filters { display: flex; gap: 9px; overflow-x: auto; padding: 4px 1px 14px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.dv-genre-filters::-webkit-scrollbar { display: none; }
+.dv-genre-filters button { flex: 0 0 auto; border: 1px solid #343434; border-radius: 999px; background: #111; color: #ddd; padding: 9px 15px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; transition: .18s ease; }
+.dv-genre-filters button.active, .dv-genre-filters button:hover { border-color: var(--red-primary, #e50914); background: var(--red-primary, #e50914); color: white; }
+.dv-profile-item { gap: 10px; }
+.dv-profile-item > span:first-child { flex: 0 0 20px; text-align: center; }
+.dv-profile-item > span:nth-child(2) { flex: 1; }
+.dv-language-item select { max-width: 112px; }
+@media (max-width: 767px) {
+  .dv-header { padding-left: 16px; padding-right: 14px; }
+  .dv-menu-toggle { display: none !important; }
+  .dv-header-right-icons { gap: 10px; }
+  .dv-main { padding-bottom: 82px; }
+  .dv-bottom-nav { left: 0; right: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .dv-bottom-nav button small { white-space: nowrap; font-size: 9px; }
+  .dv-genre-filters { margin-right: -2px; }
+}
+
+
+/* Navegação simplificada: uma única entrada de perfil no cabeçalho e TV sempre visível. */
+.dv-mobile-categories { display: none; }
+@media (max-width: 767px) {
+  .dv-mobile-categories { display: flex; position: sticky; top: 58px; z-index: 55; gap: 7px; padding: 9px 12px 10px; overflow-x: auto; background: rgba(5,5,5,.97); border-bottom: 1px solid rgba(255,255,255,.07); scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .dv-mobile-categories::-webkit-scrollbar { display: none; }
+  .dv-mobile-categories button { display: flex; flex: 0 0 auto; align-items: center; gap: 6px; padding: 8px 11px; border: 1px solid #292929; border-radius: 999px; background: #101010; color: #d4d4d8; white-space: nowrap; font-size: 11px; font-weight: 700; }
+  .dv-mobile-categories button span { font-size: 13px; }
+  .dv-mobile-categories button.active { border-color: var(--red-primary); background: rgba(229,9,20,.2); color: #fff; }
+  .dv-header { top: 0; }
+  .dv-bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+  .dv-bottom-nav button small { font-size: 8.5px; }
+  .dv-profile-menu { top: 62px; }
+}
