@@ -74,13 +74,7 @@ input {
   min-height: 100vh !important;
   padding-bottom: 90px !important;
   overflow-x: clip;
-  background:
-    radial-gradient(
-      circle at 50% -10%,
-      rgba(229, 9, 20, 0.22),
-      transparent 45%
-    ),
-    var(--bg) !important;
+  background: #050505 !important;
   color: #fff !important;
   font-family: 'DM Sans', sans-serif !important;
 }
@@ -90,7 +84,7 @@ input {
 }
 
 /* ========================================
-   CABEÇALHO
+   CABEÇALHO ESTILO NETFLIX / REFERÊNCIA
 ======================================== */
 
 .dv-header {
@@ -103,7 +97,6 @@ input {
   gap: 16px;
   padding: 14px 16px;
   background: rgba(5, 5, 5, 0.95) !important;
-  border-bottom: 1px solid var(--border);
   backdrop-filter: blur(18px);
 }
 
@@ -113,67 +106,38 @@ input {
   background: transparent;
   color: white;
   font-family: 'Outfit', sans-serif !important;
-  font-size: 24px !important;
+  font-size: 22px !important;
   font-weight: 800 !important;
   letter-spacing: -1px;
   cursor: pointer;
   padding: 0;
-  text-shadow: 0 0 15px rgba(229, 9, 20, 0.7);
+  color: #e50914;
 }
 
-.dv-logo span {
-  color: var(--red-primary);
-}
-
-.dv-header-actions {
+.dv-header-right-icons {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  min-width: 0;
-  flex: 1;
-  max-width: 320px;
+  gap: 18px;
 }
 
-.dv-search {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: 8px 14px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  outline: none;
-  background: #120505;
-  color: white;
-}
-
-.dv-search span {
-  color: #fca5a5;
-  margin-right: 8px;
-}
-
-.dv-search input {
-  width: 100%;
-  border: 0;
+.dv-icon-btn {
   background: transparent;
-  color: white;
-  outline: none;
-  font-size: 13px;
-}
-
-.dv-search input::placeholder {
-  color: #991b1b;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 0;
 }
 
 /* ========================================
-   NAVEGAÇÃO SUPERIOR
+   NAVEGAÇÃO SUPERIOR (ABAS)
 ======================================== */
 
 .dv-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 4%;
+  gap: 14px;
+  padding: 8px 16px;
   background: rgba(5, 5, 5, 0.96);
   overflow-x: auto;
   scrollbar-width: none;
@@ -187,24 +151,21 @@ input {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
   flex: 0 0 auto;
-  min-height: 40px;
-  padding: 9px 17px;
+  padding: 6px 14px;
   border: 1px solid transparent;
   border-radius: 999px;
   background: transparent;
   color: #b8b8c7;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   white-space: nowrap;
 }
 
 .dv-nav button.active {
-  background: var(--red-primary);
+  background: #e50914;
   color: #fff;
-  border-color: var(--red-primary);
-  box-shadow: 0 4px 16px rgba(229, 9, 20, 0.25);
+  border-color: #e50914;
 }
 
 /* ========================================
@@ -212,14 +173,14 @@ input {
 ======================================== */
 
 .dv-main {
-  width: 92%;
+  width: 94%;
   max-width: 1400px;
   margin: 0 auto;
-  padding-top: 15px;
+  padding-top: 10px;
 }
 
 .dv-section {
-  margin-bottom: 30px;
+  margin-bottom: 25px;
 }
 
 .dv-section-heading {
@@ -227,65 +188,27 @@ input {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin: 25px 0 12px;
+  margin: 20px 0 10px;
 }
 
 .dv-section-heading h2 {
   margin: 0;
   font-family: 'Outfit', sans-serif !important;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #fff;
 }
 
-.dv-section-heading p {
-  margin: 3px 0 0;
-  color: var(--text-muted);
+.dv-see-all {
+  border: none;
+  background: transparent;
+  color: #9ca3af;
   font-size: 12px;
-}
-
-/* ========================================
-   GRADE DE CATEGORIAS
-======================================== */
-
-.dv-style-categories-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin: 15px 0 25px;
-}
-
-.dv-style-cat-card {
-  background: linear-gradient(135deg, #120606, #080303);
-  border: 1px solid rgba(229, 9, 20, 0.35);
-  border-radius: 12px;
-  padding: 14px 8px;
-  text-align: center;
   cursor: pointer;
-  transition: transform 0.2s, border-color 0.2s;
-}
-
-.dv-style-cat-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--red-primary);
-}
-
-.dv-style-cat-icon {
-  font-size: 24px;
-  margin-bottom: 6px;
-  display: block;
-}
-
-.dv-style-cat-card span:last-child {
-  font-size: 11px;
-  font-weight: 700;
-  color: #f3f4f6;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 /* ========================================
-   BANNER PRINCIPAL
+   BANNER PRINCIPAL (HERO)
 ======================================== */
 
 .dv-hero {
@@ -293,19 +216,27 @@ input {
   isolation: isolate;
   display: flex;
   align-items: flex-end;
-  min-height: 260px !important;
-  margin: 15px 0 25px !important;
-  padding: 22px !important;
+  min-height: 380px !important;
+  margin: 10px 0 20px !important;
+  padding: 24px !important;
   overflow: hidden;
-  border: 1px solid var(--border) !important;
-  border-radius: 16px !important;
-  background: linear-gradient(135deg, #1f0608, #0a0404);
-  box-shadow: 0 10px 35px rgba(229, 9, 20, 0.3) !important;
+  border-radius: 14px !important;
+  background-size: cover !important;
+  background-position: center !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important;
+}
+
+.dv-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, #050505 0%, rgba(5,5,5,0.4) 50%, rgba(5,5,5,0.2) 100%);
+  z-index: -1;
 }
 
 .dv-hero-content {
   width: 100%;
   max-width: 550px;
+  z-index: 2;
 }
 
 .dv-eyebrow {
@@ -317,9 +248,9 @@ input {
 }
 
 .dv-hero h1 {
-  margin: 10px 0;
+  margin: 8px 0;
   font-family: 'Outfit', sans-serif !important;
-  font-size: clamp(24px, 4vw, 38px) !important;
+  font-size: clamp(22px, 4vw, 32px) !important;
   font-weight: 800 !important;
   line-height: 1.1;
   color: #fff;
@@ -330,27 +261,26 @@ input {
   max-width: 440px;
   color: #d1d5db;
   font-size: 12px;
-  line-height: 1.6;
+  line-height: 1.5;
   margin-bottom: 14px;
 }
 
 /* ========================================
-   CATÁLOGO EM CARDS
-   CAPAS VERTICAIS 9:16 SEM CORTAR A IMAGEM
+   CATÁLOGO EM CARDS (HORIZONTAL 16:9)
 ======================================== */
 
 .dv-grid {
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 14px !important;
-  padding-bottom: 25px;
+  gap: 10px !important;
+  padding-bottom: 10px;
   align-items: start;
 }
 
 @media (min-width: 768px) {
   .dv-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    gap: 18px !important;
+    gap: 14px !important;
   }
 }
 
@@ -364,16 +294,13 @@ input {
   position: relative;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid rgba(229, 9, 20, 0.25) !important;
-  border-radius: 12px !important;
-  background: #0a0404 !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
-  transition: transform 0.2s, border-color 0.2s;
+  border-radius: 8px !important;
+  background: #111 !important;
+  transition: transform 0.2s;
 }
 
 .dv-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--red-primary) !important;
+  transform: translateY(-2px);
 }
 
 .dv-card-image-button {
@@ -385,104 +312,44 @@ input {
   border: 0;
   background: #080808;
   text-align: left;
+  cursor: pointer;
 }
 
 .dv-card-image {
   display: block;
   width: 100% !important;
   height: auto !important;
-  aspect-ratio: 9 / 16 !important;
-  object-fit: contain !important;
-  object-position: center center !important;
-  background: #080808;
-}
-
-.dv-card-image-button img {
-  max-width: 100%;
-}
-
-.dv-card-play {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  display: grid;
-  width: 36px;
-  height: 36px;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  background: rgba(229, 9, 20, 0.9);
-  color: white;
-  font-size: 13px;
-  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.6);
+  aspect-ratio: 16 / 9 !important;
+  object-fit: cover !important;
 }
 
 .dv-live-badge {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  padding: 4px 7px;
+  top: 6px;
+  left: 6px;
+  padding: 3px 6px;
   border-radius: 4px;
   background: #e50914;
   color: white;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 800;
-  box-shadow: 0 0 10px rgba(229, 9, 20, 0.8);
 }
 
 .dv-card-content {
-  padding: 10px 8px;
+  padding: 6px 4px;
   min-width: 0;
-}
-
-.dv-card-category {
-  display: inline-block;
-  color: #fca5a5;
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
 }
 
 .dv-card h3 {
-  margin: 8px 0 12px;
-  font-family: 'Outfit', sans-serif !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  line-height: 1.4;
-  color: #fff;
-  overflow-wrap: anywhere;
-}
-
-.dv-card-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.dv-card-actions .dv-button-primary {
-  flex: 1;
-  min-width: 0;
-  padding: 7px 6px;
-  font-size: 10px;
-  min-height: 32px;
-}
-
-.dv-favorite-button {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  background: #180c0c;
-  color: white;
-  font-size: 16px;
-}
-
-.dv-favorite-button.active {
-  color: #e50914;
-  border-color: rgba(229, 9, 20, 0.6);
-  background: rgba(229, 9, 20, 0.15);
+  margin: 0;
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1.3;
+  color: #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ========================================
@@ -520,11 +387,9 @@ input {
   display: block;
   width: min(220px, 70%);
   height: auto;
-  aspect-ratio: 9 / 16;
-  object-fit: contain;
-  object-position: center;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
   border-radius: 12px;
-  background: #080808;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
 }
 
@@ -565,22 +430,21 @@ input {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 42px;
+  min-height: 40px;
   padding: 10px 20px;
-  border: 1px solid rgba(229, 9, 20, 0.5);
-  border-radius: 10px !important;
-  background: linear-gradient(135deg, #e50914, #991b1b) !important;
+  border: 0;
+  border-radius: 8px !important;
+  background: #e50914 !important;
   color: white !important;
   font-size: 13px;
   font-weight: 700 !important;
-  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
 }
 
 .dv-description-toggle {
   padding: 10px 18px;
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
+  border-radius: 8px;
   background: #180c0c;
   font-size: 13px;
   font-weight: 600;
@@ -777,11 +641,10 @@ input {
   background: #e50914;
   font-size: 11px;
   font-weight: 700;
-  box-shadow: 0 0 12px rgba(229, 9, 20, 0.5);
 }
 
 /* ========================================
-   RODAPÉ
+   RODAPÉ E BARRA INFERIOR DE NAVEGAÇÃO
 ======================================== */
 
 .dv-footer {
@@ -792,163 +655,48 @@ input {
   font-size: 11px;
 }
 
-/* ========================================
-   CELULAR — NAVEGAÇÃO INFERIOR
-======================================== */
+.dv-bottom-nav {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 50 !important;
+  display: flex !important;
+  justify-content: space-around !important;
+  align-items: center !important;
+  height: 60px !important;
+  margin: 0 !important;
+  padding: 0 8px env(safe-area-inset-bottom) !important;
+  background: rgba(5, 5, 5, 0.98) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(20px);
+}
 
-@media (max-width: 768px) {
-  .dv-header {
-    padding: 13px 16px;
-    gap: 10px;
-  }
+.dv-bottom-nav button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 100%;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #9ca3af;
+  font-size: 10px;
+}
 
-  .dv-logo {
-    font-size: 22px !important;
-  }
+.dv-bottom-nav button span {
+  font-size: 18px;
+}
 
-  .dv-header-actions {
-    max-width: 180px;
-  }
-
-  .dv-search {
-    padding: 8px 11px;
-  }
-
-  .dv-nav {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 50 !important;
-    display: flex !important;
-    justify-content: space-around !important;
-    align-items: center !important;
-    height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom)) !important;
-    margin: 0 !important;
-    padding: 0 8px env(safe-area-inset-bottom) !important;
-    background: rgba(6, 3, 3, 0.98) !important;
-    border-top: 1px solid rgba(229, 9, 20, 0.3) !important;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.9);
-    overflow-x: auto;
-  }
-
-  .dv-nav button {
-    flex: 1 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    height: 100%;
-    min-width: 58px;
-    padding: 4px 8px;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    color: #9ca3af;
-    font-size: 9px;
-    font-weight: 500;
-  }
-
-  .dv-nav button.active {
-    color: #e50914 !important;
-    background: transparent !important;
-    text-shadow: 0 0 12px rgba(229, 9, 20, 0.7);
-  }
-
-  .dv-main {
-    width: 94%;
-    padding-top: 8px;
-  }
-
-  .dv-hero {
-    min-height: 230px !important;
-    padding: 18px !important;
-    margin: 10px 0 20px !important;
-  }
-
-  .dv-hero h1 {
-    font-size: 25px !important;
-  }
-
-  .dv-hero p {
-    max-width: 280px;
-  }
-
-  .dv-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 10px !important;
-  }
-
-  .dv-card {
-    border-radius: 9px !important;
-  }
-
-  .dv-card h3 {
-    margin: 7px 0 10px;
-    font-size: 11px !important;
-    line-height: 1.35;
-  }
-
-  .dv-detail-header {
-    padding: 16px;
-  }
-
-  .dv-detail-cover {
-    width: min(190px, 70%);
-  }
-
-  .dv-detail-info h1 {
-    font-size: 22px;
-  }
-
-  .dv-footer {
-    padding-bottom: 100px;
-  }
+.dv-bottom-nav button.active {
+  color: #e50914 !important;
 }
 
 /* ========================================
-   TELAS MUITO PEQUENAS
-======================================== */
-
-@media (max-width: 380px) {
-  .dv-main {
-    width: 94%;
-  }
-
-  .dv-grid {
-    gap: 8px !important;
-  }
-
-  .dv-card h3 {
-    font-size: 10px !important;
-  }
-
-  .dv-style-categories-grid {
-    gap: 6px;
-  }
-
-  .dv-style-cat-card {
-    padding: 11px 4px;
-  }
-
-  .dv-style-cat-card span:last-child {
-    font-size: 9px;
-  }
-
-  .dv-player-bottom {
-    padding: 10px;
-  }
-
-  .dv-player-next {
-    padding: 8px;
-    font-size: 10px;
-  }
-}
-
-/* ========================================
-   ESTADOS VAZIOS E CARREGAMENTO
+   ESTADOS VAZIOS
 ======================================== */
 
 .dv-empty,
@@ -970,219 +718,4 @@ input {
   color: white;
   margin: 0 0 6px;
   font-size: 16px;
-}
-
-/* =========================================================
-   DRAMOVIX — INTERFACE MOBILE INSPIRADA NA REFERÊNCIA
-   Mantém a identidade original em preto e vermelho.
-========================================================= */
-.dv-app {
-  --red-primary: #e50914;
-  --red-glow: rgba(229, 9, 20, .34);
-  padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
-  background: #05070b !important;
-}
-.dv-header {
-  padding: 18px clamp(14px, 4vw, 30px) 12px;
-  border-bottom: 0;
-  background: rgba(5, 7, 11, .97) !important;
-}
-.dv-logo {
-  font-size: clamp(22px, 5vw, 30px) !important;
-  letter-spacing: -1.3px;
-  text-shadow: none;
-}
-.dv-header-actions { max-width: 190px; }
-.dv-search {
-  padding: 7px 10px;
-  background: #0b0e14;
-  border-color: rgba(255,255,255,.10);
-}
-.dv-search span { color: #e50914; font-size: 22px; line-height: 1; }
-.dv-search input { font-size: 12px; }
-.dv-search input::placeholder { color: #8a8d98; }
-.dv-nav {
-  position: sticky;
-  top: 60px;
-  z-index: 25;
-  gap: 8px;
-  padding: 8px 14px 12px;
-  background: rgba(5, 7, 11, .97);
-}
-.dv-nav button {
-  min-height: 36px;
-  padding: 8px 15px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: none;
-}
-.dv-nav button.active {
-  background: var(--red-primary);
-  border-color: var(--red-primary);
-  box-shadow: 0 4px 14px rgba(229,9,20,.24);
-}
-.dv-main {
-  width: min(100% - 28px, 1280px);
-  padding-top: 0;
-}
-.dv-hero {
-  min-height: 260px !important;
-  align-items: center;
-  margin: 0 0 20px !important;
-  padding: clamp(18px, 4vw, 30px) !important;
-  border: 0 !important;
-  border-radius: 15px !important;
-  background-color: #0b111b !important;
-  background-image:
-    linear-gradient(90deg, rgba(3,5,9,.97) 0%, rgba(3,5,9,.85) 42%, rgba(3,5,9,.12) 100%),
-    linear-gradient(0deg, rgba(3,5,9,.55), transparent 55%),
-    var(--hero-image) !important;
-  background-size: cover !important;
-  background-position: center right !important;
-  box-shadow: none !important;
-}
-.dv-hero-content { max-width: 56%; }
-.dv-hero .dv-eyebrow { color: #ffb4b4; letter-spacing: 1px; }
-.dv-hero h1 {
-  font-family: Georgia, 'Times New Roman', serif !important;
-  font-size: clamp(22px, 4.7vw, 40px) !important;
-  line-height: 1.08;
-  font-weight: 500 !important;
-}
-.dv-hero p { color: #d4d7df; font-size: 12px; line-height: 1.5; }
-.dv-button-primary {
-  border: 0;
-  border-radius: 10px !important;
-  background: var(--red-primary) !important;
-  box-shadow: 0 5px 18px rgba(229,9,20,.22);
-}
-.dv-section { margin-bottom: 18px; }
-.dv-section-heading {
-  margin: 20px 0 10px;
-  min-height: 24px;
-}
-.dv-section-heading h2 {
-  font-family: 'DM Sans', sans-serif !important;
-  font-size: 19px;
-  letter-spacing: -.35px;
-  text-transform: none;
-}
-.dv-see-all {
-  flex-shrink: 0;
-  border: 0;
-  background: transparent;
-  color: #a9adbb;
-  font-size: 11px;
-  padding: 4px 0 4px 8px;
-}
-.dv-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 12px !important;
-  padding-bottom: 8px;
-}
-.dv-card {
-  overflow: visible;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-.dv-card-image-button {
-  overflow: hidden;
-  border-radius: 9px;
-  background: #0b0e14;
-}
-.dv-card-image {
-  width: 100% !important;
-  height: auto !important;
-  aspect-ratio: 16 / 9 !important;
-  object-fit: cover !important;
-  background: #0b0e14;
-}
-.dv-card h3 {
-  margin: 7px 1px 0 !important;
-  font-family: 'DM Sans', sans-serif !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  line-height: 1.35 !important;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.dv-live-badge { top: 6px; left: 6px; }
-.dv-empty {
-  padding: 24px 16px;
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 12px;
-  background: #0a0d13;
-  color: #fff;
-}
-.dv-empty p, .dv-message { color: #a7aab5; font-size: 13px; }
-.dv-style-categories-grid { gap: 8px; }
-.dv-style-cat-card {
-  padding: 12px 5px;
-  border-color: rgba(255,255,255,.08);
-  background: #0a0d13;
-}
-.dv-style-cat-icon { font-size: 21px; }
-.dv-detail-header { background: #0a0d13; border-color: rgba(255,255,255,.08); }
-.dv-episode { background: #0a0d13; }
-.dv-player-modal { background: #080a0f; border-color: rgba(229,9,20,.35); }
-.dv-player-top, .dv-player-bottom { background: #0b0d13; }
-.dv-footer { padding-bottom: 22px; color: #747987; font-size: 11px; text-align: center; }
-
-.dv-bottom-nav {
-  position: fixed;
-  z-index: 80;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-  border-top: 1px solid rgba(255,255,255,.09);
-  background: rgba(5,7,11,.97);
-  backdrop-filter: blur(18px);
-}
-.dv-bottom-nav button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-height: 48px;
-  border: 0;
-  background: transparent;
-  color: #9297a6;
-}
-.dv-bottom-nav button > span { font-size: 25px; line-height: 1; font-weight: 400; }
-.dv-bottom-nav button small { font-size: 10px; }
-.dv-bottom-nav button.active { color: var(--red-primary); }
-.dv-bottom-nav button.active > span { font-weight: 700; }
-
-@media (min-width: 640px) {
-  .dv-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 16px !important; }
-  .dv-card-image { aspect-ratio: 16 / 9 !important; }
-  .dv-hero { min-height: 310px !important; }
-  .dv-hero-content { max-width: 48%; }
-}
-@media (min-width: 900px) {
-  .dv-header { padding-top: 22px; }
-  .dv-main { width: min(94%, 1280px); }
-  .dv-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
-  .dv-bottom-nav { display: none; }
-  .dv-app { padding-bottom: 24px !important; }
-}
-@media (max-width: 420px) {
-  .dv-header { gap: 8px; padding-left: 14px; padding-right: 14px; }
-  .dv-logo { font-size: 21px !important; }
-  .dv-header-actions { max-width: 132px; }
-  .dv-search { padding: 6px 8px; }
-  .dv-search input { font-size: 11px; }
-  .dv-hero { min-height: 238px !important; padding: 17px !important; }
-  .dv-hero-content { max-width: 66%; }
-  .dv-hero h1 { font-size: 23px !important; }
-  .dv-hero p { font-size: 11px; }
-  .dv-grid { gap: 10px !important; }
 }
