@@ -35,8 +35,10 @@ export default function App() {
   const [liveChannelsLoading, setLiveChannelsLoading] = useState(true);
 
   const [selectedSeries, setSelectedSeries] = useState(null);
+  const [selectedMovie, setSelectedMovie] = useState(null);
   const [episodes, setEpisodes] = useState([]);
   const [selectedEpisode, setSelectedEpisode] = useState(null);
+
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
   const [page, setPage] = useState("filmes");
@@ -99,6 +101,27 @@ export default function App() {
             .order("id", { ascending: true }),
         ]);
 
+        if (seriesResult.error) {
+          console.error(
+            "Erro ao carregar séries:",
+            seriesResult.error
+          );
+        }
+
+        if (moviesResult.error) {
+          console.error(
+            "Erro ao carregar filmes:",
+            moviesResult.error
+          );
+        }
+
+        if (liveChannelsResult.error) {
+          console.error(
+            "Erro ao carregar canais:",
+            liveChannelsResult.error
+          );
+        }
+
         const loadedSeries = (seriesResult.data || [])
           .filter(
             (item) =>
@@ -124,6 +147,7 @@ export default function App() {
             description: item.description || "",
             image: item.cover_url || DEFAULT_MOVIE_COVER,
             video_url: item.video_url || "",
+            isMovie: true,
           })
         );
 
@@ -151,6 +175,7 @@ export default function App() {
         }
       } catch (error) {
         console.error("Erro ao carregar catálogo:", error);
+
         if (!cancelled) {
           setSeries([]);
           setMovies([]);
@@ -172,7 +197,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!selectedSeries) {
+    if (!selectedSeries || selectedSeries.isLive) {
       setEpisodes([]);
       setEpisodesLoading(false);
       return;
@@ -212,6 +237,7 @@ export default function App() {
         }
       } catch (error) {
         console.error("Erro ao carregar episódios:", error);
+
         if (!cancelled) setEpisodes([]);
       } finally {
         if (!cancelled) setEpisodesLoading(false);
@@ -240,7 +266,7 @@ export default function App() {
 
     if (!url) {
       setPlayerError(
-        "Este episódio ainda não possui um link de vídeo."
+        "Este conteúdo ainda não possui um link de vídeo."
       );
       return;
     }
@@ -258,6 +284,7 @@ export default function App() {
 
     const handleVideoError = () => {
       if (cancelled) return;
+
       setPlayerError(
         "Não foi possível reproduzir este vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução."
       );
@@ -266,7 +293,11 @@ export default function App() {
     video.addEventListener("error", handleVideoError);
 
     if (isHls && Hls.isSupported()) {
-      hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+      hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
+      });
+
       hlsRef.current = hls;
 
       hls.on(Hls.Events.MEDIA_ATTACHED, () => {
@@ -281,6 +312,7 @@ export default function App() {
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (cancelled || !data.fatal) return;
+
         setPlayerError(
           "Não foi possível carregar a transmissão."
         );
@@ -302,11 +334,17 @@ export default function App() {
 
     return () => {
       cancelled = true;
+
       video.removeEventListener("error", handleVideoError);
+
       if (hls) {
         hls.destroy();
-        if (hlsRef.current === hls) hlsRef.current = null;
+
+        if (hlsRef.current === hls) {
+          hlsRef.current = null;
+        }
       }
+
       video.pause();
       video.removeAttribute("src");
       video.load();
@@ -334,8 +372,10 @@ export default function App() {
     return matchesSearch && matchesCategory;
   });
 
-  const filteredMovies = movies.filter((item) =>
-    normalize(item.title).includes(normalize(search))
+  const filteredMovies = movies.filter(
+    (item) =>
+      normalize(item.title).includes(normalize(search)) ||
+      normalize(item.description).includes(normalize(search))
   );
 
   const filteredLiveChannels = liveChannels.filter((item) =>
@@ -343,6 +383,8 @@ export default function App() {
   );
 
   function toggleFavorite(item) {
+    if (!item) return;
+
     setFavorites((previous) =>
       previous.includes(item.id)
         ? previous.filter((id) => id !== item.id)
@@ -351,15 +393,33 @@ export default function App() {
   }
 
   function isFavorite(item) {
-    return favorites.includes(item.id);
+    return Boolean(item && favorites.includes(item.id));
   }
 
   function openSeries(item) {
     setSelectedSeries(item);
+    setSelectedMovie(null);
     setSelectedEpisode(null);
     setShowDescription(false);
     setPage("detalhes");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
+  function openMovieDetails(item) {
+    setSelectedMovie(item);
+    setSelectedSeries(null);
+    setSelectedEpisode(null);
+    setShowDescription(false);
+    setPage("detalhes-filme");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   }
 
   function openPlayer(episode) {
@@ -373,14 +433,28 @@ export default function App() {
     openPlayer(episode);
   }
 
+  function playMovie(movie) {
+    if (!movie) return;
+
+    openPlayer({
+      id: movie.id,
+      title: movie.title,
+      video_url: movie.video_url,
+      isMovie: true,
+    });
+  }
+
   function openLive(item) {
     setSelectedSeries(item);
+    setSelectedMovie(null);
+
     setSelectedEpisode({
       id: `${item.id}-stream`,
       title: item.title,
       video_url: item.video_url,
       isLive: true,
     });
+
     setPlayerError("");
     setPlayerOpen(true);
   }
@@ -390,11 +464,13 @@ export default function App() {
       hlsRef.current.destroy();
       hlsRef.current = null;
     }
+
     if (videoRef.current) {
       videoRef.current.pause();
       videoRef.current.removeAttribute("src");
       videoRef.current.load();
     }
+
     setPlayerOpen(false);
     setSelectedEpisode(null);
     setPlayerError("");
@@ -403,10 +479,15 @@ export default function App() {
 
   function playNextEpisode() {
     if (!selectedEpisode || !episodes.length) return;
+
     const currentIndex = episodes.findIndex(
       (episode) => episode.id === selectedEpisode.id
     );
-    if (currentIndex >= 0 && currentIndex < episodes.length - 1) {
+
+    if (
+      currentIndex >= 0 &&
+      currentIndex < episodes.length - 1
+    ) {
       openPlayer(episodes[currentIndex + 1]);
     }
   }
@@ -419,26 +500,25 @@ export default function App() {
   function goToPage(nextPage) {
     setPage(nextPage);
     setSelectedSeries(null);
+    setSelectedMovie(null);
     setSelectedEpisode(null);
+    setEpisodes([]);
     setSearch("");
     setCategory("Todas");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShowDescription(false);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   }
 
   function renderCard(item, type = "series") {
-    const favorite = isFavorite(item);
-
     const openItem = () => {
       if (type === "live") {
         openLive(item);
       } else if (type === "movie") {
-        setSelectedSeries(null);
-        openPlayer({
-          id: item.id,
-          title: item.title,
-          video_url: item.video_url,
-          isMovie: true,
-        });
+        openMovieDetails(item);
       } else {
         openSeries(item);
       }
@@ -450,6 +530,15 @@ export default function App() {
           className="dv-card-image-button"
           onClick={openItem}
           aria-label={`Abrir ${item.title}`}
+          style={{
+            display: "block",
+            width: "100%",
+            padding: 0,
+            border: "none",
+            background: "transparent",
+            cursor: "pointer",
+            textAlign: "left",
+          }}
         >
           <img
             className="dv-card-image"
@@ -461,46 +550,34 @@ export default function App() {
               event.currentTarget.src = DEFAULT_COVER;
             }}
           />
+
           {type === "live" && (
             <span className="dv-live-badge">AO VIVO</span>
           )}
+
+          <h3
+            style={{
+              margin: "8px 0 12px",
+              fontSize: "14px",
+              lineHeight: 1.4,
+              fontWeight: 600,
+              color: "#ffffff",
+            }}
+          >
+            {item.title}
+          </h3>
         </button>
-
-        {/* Exibe APENAS Categoria e Nome do Conteúdo (sem sinopse nem botão play de fora) */}
-        <div className="dv-card-content">
-          <span className="dv-card-category">
-            {type === "live" ? "AO VIVO" : item.category}
-          </span>
-          <h3>{item.title}</h3>
-
-          <div className="dv-card-actions">
-            <button
-              className="dv-button-primary"
-              onClick={openItem}
-            >
-              Detalhes
-            </button>
-
-            {type !== "live" && (
-              <button
-                className={`dv-favorite-button ${
-                  favorite ? "active" : ""
-                }`}
-                onClick={() => toggleFavorite(item)}
-                aria-label="Favoritar"
-              >
-                {favorite ? "♥" : "♡"}
-              </button>
-            )}
-          </div>
-        </div>
       </article>
     );
   }
 
   function renderGrid(items, type = "series") {
     if (loading && type !== "live") {
-      return <p className="dv-message">Carregando catálogo...</p>;
+      return (
+        <p className="dv-message">
+          Carregando catálogo...
+        </p>
+      );
     }
 
     if (!items.length) {
@@ -508,7 +585,9 @@ export default function App() {
         <div className="dv-empty">
           <span>✦</span>
           <h3>Nenhum conteúdo encontrado</h3>
-          <p>Tente buscar por outro termo ou categoria.</p>
+          <p>
+            Tente buscar por outro termo ou categoria.
+          </p>
         </div>
       );
     }
@@ -520,13 +599,20 @@ export default function App() {
     );
   }
 
-  const favoriteSeries = series.filter((item) => isFavorite(item));
-  const favoriteMovies = movies.filter((item) => isFavorite(item));
+  const favoriteSeries = series.filter((item) =>
+    isFavorite(item)
+  );
+
+  const favoriteMovies = movies.filter((item) =>
+    isFavorite(item)
+  );
 
   const isLandscapePlayer =
     Boolean(selectedEpisode?.isMovie) ||
     Boolean(selectedEpisode?.isLive) ||
     Boolean(selectedSeries?.isLive);
+
+  const detailItem = selectedSeries || selectedMovie;
 
   return (
     <div className="dv-app">
@@ -542,21 +628,27 @@ export default function App() {
         <div className="dv-header-actions">
           <label className="dv-search">
             <span>⌕</span>
+
             <input
               type="search"
               placeholder="Pesquisar..."
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value);
-                if (page === "filmes") setPage("explorar");
+
+                if (page === "filmes") {
+                  setPage("explorar");
+                }
               }}
             />
           </label>
         </div>
       </header>
 
-      {/* Barra Inferior Exata: FILMES - TV - SERIES - ANIMES - DORAMAS (Sem favoritos embaixo) */}
-      <nav className="dv-nav" aria-label="Navegação principal">
+      <nav
+        className="dv-nav"
+        aria-label="Navegação principal"
+      >
         {[
           ["filmes", "🎬", "FILMES"],
           ["tv", "📡", "TV"],
@@ -569,7 +661,9 @@ export default function App() {
             className={page === key ? "active" : ""}
             onClick={() => goToPage(key)}
           >
-            <span style={{ fontSize: "16px" }}>{icon}</span>
+            <span style={{ fontSize: "16px" }}>
+              {icon}
+            </span>
             <span>{label}</span>
           </button>
         ))}
@@ -580,41 +674,59 @@ export default function App() {
           <section className="dv-detail">
             <button
               className="dv-back"
-              onClick={() => goToPage("filmes")}
+              onClick={() => goToPage("series")}
             >
               ← Voltar ao catálogo
             </button>
 
-            {/* Informações organizadas abaixo da capa em linha reta */}
             <div className="dv-detail-header">
               <img
                 className="dv-detail-cover"
                 src={selectedSeries.image || DEFAULT_COVER}
                 alt={selectedSeries.title}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = DEFAULT_COVER;
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = DEFAULT_COVER;
                 }}
               />
 
               <div className="dv-detail-info">
-                <span className="dv-eyebrow" style={{ color: "#fca5a5" }}>
+                <span
+                  className="dv-eyebrow"
+                  style={{ color: "#fca5a5" }}
+                >
                   {selectedSeries.category || "DRAMA"}
                 </span>
+
                 <h1>{selectedSeries.title}</h1>
+
                 <p>
                   {showDescription
-                    ? selectedSeries.description || "Descrição indisponível."
-                    : (selectedSeries.description || "Uma história incrível.").slice(0, 160) +
-                      ((selectedSeries.description || "").length > 160 ? "..." : "")}
+                    ? selectedSeries.description ||
+                      "Descrição indisponível."
+                    : (
+                        selectedSeries.description ||
+                        "Uma história incrível."
+                      ).slice(0, 160) +
+                      (
+                        (selectedSeries.description || "")
+                          .length > 160
+                          ? "..."
+                          : ""
+                      )}
                 </p>
 
-                {(selectedSeries.description || "").length > 160 && (
+                {(selectedSeries.description || "").length >
+                  160 && (
                   <button
                     className="dv-description-toggle"
-                    onClick={() => setShowDescription((v) => !v)}
+                    onClick={() =>
+                      setShowDescription((value) => !value)
+                    }
                   >
-                    {showDescription ? "Mostrar menos" : "Ler descrição completa"}
+                    {showDescription
+                      ? "Mostrar menos"
+                      : "Ler descrição completa"}
                   </button>
                 )}
 
@@ -622,18 +734,26 @@ export default function App() {
                   <button
                     className="dv-button-primary"
                     onClick={() => {
-                      if (episodes.length) openEpisode(episodes[0]);
+                      if (episodes.length) {
+                        openEpisode(episodes[0]);
+                      }
                     }}
-                    disabled={episodesLoading || !episodes.length}
+                    disabled={
+                      episodesLoading || !episodes.length
+                    }
                   >
                     ▶ Assistir 1º Episódio
                   </button>
 
                   <button
                     className="dv-description-toggle"
-                    onClick={() => toggleFavorite(selectedSeries)}
+                    onClick={() =>
+                      toggleFavorite(selectedSeries)
+                    }
                   >
-                    {isFavorite(selectedSeries) ? "♥ Favoritado" : "♡ Favoritar"}
+                    {isFavorite(selectedSeries)
+                      ? "♥ Favoritado"
+                      : "♡ Favoritar"}
                   </button>
                 </div>
               </div>
@@ -643,12 +763,17 @@ export default function App() {
               <div className="dv-section-heading">
                 <div>
                   <h2>Episódios</h2>
-                  <p>{episodes.length} episódio(s) disponível(is)</p>
+                  <p>
+                    {episodes.length} episódio(s)
+                    disponível(is)
+                  </p>
                 </div>
               </div>
 
               {episodesLoading ? (
-                <p className="dv-message">Carregando episódios...</p>
+                <p className="dv-message">
+                  Carregando episódios...
+                </p>
               ) : episodes.length ? (
                 <div className="dv-episode-list">
                   {episodes.map((episode, index) => (
@@ -660,25 +785,120 @@ export default function App() {
                       <span className="dv-episode-number">
                         {episode.episode_number || index + 1}
                       </span>
+
                       <span className="dv-episode-info">
                         <strong>
-                          {episode.title || `Episódio ${index + 1}`}
+                          {episode.title ||
+                            `Episódio ${index + 1}`}
                         </strong>
+
                         <small style={{ color: "#fca5a5" }}>
-                          {episode.video_url ? "Pronto para reprodução" : "Em breve"}
+                          {episode.video_url
+                            ? "Pronto para reprodução"
+                            : "Em breve"}
                         </small>
                       </span>
-                      <span className="dv-episode-play">▶</span>
+
+                      <span className="dv-episode-play">
+                        ▶
+                      </span>
                     </button>
                   ))}
                 </div>
               ) : (
                 <div className="dv-empty">
                   <h3>Novos episódios em breve</h3>
-                  <p>Estamos preparando os capítulos desta série para você.</p>
+                  <p>
+                    Estamos preparando os capítulos desta
+                    série para você.
+                  </p>
                 </div>
               )}
             </section>
+          </section>
+        )}
+
+        {page === "detalhes-filme" && selectedMovie && (
+          <section className="dv-detail">
+            <button
+              className="dv-back"
+              onClick={() => goToPage("filmes")}
+            >
+              ← Voltar ao catálogo
+            </button>
+
+            <div className="dv-detail-header">
+              <img
+                className="dv-detail-cover"
+                src={selectedMovie.image || DEFAULT_MOVIE_COVER}
+                alt={selectedMovie.title}
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = DEFAULT_MOVIE_COVER;
+                }}
+              />
+
+              <div className="dv-detail-info">
+                <span
+                  className="dv-eyebrow"
+                  style={{ color: "#fca5a5" }}
+                >
+                  {selectedMovie.category || "FILME"}
+                </span>
+
+                <h1>{selectedMovie.title}</h1>
+
+                <p>
+                  {showDescription
+                    ? selectedMovie.description ||
+                      "Descrição indisponível."
+                    : (
+                        selectedMovie.description ||
+                        "Prepare-se para descobrir esta história."
+                      ).slice(0, 160) +
+                      (
+                        (selectedMovie.description || "")
+                          .length > 160
+                          ? "..."
+                          : ""
+                      )}
+                </p>
+
+                {(selectedMovie.description || "").length >
+                  160 && (
+                  <button
+                    className="dv-description-toggle"
+                    onClick={() =>
+                      setShowDescription((value) => !value)
+                    }
+                  >
+                    {showDescription
+                      ? "Mostrar menos"
+                      : "Ler descrição completa"}
+                  </button>
+                )}
+
+                <div className="dv-detail-actions">
+                  <button
+                    className="dv-button-primary"
+                    onClick={() => playMovie(selectedMovie)}
+                  >
+                    ▶ Assistir Filme
+                  </button>
+
+                  <button
+                    className="dv-description-toggle"
+                    onClick={() =>
+                      toggleFavorite(selectedMovie)
+                    }
+                  >
+                    {isFavorite(selectedMovie)
+                      ? "♥ Favoritado"
+                      : "♡ Favoritar"}
+                  </button>
+                </div>
+              </div>
+            </div>
           </section>
         )}
 
@@ -686,37 +906,79 @@ export default function App() {
           <>
             <section className="dv-hero">
               <div className="dv-hero-content">
-                <span className="dv-eyebrow">✦ DRAMOVIX+ CINEMA</span>
-                <h1>O melhor conteúdo sempre com você.</h1>
-                <p>Conteúdo variado para todos os gostos. Lançamentos e clássicos atualizados.</p>
+                <span className="dv-eyebrow">
+                  ✦ DRAMOVIX+ CINEMA
+                </span>
+
+                <h1>
+                  O melhor conteúdo sempre com você.
+                </h1>
+
+                <p>
+                  Conteúdo variado para todos os gostos.
+                  Lançamentos e clássicos atualizados.
+                </p>
+
                 <button
                   className="dv-button-primary"
-                  onClick={() => goToPage("filmes")}
+                  onClick={() => {
+                    setSearch("");
+                    window.scrollTo({
+                      top: 0,
+                      behavior: "smooth",
+                    });
+                  }}
                 >
                   Explorar Filmes →
                 </button>
               </div>
             </section>
 
-            {/* Categorias visuais em Maiúsculo */}
-            <div className="dv-section-heading" style={{ marginTop: "15px" }}>
+            <div
+              className="dv-section-heading"
+              style={{ marginTop: "15px" }}
+            >
               <h2>CATEGORIAS</h2>
             </div>
+
             <div className="dv-style-categories-grid">
-              <div className="dv-style-cat-card" onClick={() => goToPage("filmes")}>
-                <span className="dv-style-cat-icon">🎬</span>
+              <div
+                className="dv-style-cat-card"
+                onClick={() => goToPage("filmes")}
+              >
+                <span className="dv-style-cat-icon">
+                  🎬
+                </span>
                 <span>FILMES</span>
               </div>
-              <div className="dv-style-cat-card" onClick={() => goToPage("tv")}>
-                <span className="dv-style-cat-icon">📡</span>
+
+              <div
+                className="dv-style-cat-card"
+                onClick={() => goToPage("tv")}
+              >
+                <span className="dv-style-cat-icon">
+                  📡
+                </span>
                 <span>TV</span>
               </div>
-              <div className="dv-style-cat-card" onClick={() => goToPage("series")}>
-                <span className="dv-style-cat-icon">📺</span>
+
+              <div
+                className="dv-style-cat-card"
+                onClick={() => goToPage("series")}
+              >
+                <span className="dv-style-cat-icon">
+                  📺
+                </span>
                 <span>SÉRIES</span>
               </div>
-              <div className="dv-style-cat-card" onClick={() => goToPage("animes")}>
-                <span className="dv-style-cat-icon">⚡</span>
+
+              <div
+                className="dv-style-cat-card"
+                onClick={() => goToPage("animes")}
+              >
+                <span className="dv-style-cat-icon">
+                  ⚡
+                </span>
                 <span>ANIMES</span>
               </div>
             </div>
@@ -727,9 +989,39 @@ export default function App() {
                   <h2>FILMES EM DESTAQUE</h2>
                 </div>
               </div>
+
               {renderGrid(filteredMovies, "movie")}
             </section>
           </>
+        )}
+
+        {page === "explorar" && (
+          <section className="dv-section">
+            <div className="dv-section-heading">
+              <div>
+                <h2>RESULTADOS DA PESQUISA</h2>
+                <p>
+                  Conteúdos encontrados no catálogo.
+                </p>
+              </div>
+            </div>
+
+            {loading ? (
+              <p className="dv-message">
+                Carregando catálogo...
+              </p>
+            ) : (
+              <>
+                <h3>Filmes</h3>
+                {renderGrid(filteredMovies, "movie")}
+
+                <h3 style={{ marginTop: "24px" }}>
+                  Séries, animes e doramas
+                </h3>
+                {renderGrid(filteredSeries, "series")}
+              </>
+            )}
+          </section>
         )}
 
         {page === "tv" && (
@@ -737,21 +1029,31 @@ export default function App() {
             <div className="dv-section-heading">
               <div>
                 <h2>TV ONLINE / CANAIS AO VIVO</h2>
-                <p>Assista às transmissões de TV e canais disponíveis.</p>
+                <p>
+                  Assista às transmissões de TV e canais
+                  disponíveis.
+                </p>
               </div>
             </div>
 
             {liveChannelsLoading ? (
-              <p className="dv-message">Carregando canais ao vivo...</p>
+              <p className="dv-message">
+                Carregando canais ao vivo...
+              </p>
             ) : (
               renderGrid(
                 [
-                  ...liveChannels,
-                  ...(liveChannels.some(
-                    (item) => normalize(item.title) === normalize("Z Nation")
-                  )
-                    ? []
-                    : [LIVE_SERIES]),
+                  ...filteredLiveChannels,
+                  ...(
+                    !search &&
+                    !liveChannels.some(
+                      (item) =>
+                        normalize(item.title) ===
+                        normalize("Z Nation")
+                    )
+                      ? [LIVE_SERIES]
+                      : []
+                  ),
                 ],
                 "live"
               )
@@ -764,10 +1066,13 @@ export default function App() {
             <div className="dv-section-heading">
               <div>
                 <h2>SÉRIES</h2>
-                <p>Maratone as melhores minisséries e séries.</p>
+                <p>
+                  Maratone as melhores minisséries e séries.
+                </p>
               </div>
             </div>
-            {renderGrid(filteredSeries)}
+
+            {renderGrid(filteredSeries, "series")}
           </section>
         )}
 
@@ -776,10 +1081,18 @@ export default function App() {
             <div className="dv-section-heading">
               <div>
                 <h2>ANIMES</h2>
-                <p>As melhores animações japonesas.</p>
+                <p>
+                  As melhores animações japonesas.
+                </p>
               </div>
             </div>
-            {renderGrid(filteredSeries.filter(i => normalize(i.category).includes("anime")))}
+
+            {renderGrid(
+              filteredSeries.filter((item) =>
+                normalize(item.category).includes("anime")
+              ),
+              "series"
+            )}
           </section>
         )}
 
@@ -788,10 +1101,18 @@ export default function App() {
             <div className="dv-section-heading">
               <div>
                 <h2>DORAMAS</h2>
-                <p>Séries asiáticas de sucesso.</p>
+                <p>
+                  Séries asiáticas de sucesso.
+                </p>
               </div>
             </div>
-            {renderGrid(filteredSeries.filter(i => normalize(i.category).includes("dorama")))}
+
+            {renderGrid(
+              filteredSeries.filter((item) =>
+                normalize(item.category).includes("dorama")
+              ),
+              "series"
+            )}
           </section>
         )}
       </main>
@@ -803,8 +1124,10 @@ export default function App() {
       {playerOpen && (
         <div
           className="dv-player-overlay"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closePlayer();
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              closePlayer();
+            }
           }}
         >
           <div
@@ -816,14 +1139,19 @@ export default function App() {
             <div className="dv-player-top">
               <div className="dv-player-heading">
                 <strong>
-                  {selectedEpisode?.title || selectedSeries?.title || "Reproduzindo"}
+                  {selectedEpisode?.title ||
+                    selectedSeries?.title ||
+                    selectedMovie?.title ||
+                    "Reproduzindo"}
                 </strong>
+
                 <small style={{ color: "#fca5a5" }}>
                   {selectedEpisode?.isLive
                     ? "Ao vivo"
                     : selectedEpisode?.isMovie
                       ? "Filme"
-                      : selectedSeries?.title || "DRAMOVIX+"}
+                      : selectedSeries?.title ||
+                        "DRAMOVIX+"}
                 </small>
               </div>
 
@@ -855,79 +1183,143 @@ export default function App() {
             </div>
 
             {playerError && (
-              <div className="dv-player-error" role="alert">
+              <div
+                className="dv-player-error"
+                role="alert"
+              >
                 {playerError}
               </div>
             )}
 
-            {/* Gaveta de Episódios */}
             {episodeDrawerOpen && episodes.length > 0 && (
-              <div style={{
-                position: "absolute",
-                bottom: "70px",
-                left: "10px",
-                right: "10px",
-                background: "rgba(10, 4, 4, 0.95)",
-                border: "1px solid rgba(229, 9, 20, 0.4)",
-                borderRadius: "12px",
-                padding: "12px",
-                maxHeight: "200px",
-                overflowY: "auto",
-                zIndex: 30
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "12px", fontWeight: "bold", color: "#fca5a5" }}>
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "70px",
+                  left: "10px",
+                  right: "10px",
+                  background: "rgba(10, 4, 4, 0.95)",
+                  border:
+                    "1px solid rgba(229, 9, 20, 0.4)",
+                  borderRadius: "12px",
+                  padding: "12px",
+                  maxHeight: "200px",
+                  overflowY: "auto",
+                  zIndex: 30,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "8px",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                    color: "#fca5a5",
+                  }}
+                >
                   <span>Selecionar Episódio</span>
-                  <span onClick={() => setEpisodeDrawerOpen(false)} style={{ cursor: "pointer" }}>✕</span>
-                </div>
-                {episodes.map((ep, idx) => (
-                  <div
-                    key={ep.id || idx}
-                    onClick={() => openEpisode(ep)}
+
+                  <button
+                    onClick={() =>
+                      setEpisodeDrawerOpen(false)
+                    }
                     style={{
-                      padding: "8px 10px",
-                      borderRadius: "6px",
-                      background: selectedEpisode?.id === ep.id ? "rgba(229, 9, 20, 0.3)" : "transparent",
-                      fontSize: "12px",
                       cursor: "pointer",
-                      marginBottom: "4px"
+                      border: "none",
+                      background: "transparent",
+                      color: "#fff",
                     }}
                   >
-                    Episódio {ep.episode_number || idx + 1}: {ep.title || "Assistir"}
-                  </div>
+                    ✕
+                  </button>
+                </div>
+
+                {episodes.map((episode, index) => (
+                  <button
+                    key={episode.id || index}
+                    onClick={() => openEpisode(episode)}
+                    style={{
+                      width: "100%",
+                      textAlign: "left",
+                      padding: "8px 10px",
+                      borderRadius: "6px",
+                      background:
+                        selectedEpisode?.id === episode.id
+                          ? "rgba(229, 9, 20, 0.3)"
+                          : "transparent",
+                      color: "#fff",
+                      border: "none",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    Episódio{" "}
+                    {episode.episode_number || index + 1}:{" "}
+                    {episode.title || "Assistir"}
+                  </button>
                 ))}
               </div>
             )}
 
             <div className="dv-player-bottom">
-              {!selectedEpisode?.isLive && !selectedEpisode?.isMovie && episodes.length > 0 ? (
-                <div
-                  onClick={() => setEpisodeDrawerOpen(!episodeDrawerOpen)}
-                  style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "12px", color: "#fca5a5", background: "rgba(229,9,20,0.15)", padding: "6px 10px", borderRadius: "8px", border: "1px solid rgba(229,9,20,0.3)" }}
+              {!selectedEpisode?.isLive &&
+              !selectedEpisode?.isMovie &&
+              episodes.length > 0 ? (
+                <button
+                  onClick={() =>
+                    setEpisodeDrawerOpen(
+                      (previous) => !previous
+                    )
+                  }
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    cursor: "pointer",
+                    fontSize: "12px",
+                    color: "#fca5a5",
+                    background: "rgba(229,9,20,0.15)",
+                    padding: "6px 10px",
+                    borderRadius: "8px",
+                    border:
+                      "1px solid rgba(229,9,20,0.3)",
+                  }}
                 >
-                  <span>📦 EP.{selectedEpisode?.episode_number || 1} / EP.{episodes.length}</span>
-                  <span>{episodeDrawerOpen ? "⌄" : "∧"}</span>
-                </div>
+                  <span>
+                    EP.{selectedEpisode?.episode_number || 1}{" "}
+                    / EP.{episodes.length}
+                  </span>
+                  <span>
+                    {episodeDrawerOpen ? "⌄" : "∧"}
+                  </span>
+                </button>
               ) : (
                 <span style={{ color: "#9ca3af" }}>
-                  {selectedEpisode?.isLive ? "Transmissão ao vivo" : "Filme · DRAMOVIX+"}
+                  {selectedEpisode?.isLive
+                    ? "Transmissão ao vivo"
+                    : "Filme · DRAMOVIX+"}
                 </span>
               )}
 
-              {!selectedEpisode?.isLive && !selectedEpisode?.isMovie && (
-                <button
-                  className="dv-player-next"
-                  onClick={playNextEpisode}
-                  disabled={
-                    !episodes.length ||
-                    episodes.findIndex(
-                      (ep) => ep.id === selectedEpisode?.id
-                    ) >=
-                      episodes.length - 1
-                  }
-                >
-                  Próximo episódio →
-                </button>
-              )}
+              {!selectedEpisode?.isLive &&
+                !selectedEpisode?.isMovie && (
+                  <button
+                    className="dv-player-next"
+                    onClick={playNextEpisode}
+                    disabled={
+                      !episodes.length ||
+                      episodes.findIndex(
+                        (episode) =>
+                          episode.id === selectedEpisode?.id
+                      ) >=
+                        episodes.length - 1
+                    }
+                  >
+                    Próximo episódio →
+                  </button>
+                )}
             </div>
           </div>
         </div>
