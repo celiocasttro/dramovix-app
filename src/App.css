@@ -1,5 +1,4 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
-
 :root {
   font-family: 'DM Sans', sans-serif;
   color: #f7f5fc;
@@ -17,11 +16,9 @@
   --border: rgba(229, 9, 20, 0.3);
   --bottom-nav-height: 68px;
 }
-
 * {
   box-sizing: border-box;
 }
-
 html {
   min-width: 320px;
   min-height: 100%;
@@ -29,7 +26,6 @@ html {
   background: var(--bg);
   scrollbar-color: var(--red-primary) var(--bg);
 }
-
 body {
   margin: 0;
   min-width: 320px;
@@ -37,30 +33,24 @@ body {
   background: var(--bg);
   padding-bottom: env(safe-area-inset-bottom);
 }
-
 button, input, select, textarea {
   font: inherit;
 }
-
 button {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-
 button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
-
 img {
   max-width: 100%;
 }
-
 button, input {
   -webkit-appearance: none;
   appearance: none;
 }
-
 /* ========================================
    APLICATIVO (TEMA VERMELHO E PRETO)
 ======================================== */
@@ -68,17 +58,15 @@ button, input {
   min-height: 100vh !important;
   padding-bottom: 90px !important;
   overflow-x: clip;
-  background: 
-    radial-gradient(circle at 50% -10%, rgba(229, 9, 20, 0.22), transparent 45%), 
+  background:
+    radial-gradient(circle at 50% -10%, rgba(229, 9, 20, 0.22), transparent 45%),
     var(--bg) !important;
   color: #fff !important;
   font-family: 'DM Sans', sans-serif !important;
 }
-
 .dv-app button {
   transition: all 0.2s ease;
 }
-
 /* ========================================
    CABEÇALHO
 ======================================== */
@@ -95,7 +83,6 @@ button, input {
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(18px);
 }
-
 .dv-logo {
   flex-shrink: 0;
   border: 0;
@@ -109,11 +96,9 @@ button, input {
   padding: 0;
   text-shadow: 0 0 15px rgba(229, 9, 20, 0.7);
 }
-
 .dv-logo span {
   color: var(--red-primary);
 }
-
 .dv-header-actions {
   display: flex;
   align-items: center;
@@ -123,7 +108,6 @@ button, input {
   flex: 1;
   max-width: 320px;
 }
-
 .dv-search {
   display: flex;
   align-items: center;
@@ -135,12 +119,10 @@ button, input {
   background: #120505;
   color: white;
 }
-
 .dv-search span {
   color: #fca5a5;
   margin-right: 8px;
 }
-
 .dv-search input {
   width: 100%;
   border: 0;
@@ -149,11 +131,9 @@ button, input {
   outline: none;
   font-size: 13px;
 }
-
 .dv-search input::placeholder {
   color: #991b1b;
 }
-
 /* ========================================
    CONTEÚDO PRINCIPAL E NAVEGAÇÃO
 ======================================== */
@@ -163,7 +143,6 @@ button, input {
   margin: 0 auto;
   padding-top: 15px;
 }
-
 .dv-section-heading {
   display: flex;
   align-items: center;
@@ -171,7 +150,6 @@ button, input {
   gap: 10px;
   margin: 25px 0 12px;
 }
-
 .dv-section-heading h2 {
   margin: 0;
   font-family: 'Outfit', sans-serif !important;
@@ -179,21 +157,18 @@ button, input {
   font-weight: 700;
   color: #ffffff;
 }
-
 .dv-section-heading p {
   margin: 3px 0 0;
   color: var(--text-muted);
   font-size: 12px;
 }
-
-/* Grade de Categorias em Bloco (Tudo em Maiúsculo) */
+/* GRADE DE CATEGORIAS */
 .dv-style-categories-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   margin: 15px 0 25px;
 }
-
 .dv-style-cat-card {
   background: linear-gradient(135deg, #120606, #080303);
   border: 1px solid rgba(229, 9, 20, 0.35);
@@ -203,18 +178,15 @@ button, input {
   cursor: pointer;
   transition: transform 0.2s, border-color 0.2s;
 }
-
 .dv-style-cat-card:hover {
   transform: translateY(-2px);
   border-color: var(--red-primary);
 }
-
 .dv-style-cat-icon {
   font-size: 24px;
   margin-bottom: 6px;
   display: block;
 }
-
 .dv-style-cat-card span:last-child {
   font-size: 11px;
   font-weight: 700;
@@ -222,7 +194,6 @@ button, input {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-
 /* ========================================
    BANNER (HERO)
 ======================================== */
@@ -240,12 +211,10 @@ button, input {
   background: linear-gradient(135deg, #1f0608, #0a0404);
   box-shadow: 0 10px 35px rgba(229, 9, 20, 0.3) !important;
 }
-
 .dv-hero-content {
   width: 100%;
   max-width: 550px;
 }
-
 .dv-hero h1 {
   margin: 10px 0;
   font-family: 'Outfit', sans-serif !important;
@@ -253,9 +222,8 @@ button, input {
   font-weight: 800 !important;
   line-height: 1.1;
   color: #ffffff;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
 }
-
 .dv-hero p {
   max-width: 440px;
   color: #d1d5db;
@@ -263,30 +231,28 @@ button, input {
   line-height: 1.6;
   margin-bottom: 14px;
 }
-
 /* ========================================
-   CATÁLOGO / GRID DE CARDS (APENAS CAPA E NOME)
+   CATÁLOGO / GRADE DE CAPAS
+   CAPAS MAIS ALTAS E IMAGEM COMPLETA
 ======================================== */
 .dv-grid {
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 14px !important;
   padding-bottom: 25px;
+  align-items: start;
 }
-
 @media (min-width: 768px) {
   .dv-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     gap: 18px !important;
   }
 }
-
 @media (min-width: 1100px) {
   .dv-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   }
 }
-
 .dv-card {
   position: relative;
   min-width: 0;
@@ -294,15 +260,13 @@ button, input {
   border: 1px solid rgba(229, 9, 20, 0.25) !important;
   border-radius: 12px !important;
   background: #0a0404 !important;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
   transition: transform 0.2s, border-color 0.2s;
 }
-
 .dv-card:hover {
   transform: translateY(-3px);
   border-color: var(--red-primary) !important;
 }
-
 .dv-card-image-button {
   position: relative;
   display: block;
@@ -310,17 +274,27 @@ button, input {
   padding: 0;
   overflow: hidden;
   border: 0;
-  background: #180c0c;
+  background: #080808;
   text-align: left;
 }
-
+/*
+  Aumenta a altura das capas e usa contain para
+  exibir a imagem inteira, sem cortar bordas.
+*/
 .dv-card-image {
   display: block;
   width: 100% !important;
+  height: auto !important;
   aspect-ratio: 3 / 4 !important;
-  object-fit: cover !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  background: #080808;
 }
-
+/* Mantém a proporção original da imagem */
+.dv-card-image-button img {
+  max-width: 100%;
+}
+/* Botão de reprodução, caso seja utilizado no card */
 .dv-card-play {
   position: absolute;
   right: 10px;
@@ -336,7 +310,6 @@ button, input {
   font-size: 13px;
   box-shadow: 0 4px 15px rgba(229, 9, 20, 0.6);
 }
-
 .dv-live-badge {
   position: absolute;
   top: 8px;
@@ -349,12 +322,10 @@ button, input {
   font-weight: 800;
   box-shadow: 0 0 10px rgba(229, 9, 20, 0.8);
 }
-
 .dv-card-content {
   padding: 10px 8px;
   min-width: 0;
 }
-
 .dv-card-category {
   display: inline-block;
   color: #fca5a5;
@@ -362,7 +333,6 @@ button, input {
   font-weight: 800;
   text-transform: uppercase;
 }
-
 .dv-card h3 {
   margin: 4px 0 8px;
   font-family: 'Outfit', sans-serif !important;
@@ -373,12 +343,10 @@ button, input {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .dv-card-actions {
   display: flex;
   gap: 6px;
 }
-
 .dv-card-actions .dv-button-primary {
   flex: 1;
   min-width: 0;
@@ -386,7 +354,6 @@ button, input {
   font-size: 10px;
   min-height: 32px;
 }
-
 .dv-favorite-button {
   display: grid;
   width: 32px;
@@ -399,13 +366,11 @@ button, input {
   color: white;
   font-size: 16px;
 }
-
 .dv-favorite-button.active {
   color: #e50914;
   border-color: rgba(229, 9, 20, 0.6);
   background: rgba(229, 9, 20, 0.15);
 }
-
 /* ========================================
    TELA DE DETALHES
 ======================================== */
@@ -413,7 +378,6 @@ button, input {
   max-width: 950px;
   margin: 10px auto 40px;
 }
-
 .dv-back {
   margin-bottom: 14px;
   padding: 6px 0;
@@ -423,7 +387,6 @@ button, input {
   font-weight: 600;
   font-size: 13px;
 }
-
 .dv-detail-header {
   display: flex;
   flex-direction: column;
@@ -435,30 +398,28 @@ button, input {
   text-align: center;
   align-items: center;
 }
-
 .dv-detail-cover {
   display: block;
   width: min(220px, 70%);
+  height: auto;
   aspect-ratio: 3 / 4;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   border-radius: 12px;
-  background: #180c0c;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  background: #080808;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
 }
-
 .dv-detail-info {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-
 .dv-detail-info h1 {
   margin: 8px 0 10px;
   font-size: 24px;
   color: #ffffff;
 }
-
 .dv-detail-info p {
   color: #9ca3af;
   font-size: 13px;
@@ -466,7 +427,6 @@ button, input {
   margin-bottom: 15px;
   max-width: 600px;
 }
-
 .dv-detail-actions {
   display: flex;
   flex-direction: row;
@@ -476,7 +436,6 @@ button, input {
   gap: 12px;
   width: 100%;
 }
-
 .dv-button-primary {
   display: inline-flex;
   align-items: center;
@@ -492,7 +451,6 @@ button, input {
   font-weight: 700 !important;
   box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
 }
-
 .dv-description-toggle {
   padding: 10px 18px;
   color: white;
@@ -502,16 +460,13 @@ button, input {
   font-size: 13px;
   font-weight: 600;
 }
-
 .dv-episodes {
   margin-top: 24px;
 }
-
 .dv-episode-list {
   display: grid;
   gap: 8px;
 }
-
 .dv-episode {
   display: flex;
   align-items: center;
@@ -524,12 +479,10 @@ button, input {
   border-radius: 11px;
   background: #0d0404;
 }
-
 .dv-episode:hover {
   border-color: var(--red-primary);
   background: #1a0808;
 }
-
 .dv-episode-number {
   display: grid;
   width: 38px;
@@ -542,7 +495,6 @@ button, input {
   font-weight: 800;
   font-size: 13px;
 }
-
 /* ========================================
    PLAYER
 ======================================== */
@@ -557,7 +509,6 @@ button, input {
   background: rgba(0, 0, 0, 0.95);
   backdrop-filter: blur(14px);
 }
-
 .dv-player-modal {
   position: relative;
   display: flex;
@@ -567,10 +518,9 @@ button, input {
   border: 1px solid rgba(229, 9, 20, 0.4);
   border-radius: 16px;
   background: #0d0404;
-  box-shadow: 0 25px 80px rgba(0,0,0,0.9);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.9);
   overflow: hidden;
 }
-
 .dv-player-top {
   display: flex;
   align-items: center;
@@ -580,7 +530,6 @@ button, input {
   border-bottom: 1px solid var(--border);
   background: #120505;
 }
-
 .dv-player-close {
   display: grid;
   width: 36px;
@@ -592,7 +541,6 @@ button, input {
   background: #180c0c;
   font-size: 20px;
 }
-
 .dv-video-wrap {
   position: relative;
   display: flex;
@@ -602,40 +550,34 @@ button, input {
   width: 100%;
   overflow: hidden;
 }
-
 .dv-video-wrap--portrait {
   width: min(100%, 420px);
   aspect-ratio: 9 / 16;
   max-height: 70vh;
   margin: 0 auto;
 }
-
 .dv-video-wrap--portrait .dv-video {
   width: 100%;
   height: 100%;
   object-fit: contain !important;
 }
-
 .dv-video-wrap--landscape {
   width: 100%;
   aspect-ratio: 16 / 9;
   max-height: 75vh;
   margin: 0 auto;
 }
-
 .dv-video-wrap--landscape .dv-video {
   width: 100%;
   height: 100%;
   object-fit: contain !important;
 }
-
 .dv-video {
   display: block;
   width: 100%;
   height: 100%;
   background: #000;
 }
-
 .dv-player-bottom {
   display: flex;
   align-items: center;
@@ -645,7 +587,6 @@ button, input {
   border-top: 1px solid var(--border);
   background: #120505;
 }
-
 .dv-player-next {
   padding: 8px 14px;
   color: white;
@@ -656,9 +597,8 @@ button, input {
   font-weight: 700;
   box-shadow: 0 0 12px rgba(229, 9, 20, 0.5);
 }
-
 /* ========================================
-   RODAPÉ E BARRA DE NAVEGAÇÃO INFERIOR FIXA
+   RODAPÉ E BARRA DE NAVEGAÇÃO INFERIOR
 ======================================== */
 .dv-footer {
   padding: 30px 16px 90px;
@@ -667,7 +607,6 @@ button, input {
   text-align: center;
   font-size: 11px;
 }
-
 @media (max-width: 768px) {
   .dv-nav {
     position: fixed !important;
@@ -686,7 +625,6 @@ button, input {
     backdrop-filter: blur(20px);
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.9);
   }
-
   .dv-nav button {
     flex: 1;
     display: flex;
@@ -702,30 +640,41 @@ button, input {
     font-size: 10px;
     font-weight: 500;
   }
-
   .dv-nav button.active {
     color: #e50914 !important;
     background: transparent !important;
     text-shadow: 0 0 12px rgba(229, 9, 20, 0.7);
   }
 }
-
 .dv-empty, .dv-message {
   padding: 40px 15px;
   text-align: center;
   color: var(--text-muted);
   font-size: 13px;
 }
-
 .dv-empty span {
   color: var(--red-primary);
   font-size: 32px;
   display: block;
   margin-bottom: 8px;
 }
-
 .dv-empty h3 {
   color: white;
   margin: 0 0 6px;
   font-size: 16px;
+}
+/* Ajustes para telas pequenas */
+@media (max-width: 380px) {
+  .dv-main {
+    width: 94%;
+  }
+  .dv-grid {
+    gap: 10px !important;
+  }
+  .dv-card-content {
+    padding: 8px 6px;
+  }
+  .dv-card h3 {
+    font-size: 12px !important;
+  }
 }
