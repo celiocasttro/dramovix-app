@@ -63,6 +63,7 @@ button, input { -webkit-appearance: none; appearance: none; }
 .dv-favorite-badge { position: absolute; top: 7px; right: 7px; padding: 3px 6px; border-radius: 5px; background: rgba(0,0,0,.75); color: #ff5260; font-size: 13px; }
 .dv-card-content { min-width: 0; padding: 8px 7px 10px; }
 .dv-card h3 { margin: 0; color: #e5e7eb; font-family: 'DM Sans',sans-serif; font-size: 12px; font-weight: 600; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; cursor: pointer; }
+.dv-card-category { display: inline-flex; margin-top: 5px; padding: 3px 7px; border: 1px solid rgba(229,9,20,.35); border-radius: 999px; color: #ff7b83; background: rgba(229,9,20,.1); font-size: 10px; font-weight: 700; line-height: 1.2; }
 .dv-detail { width: 100%; max-width: 1050px; margin: 8px auto 40px; }
 .dv-back { margin-bottom: 14px; padding: 7px 0; color: #fca5a5; border: 0; background: transparent; font-weight: 600; font-size: 13px; }
 .dv-detail-header { display: flex; flex-direction: row; align-items: center; gap: 25px; padding: 22px; border: 1px solid var(--border); border-radius: 16px; background: #0d0404; }
