@@ -65,6 +65,15 @@ export default function App() {
   const [genreFilter, setGenreFilter] = useState("Todas");
   const [page, setPage] = useState("filmes");
   const [profileOpen, setProfileOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState("signin");
+  const [authName, setAuthName] = useState("");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authMessage, setAuthMessage] = useState("");
+  const [authError, setAuthError] = useState("");
   const [language, setLanguage] = useState(() => localStorage.getItem("dramovix-language") || "Português");
   const [visitorId, setVisitorId] = useState(() => getVisitorId());
   const [watchHistory, setWatchHistory] = useState(() => {
@@ -91,6 +100,21 @@ export default function App() {
     Español: { "Início":"Inicio", "Filmes":"Películas", "Séries":"Series", "Desenhos":"Dibujos", "Anime":"Anime", "Doramas":"Doramas", "TV Ao Vivo":"TV en vivo", "Buscar":"Buscar", "Minha Lista":"Mi lista", "Perfil":"Perfil", "Meu perfil":"Mi perfil", "Visitante DRAMOVIX":"Visitante DRAMOVIX", "Seu ID de visitante":"Tu ID de visitante", "Copiar ID":"Copiar ID", "Mudança de linguagem":"Idioma", "Veja o histórico":"Ver historial", "Limpar cache":"Borrar datos locales", "Você pode assistir sem criar uma conta.":"Puedes ver contenido sin crear una cuenta.", "EM DESTAQUE":"DESTACADO", "Continue assistindo":"Seguir viendo", "Ver histórico ›":"Ver historial ›", "FILMES":"PELÍCULAS", "SÉRIES":"SERIES", "DESENHOS":"DIBUJOS", "TV AO VIVO":"TV EN VIVO", "Episódios":"Episodios", "Assistir filme":"Ver película", "Assistir 1º Episódio":"Ver primer episodio", "Nenhum conteúdo encontrado":"No se encontró contenido", "Carregando catálogo...":"Cargando catálogo...", "Sempre tem uma nova história.":"Siempre hay una nueva historia.", "Vingança":"Venganza", "Bilionários":"Multimillonarios", "Casamento":"Matrimonio", "Ação":"Acción", "Aventura":"Aventura", "Comédia":"Comedia", "Drama":"Drama", "Fantasia":"Fantasía", "Mistério":"Misterio", "Ficção Científica":"Ciencia ficción", "Categorias":"Categorías", "Desenhos e animações para curtir.":"Dibujos y animaciones para disfrutar.", "Animações japonesas.":"Animación japonesa.", "Séries asiáticas de sucesso.":"Dramas asiáticos populares.", "Filmes disponíveis no catálogo.":"Películas disponibles en el catálogo.", "Maratone as melhores séries e minisséries.":"Maratonea las mejores series y miniseries.", "Buscar conteúdo":"Buscar contenido", "Pesquise filmes, séries, desenhos, animes e doramas.":"Busca películas, series, dibujos, anime y doramas.", "O que deseja assistir?":"¿Qué quieres ver?", "Séries, desenhos, animes e doramas":"Series, dibujos, anime y doramas", "Histórico":"Historial", "Conteúdos reproduzidos neste navegador.":"Contenido reproducido en este navegador.", "Limpar histórico":"Borrar historial", "Seu histórico está vazio":"Tu historial está vacío", "Quando você assistir a algo, aparecerá aqui.":"Cuando veas algo, aparecerá aquí.", "Novos episódios em breve":"Nuevos episodios pronto", "Estamos preparando os capítulos desta série para você.":"Estamos preparando los episodios de esta serie para ti.", "Ler descrição completa":"Leer descripción completa", "Mostrar menos":"Mostrar menos", "Pronto para reprodução":"Listo para reproducir", "Em breve":"Próximamente", "Selecionar episódio":"Seleccionar episodio", "Próximo episódio":"Siguiente episodio", "Transmissão ao vivo":"Transmisión en vivo", "Filme · DRAMOVIX":"Película · DRAMOVIX", "Assistir":"Ver", "Ver todos ›":"Ver todos ›", "Desenhos":"Dibujos", "Animes":"Anime", "Filmes":"Películas", "Séries":"Series", "Voltar ao catálogo":"Volver al catálogo", "Descrição indisponível.":"Descripción no disponible.", "Uma história incrível.":"Una historia increíble.", "Minha lista":"Mi lista", "Na minha lista":"En mi lista", "Série":"Serie", "Episódio":"Episodio", "Ao vivo":"En vivo", "Reproduzindo":"Reproduciendo", "Assista às transmissões disponíveis.":"Mira las transmisiones disponibles.", "O ID fica salvo neste navegador. Para sincronizar seus dados entre dispositivos, futuramente será necessário criar uma conta.":"Tu ID se guarda en este navegador. Para sincronizar tus datos entre dispositivos, necesitarás una cuenta en el futuro.", "Séries e animações":"Series y animación", "Ver todos ›":"Ver todos ›", "Assistir às transmissões disponíveis.":"Mira las transmisiones disponibles.", "Voltar ao catálogo":"Volver al catálogo", "O catálogo está vazio.":"El catálogo está vacío.", "Ainda não há episódios cadastrados para esta série.":"Todavía no hay episodios para esta serie.", "Episódios disponíveis":"Episodios disponibles", "Aguarde, carregando episódios...":"Espera, cargando episodios...", "Não foi possível reproduzir este vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução.":"No se pudo reproducir este video. El enlace puede haber expirado o el servidor puede bloquear la reproducción.", "Este conteúdo ainda não possui um link de vídeo.":"Este contenido aún no tiene un enlace de video." }
   };
   const tr = (text) => translations[language]?.[text] || text;
+
+  useEffect(() => {
+    let alive = true;
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) console.error("Erro ao verificar sessão:", error);
+      if (alive) setUser(data?.session?.user || null);
+    });
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => {
+      alive = false;
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -279,6 +303,67 @@ export default function App() {
     setProfileOpen(false);
     window.alert("Cache local limpo.");
   }
+  function openAuth(mode = "signin") {
+    setAuthMode(mode);
+    setAuthMessage("");
+    setAuthError("");
+    setAuthPassword("");
+    setAuthOpen(true);
+    setProfileOpen(false);
+  }
+  async function submitAuth(event) {
+    event.preventDefault();
+    setAuthBusy(true);
+    setAuthMessage("");
+    setAuthError("");
+    try {
+      const email = authEmail.trim().toLowerCase();
+      if (!email || !authPassword) throw new Error("Preencha o e-mail e a senha.");
+      if (authMode === "signup") {
+        if (authPassword.length < 6) throw new Error("A senha precisa ter pelo menos 6 caracteres.");
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password: authPassword,
+          options: {
+            data: { full_name: authName.trim() },
+            emailRedirectTo: window.location.origin,
+          },
+        });
+        if (error) throw error;
+        if (data?.session) {
+          setUser(data.user || data.session.user);
+          setAuthMessage("Conta criada com sucesso! Você já está conectado.");
+          setTimeout(() => setAuthOpen(false), 900);
+        } else {
+          setAuthMessage("Cadastro iniciado! Confira seu e-mail e clique no link de confirmação para ativar a conta.");
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: authPassword });
+        if (error) throw error;
+        setUser(data.user || null);
+        setAuthMessage("Login realizado com sucesso!");
+        setTimeout(() => setAuthOpen(false), 500);
+      }
+    } catch (error) {
+      setAuthError(error?.message || "Não foi possível concluir. Tente novamente.");
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+  async function signOut() {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      window.alert(`Não foi possível sair da conta: ${error.message}`);
+      return;
+    }
+    setUser(null);
+    setProfileOpen(false);
+    setAuthOpen(false);
+    setAuthMessage("");
+    setAuthError("");
+    window.alert("Você saiu da sua conta DRAMOVIX.");
+  }
+
   function renderGenreFilters() {
     return <div className="dv-genre-filters" aria-label="Filtrar por categoria">{genreCategories.map((category) => <button key={category} className={genreFilter === category ? "active" : ""} onClick={() => setGenreFilter(category)}>{category === "Todas" ? (language === "English" ? "All" : "Todas") : tr(category)}</button>)}</div>;
   }
@@ -368,10 +453,14 @@ export default function App() {
           <section className="dv-profile-menu" aria-label="Menu de perfil">
             <div className="dv-profile-top">
               <div className="dv-profile-avatar">♙</div>
-              <div><strong>{tr("Meu perfil")}</strong><small>{tr("Visitante DRAMOVIX")}</small></div>
+              <div><strong>{user?.user_metadata?.full_name || user?.email?.split("@")[0] || tr("Meu perfil")}</strong><small>{user?.email || tr("Visitante DRAMOVIX")}</small></div>
               <button className="dv-profile-close" onClick={() => setProfileOpen(false)} aria-label="Fechar">×</button>
             </div>
-            <div className="dv-profile-id"><small>{tr("Seu ID de visitante")}</small><strong>{visitorId}</strong><button onClick={() => navigator.clipboard?.writeText(visitorId)}>{tr("Copiar ID")}</button></div>
+            {!user && <div className="dv-profile-id"><small>{tr("Seu ID de visitante")}</small><strong>{visitorId}</strong><button onClick={() => navigator.clipboard?.writeText(visitorId)}>{tr("Copiar ID")}</button></div>}
+            {!user ? <>
+              <button className="dv-profile-auth-button" onClick={() => openAuth("signin")}>Entrar na conta</button>
+              <button className="dv-profile-auth-button dv-profile-auth-secondary" onClick={() => openAuth("signup")}>Criar conta grátis</button>
+            </> : <button className="dv-profile-auth-button dv-profile-auth-secondary" onClick={signOut}>Sair da conta</button>}
             <button className="dv-profile-item" onClick={() => { setProfileOpen(false); goToPage("perfil"); }}><span>♙</span><span>{tr("Perfil")}</span><b>›</b></button>
             <div className="dv-profile-item dv-language-item"><span>🌐</span><span>{tr("Mudança de linguagem")}</span>
               <select aria-label="Idioma" value={language} onChange={(e) => setLanguage(e.target.value)}>
@@ -381,7 +470,7 @@ export default function App() {
             <button className="dv-profile-item" onClick={() => { setProfileOpen(false); goToPage("historico"); }}><span>◷</span><span>{tr("Veja o histórico")}</span><b>›</b></button>
             <button className="dv-profile-item" onClick={() => { setProfileOpen(false); goToPage("favoritos"); }}><span>♡</span><span>{tr("Minha Lista")}</span><b>›</b></button>
             <button className="dv-profile-item" onClick={clearCache}><span>⌫</span><span>{tr("Limpar cache")}</span><b>›</b></button>
-            <div className="dv-profile-bottom">{tr("Você pode assistir sem criar uma conta.")}</div>
+            <div className="dv-profile-bottom">{user ? "Sua conta DRAMOVIX está conectada." : tr("Você pode assistir sem criar uma conta.")}</div>
           </section>
         </>
       )}
@@ -473,7 +562,7 @@ export default function App() {
             if (match) match.isMovie ? openMovieDetails(match) : openSeries(match);
           }}><img src={entry.image || DEFAULT_COVER} alt="" /><span><strong>{entry.contentTitle || entry.title}</strong><small>{new Date(entry.watchedAt).toLocaleString()}</small></span><b>›</b></button>)}</div>}
         </section>}
-        {page === "perfil" && <section className="dv-section dv-account-page"><div className="dv-section-heading"><h2>{tr("Perfil")}</h2></div><div className="dv-account-card"><div className="dv-profile-avatar">♙</div><h2>{tr("Visitante DRAMOVIX")}</h2><p>{tr("Você pode assistir sem criar uma conta.")}</p><small>{tr("Seu ID de visitante")}</small><strong>{visitorId}</strong><button className="dv-button-primary" onClick={() => navigator.clipboard?.writeText(visitorId)}>{tr("Copiar ID")}</button><p className="dv-muted">{tr("O ID fica salvo neste navegador. Para sincronizar seus dados entre dispositivos, futuramente será necessário criar uma conta.")}</p></div></section>}
+        {page === "perfil" && <section className="dv-section dv-account-page"><div className="dv-section-heading"><h2>{tr("Perfil")}</h2></div><div className="dv-account-card"><div className="dv-profile-avatar">♙</div><h2>{user?.user_metadata?.full_name || user?.email?.split("@")[0] || tr("Visitante DRAMOVIX")}</h2>{user ? <><p>Conta DRAMOVIX conectada</p><small>E-mail da conta</small><strong className="dv-account-email">{user.email}</strong><button className="dv-button-primary" onClick={signOut}>Sair da conta</button><p className="dv-muted">Sua conta permite identificar você no DRAMOVIX. Os favoritos e o histórico atuais ainda ficam salvos neste navegador.</p></> : <><p>{tr("Você pode assistir sem criar uma conta.")}</p><small>{tr("Seu ID de visitante")}</small><strong>{visitorId}</strong><button className="dv-button-primary" onClick={() => navigator.clipboard?.writeText(visitorId)}>{tr("Copiar ID")}</button><button className="dv-profile-auth-button" onClick={() => openAuth("signin")}>Entrar na conta</button><button className="dv-profile-auth-button dv-profile-auth-secondary" onClick={() => openAuth("signup")}>Criar conta grátis</button><p className="dv-muted">{tr("O ID fica salvo neste navegador. Para sincronizar seus dados entre dispositivos, futuramente será necessário criar uma conta.")}</p></>}</div></section>}
       </main>
 
       <footer className="dv-footer">DRAMOVIX · Sempre tem uma nova história.</footer>
@@ -495,6 +584,25 @@ export default function App() {
             {!selectedEpisode?.isLive && !selectedEpisode?.isMovie && <button className="dv-player-next" onClick={playNextEpisode} disabled={!episodes.length || episodes.findIndex((ep) => String(ep.id) === String(selectedEpisode?.id)) >= episodes.length - 1}>{tr("Próximo episódio")} →</button>}
           </div>
         </div>
+      </div>}
+
+      {authOpen && <div className="dv-auth-overlay" onClick={(event) => { if (event.target === event.currentTarget) setAuthOpen(false); }}>
+        <section className="dv-auth-modal" role="dialog" aria-modal="true" aria-labelledby="dv-auth-title">
+          <button className="dv-auth-close" type="button" onClick={() => setAuthOpen(false)} aria-label="Fechar">×</button>
+          <div className="dv-auth-brand">DRAMOVIX</div>
+          <h2 id="dv-auth-title">{authMode === "signup" ? "Crie sua conta grátis" : "Entre na sua conta"}</h2>
+          <p className="dv-auth-subtitle">{authMode === "signup" ? "Crie sua conta para se identificar no DRAMOVIX." : "Entre para acessar sua conta DRAMOVIX."}</p>
+          <form className="dv-auth-form" onSubmit={submitAuth}>
+            {authMode === "signup" && <label>Nome <input className="dv-auth-input" type="text" autoComplete="name" value={authName} onChange={(event) => setAuthName(event.target.value)} placeholder="Como podemos te chamar?" /></label>}
+            <label>E-mail <input className="dv-auth-input" type="email" autoComplete="email" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="voce@exemplo.com" /></label>
+            <label>Senha <input className="dv-auth-input" type="password" autoComplete={authMode === "signup" ? "new-password" : "current-password"} required minLength={6} value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder={authMode === "signup" ? "Pelo menos 6 caracteres" : "Sua senha"} /></label>
+            {authError && <p className="dv-auth-error" role="alert">{authError}</p>}
+            {authMessage && <p className="dv-auth-message" role="status">{authMessage}</p>}
+            <button className="dv-auth-submit" type="submit" disabled={authBusy}>{authBusy ? "Aguarde..." : authMode === "signup" ? "Criar conta grátis" : "Entrar"}</button>
+          </form>
+          <div className="dv-auth-switch">{authMode === "signup" ? "Já tem uma conta?" : "Ainda não tem uma conta?"} <button type="button" onClick={() => { setAuthMode(authMode === "signup" ? "signin" : "signup"); setAuthMessage(""); setAuthError(""); setAuthPassword(""); }}>{authMode === "signup" ? "Entrar" : "Criar conta"}</button></div>
+          {authMode === "signup" && <small className="dv-auth-terms">Ao se cadastrar, você poderá precisar confirmar seu e-mail antes de entrar.</small>}
+        </section>
       </div>}
     </div>
   );
