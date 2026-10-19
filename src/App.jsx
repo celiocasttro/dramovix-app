@@ -2,39 +2,30 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase";
 import Hls from "hls.js";
 import "./App.css";
-
 const ZNATION_URL =
   "https://epg.provider.plex.tv/library/parts/646546f35db8ada4c8edd7e5-67d1be3696c7b08c26c19d64.m3u8?includeAllStreams=1&x-plex-product=Plex+Mediaverse&x-plex-token=MZFkHw1Atc9c9bZLRyWw&auto=0";
-
-const DEFAULT_COVER =
-  "https://svinrjrlrlitipleiccb.supabase.co/storage/v1/object/public/dramovix-videos/Capas/Znation.PNG";
-
-const DEFAULT_MOVIE_COVER = DEFAULT_COVER;
-
+const DEFAULT_COVER = "";
+const DEFAULT_MOVIE_COVER = "";
 const LIVE_SERIES = {
   id: "live-znation",
   title: "Z Nation",
   category: "Ao vivo",
   description: "Assista à transmissão de Z Nation.",
-  image: DEFAULT_COVER,
+  image:
+    "https://svinrjrlrlitipleiccb.supabase.co/storage/v1/object/public/dramovix-videos/Capas/Znation.PNG",
   video_url: ZNATION_URL,
   isLive: true,
 };
-
 const normalize = (value = "") =>
   String(value)
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
-
 function getContentType(item) {
   const title = normalize(item.title);
   const genre = normalize(item.category || item.genre || "");
-  const explicitType = normalize(
-    item.content_type || item.contentType || ""
-  );
-
+  const explicitType = normalize(item.content_type || item.contentType || "");
   if (explicitType) {
     if (explicitType.includes("desen")) return "desenhos";
     if (explicitType.includes("anime")) return "animes";
@@ -42,7 +33,6 @@ function getContentType(item) {
     if (explicitType.includes("filme")) return "filmes";
     if (explicitType.includes("serie")) return "series";
   }
-
   if (
     genre.includes("dorama") ||
     genre.includes("k-drama") ||
@@ -50,7 +40,6 @@ function getContentType(item) {
   ) {
     return "doramas";
   }
-
   if (
     genre.includes("anime") ||
     genre.includes("shounen") ||
@@ -59,66 +48,65 @@ function getContentType(item) {
   ) {
     return "animes";
   }
-
   if (
     genre.includes("desenho") ||
     genre.includes("cartoon") ||
     genre.includes("infantil") ||
     genre.includes("kids") ||
     genre.includes("animacao") ||
-    genre.includes("animação") ||
     /bob esponja|meninas super poderosas|jovens tita|pantera cor de rosa|coragem o cao|familia urso|jackie chan|avatar a lenda|dragon ball|tom e jerry|pica-pau|scooby-doo|scooby doo|ben 10|hora de aventura|apenas um show|gumball|steven universo|finn e jake/.test(
       title
     )
   ) {
     return "desenhos";
   }
-
   return "series";
 }
-
 function getVisitorId() {
   const key = "dramovix-visitor-id";
-
   let id = localStorage.getItem(key);
-
   if (!id) {
     id = `DV-${Math.random()
       .toString(36)
       .slice(2, 6)
-      .toUpperCase()}${Date.now()
-      .toString(36)
-      .slice(-4)
-      .toUpperCase()}`;
-
+      .toUpperCase()}${Date.now().toString(36).slice(-4).toUpperCase()}`;
     localStorage.setItem(key, id);
   }
-
   return id;
 }
-
+/* Não substitui capas quebradas pela imagem de Z Nation. */
+function hideBrokenImage(event) {
+  const image = event.currentTarget;
+  image.onerror = null;
+  image.removeAttribute("src");
+  image.style.visibility = "hidden";
+}
 export default function App() {
   const [series, setSeries] = useState([]);
   const [movies, setMovies] = useState([]);
   const [liveChannels, setLiveChannels] = useState([]);
   const [liveChannelsLoading, setLiveChannelsLoading] = useState(true);
-
   const [selectedSeries, setSelectedSeries] = useState(null);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [episodes, setEpisodes] = useState([]);
   const [selectedEpisode, setSelectedEpisode] = useState(null);
-
   const [search, setSearch] = useState("");
   const [genreFilter, setGenreFilter] = useState("Todas");
   const [page, setPage] = useState("filmes");
   const [profileOpen, setProfileOpen] = useState(false);
-
+  const [user, setUser] = useState(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState("signin");
+  const [authName, setAuthName] = useState("");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authMessage, setAuthMessage] = useState("");
+  const [authError, setAuthError] = useState("");
   const [language, setLanguage] = useState(
     () => localStorage.getItem("dramovix-language") || "Português"
   );
-
   const [visitorId, setVisitorId] = useState(() => getVisitorId());
-
   const [watchHistory, setWatchHistory] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("dramovix-history") || "[]");
@@ -126,7 +114,6 @@ export default function App() {
       return [];
     }
   });
-
   const [favorites, setFavorites] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("dramovix-favorites") || "[]");
@@ -134,50 +121,35 @@ export default function App() {
       return [];
     }
   });
-
   const [loading, setLoading] = useState(true);
   const [episodesLoading, setEpisodesLoading] = useState(false);
-
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerError, setPlayerError] = useState("");
-  const [playerAttempt, setPlayerAttempt] = useState(0);
-
   const [showDescription, setShowDescription] = useState(false);
   const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false);
-
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
-
   useEffect(() => {
-    localStorage.setItem(
-      "dramovix-favorites",
-      JSON.stringify(favorites)
-    );
+    localStorage.setItem("dramovix-favorites", JSON.stringify(favorites));
   }, [favorites]);
-
   useEffect(() => {
-    localStorage.setItem(
-      "dramovix-history",
-      JSON.stringify(watchHistory)
-    );
+    localStorage.setItem("dramovix-history", JSON.stringify(watchHistory));
   }, [watchHistory]);
-
   useEffect(() => {
     localStorage.setItem("dramovix-language", language);
   }, [language]);
-
   const translations = {
     English: {
-      "Início": "Home",
-      "Filmes": "Movies",
-      "Séries": "Series",
-      "Desenhos": "Cartoons",
-      "Anime": "Anime",
-      "Doramas": "Dramas",
+      Início: "Home",
+      Filmes: "Movies",
+      Séries: "Series",
+      Desenhos: "Cartoons",
+      Anime: "Anime",
+      Doramas: "Dramas",
       "TV Ao Vivo": "Live TV",
-      "Buscar": "Search",
+      Buscar: "Search",
       "Minha Lista": "My List",
-      "Perfil": "Profile",
+      Perfil: "Profile",
       "Meu perfil": "My profile",
       "Visitante DRAMOVIX": "DRAMOVIX Guest",
       "Seu ID de visitante": "Your visitor ID",
@@ -189,27 +161,27 @@ export default function App() {
       "EM DESTAQUE": "FEATURED",
       "Continue assistindo": "Continue watching",
       "Ver histórico ›": "Watch history ›",
-      "FILMES": "MOVIES",
-      "SÉRIES": "SERIES",
-      "DESENHOS": "CARTOONS",
+      FILMES: "MOVIES",
+      SÉRIES: "SERIES",
+      DESENHOS: "CARTOONS",
       "TV AO VIVO": "LIVE TV",
-      "Episódios": "Episodes",
+      Episódios: "Episodes",
       "Assistir filme": "Watch movie",
       "Assistir 1º Episódio": "Watch first episode",
       "Nenhum conteúdo encontrado": "No content found",
       "Carregando catálogo...": "Loading catalog...",
       "Sempre tem uma nova história.": "There's always a new story.",
-      "Vingança": "Revenge",
-      "Bilionários": "Billionaires",
-      "Casamento": "Marriage",
-      "Ação": "Action",
-      "Aventura": "Adventure",
-      "Comédia": "Comedy",
-      "Drama": "Drama",
-      "Fantasia": "Fantasy",
-      "Mistério": "Mystery",
+      Vingança: "Revenge",
+      Bilionários: "Billionaires",
+      Casamento: "Marriage",
+      Ação: "Action",
+      Aventura: "Adventure",
+      Comédia: "Comedy",
+      Drama: "Drama",
+      Fantasia: "Fantasy",
+      Mistério: "Mystery",
       "Ficção Científica": "Science Fiction",
-      "Categorias": "Categories",
+      Categorias: "Categories",
       "Desenhos e animações para curtir.": "Cartoons and animation to enjoy.",
       "Animações japonesas.": "Japanese animation.",
       "Séries asiáticas de sucesso.": "Popular Asian dramas.",
@@ -219,7 +191,7 @@ export default function App() {
       "Pesquise filmes, séries, desenhos, animes e doramas.": "Search movies, series, cartoons, anime, and dramas.",
       "O que deseja assistir?": "What do you want to watch?",
       "Séries, desenhos, animes e doramas": "Series, cartoons, anime, and dramas",
-      "Histórico": "History",
+      Histórico: "History",
       "Conteúdos reproduzidos neste navegador.": "Content played in this browser.",
       "Limpar histórico": "Clear history",
       "Seu histórico está vazio": "Your history is empty",
@@ -234,18 +206,18 @@ export default function App() {
       "Próximo episódio": "Next episode",
       "Transmissão ao vivo": "Live stream",
       "Filme · DRAMOVIX": "Movie · DRAMOVIX",
-      "Assistir": "Watch",
+      Assistir: "Watch",
       "Ver todos ›": "See all ›",
-      "Animes": "Anime",
+      Animes: "Anime",
       "Voltar ao catálogo": "Back to catalog",
       "Descrição indisponível.": "Description unavailable.",
       "Uma história incrível.": "An amazing story.",
       "Minha lista": "My list",
       "Na minha lista": "In my list",
-      "Série": "Series",
-      "Episódio": "Episode",
+      Série: "Series",
+      Episódio: "Episode",
       "Ao vivo": "Live",
-      "Reproduzindo": "Now playing",
+      Reproduzindo: "Now playing",
       "Nenhum canal disponível": "No channels available",
       "Assista às transmissões disponíveis.": "Watch available live streams.",
       "O ID fica salvo neste navegador. Para sincronizar seus dados entre dispositivos, futuramente será necessário criar uma conta.": "Your ID is saved in this browser. To sync your data across devices, an account will be needed in the future.",
@@ -257,18 +229,17 @@ export default function App() {
       "Não foi possível reproduzir este vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução.": "This video could not be played. The link may have expired or the server may block playback.",
       "Este conteúdo ainda não possui um link de vídeo.": "This content does not have a video link yet."
     },
-
     Español: {
-      "Início": "Inicio",
-      "Filmes": "Películas",
-      "Séries": "Series",
-      "Desenhos": "Dibujos",
-      "Anime": "Anime",
-      "Doramas": "Doramas",
+      Início: "Inicio",
+      Filmes: "Películas",
+      Séries: "Series",
+      Desenhos: "Dibujos",
+      Anime: "Anime",
+      Doramas: "Doramas",
       "TV Ao Vivo": "TV en vivo",
-      "Buscar": "Buscar",
+      Buscar: "Buscar",
       "Minha Lista": "Mi lista",
-      "Perfil": "Perfil",
+      Perfil: "Perfil",
       "Meu perfil": "Mi perfil",
       "Visitante DRAMOVIX": "Visitante DRAMOVIX",
       "Seu ID de visitante": "Tu ID de visitante",
@@ -280,27 +251,27 @@ export default function App() {
       "EM DESTAQUE": "DESTACADO",
       "Continue assistindo": "Seguir viendo",
       "Ver histórico ›": "Ver historial ›",
-      "FILMES": "PELÍCULAS",
-      "SÉRIES": "SERIES",
-      "DESENHOS": "DIBUJOS",
+      FILMES: "PELÍCULAS",
+      SÉRIES: "SERIES",
+      DESENHOS: "DIBUJOS",
       "TV AO VIVO": "TV EN VIVO",
-      "Episódios": "Episodios",
+      Episódios: "Episodios",
       "Assistir filme": "Ver película",
       "Assistir 1º Episódio": "Ver primer episodio",
       "Nenhum conteúdo encontrado": "No se encontró contenido",
       "Carregando catálogo...": "Cargando catálogo...",
       "Sempre tem uma nova história.": "Siempre hay una nueva historia.",
-      "Vingança": "Venganza",
-      "Bilionários": "Multimillonarios",
-      "Casamento": "Matrimonio",
-      "Ação": "Acción",
-      "Aventura": "Aventura",
-      "Comédia": "Comedia",
-      "Drama": "Drama",
-      "Fantasia": "Fantasía",
-      "Mistério": "Misterio",
+      Vingança: "Venganza",
+      Bilionários: "Multimillonarios",
+      Casamento: "Matrimonio",
+      Ação: "Acción",
+      Aventura: "Aventura",
+      Comédia: "Comedia",
+      Drama: "Drama",
+      Fantasia: "Fantasía",
+      Mistério: "Misterio",
       "Ficção Científica": "Ciencia ficción",
-      "Categorias": "Categorías",
+      Categorias: "Categorías",
       "Desenhos e animações para curtir.": "Dibujos y animaciones para disfrutar.",
       "Animações japonesas.": "Animación japonesa.",
       "Séries asiáticas de sucesso.": "Dramas asiáticos populares.",
@@ -310,7 +281,7 @@ export default function App() {
       "Pesquise filmes, séries, desenhos, animes e doramas.": "Busca películas, series, dibujos, anime y doramas.",
       "O que deseja assistir?": "¿Qué quieres ver?",
       "Séries, desenhos, animes e doramas": "Series, dibujos, anime y doramas",
-      "Histórico": "Historial",
+      Histórico: "Historial",
       "Conteúdos reproduzidos neste navegador.": "Contenido reproducido en este navegador.",
       "Limpar histórico": "Borrar historial",
       "Seu histórico está vazio": "Tu historial está vacío",
@@ -325,19 +296,18 @@ export default function App() {
       "Próximo episódio": "Siguiente episodio",
       "Transmissão ao vivo": "Transmisión en vivo",
       "Filme · DRAMOVIX": "Película · DRAMOVIX",
-      "Assistir": "Ver",
+      Assistir: "Ver",
       "Ver todos ›": "Ver todos ›",
-      "Animes": "Anime",
+      Animes: "Anime",
       "Voltar ao catálogo": "Volver al catálogo",
       "Descrição indisponível.": "Descripción no disponible.",
       "Uma história incrível.": "Una historia increíble.",
       "Minha lista": "Mi lista",
       "Na minha lista": "En mi lista",
-      "Série": "Serie",
-      "Episódio": "Episodio",
+      Série: "Serie",
+      Episódio: "Episodio",
       "Ao vivo": "En vivo",
-      "Reproduzindo": "Reproduciendo",
-      "Nenhum canal disponível": "No hay canales disponibles",
+      Reproduzindo: "Reproduciendo",
       "Assista às transmissões disponíveis.": "Mira las transmisiones disponibles.",
       "O ID fica salvo neste navegador. Para sincronizar seus dados entre dispositivos, futuramente será necessário criar uma conta.": "Tu ID se guarda en este navegador. Para sincronizar tus datos entre dispositivos, necesitarás una cuenta en el futuro.",
       "Séries e animações": "Series y animación",
@@ -349,16 +319,28 @@ export default function App() {
       "Este conteúdo ainda não possui um link de vídeo.": "Este contenido aún no tiene un enlace de video."
     }
   };
-
   const tr = (text) => translations[language]?.[text] || text;
-
+  useEffect(() => {
+    let alive = true;
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) console.error("Erro ao verificar sessão:", error);
+      if (alive) setUser(data?.session?.user || null);
+    });
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+    return () => {
+      alive = false;
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
   useEffect(() => {
     let cancelled = false;
-
     async function loadCatalog() {
       setLoading(true);
       setLiveChannelsLoading(true);
-
       try {
         const [seriesResult, moviesResult, liveResult] = await Promise.all([
           supabase
@@ -366,27 +348,22 @@ export default function App() {
             .select("*")
             .eq("published", true)
             .order("created_at", { ascending: false }),
-
           supabase
             .from("movies")
             .select("*")
             .order("created_at", { ascending: false }),
-
           supabase
             .from("movie_live_channels")
             .select("*")
             .eq("is_active", true)
             .order("id", { ascending: true })
         ]);
-
         if (seriesResult.error) {
           console.error("Erro ao carregar séries:", seriesResult.error);
         }
-
         if (moviesResult.error) {
           console.error("Erro ao carregar filmes:", moviesResult.error);
         }
-
         const loadedSeries = (seriesResult.data || [])
           .filter(
             (item) =>
@@ -401,32 +378,31 @@ export default function App() {
             genre: item.genre || "",
             content_type: item.content_type || "",
             description: item.description || "",
-            image: item.cover_url || DEFAULT_COVER,
+            // Não usa a capa de Z Nation como substituta.
+            image: item.cover_url || "",
             isLive: false
           }));
-
         const loadedMovies = (moviesResult.data || []).map((item) => ({
           id: `movie-${item.id}`,
           dbId: item.id,
           title: item.title || "Sem título",
           category: item.genre || "Filme",
           description: item.description || "",
-          image: item.cover_url || DEFAULT_MOVIE_COVER,
+          // Não usa a capa de Z Nation como substituta.
+          image: item.cover_url || "",
           video_url: item.video_url || "",
           isMovie: true
         }));
-
         const loadedLive = (liveResult.data || []).map((item) => ({
           id: `live-channel-${item.id}`,
           dbId: item.id,
           title: item.name || "Canal ao vivo",
           category: item.category || "Ao vivo",
           description: `Assista ao canal ${item.name || "ao vivo"}.`,
-          image: item.cover_url || DEFAULT_COVER,
+          image: item.cover_url || "",
           video_url: item.stream_url || "",
           isLive: true
         }));
-
         if (!cancelled) {
           setSeries(loadedSeries);
           setMovies(loadedMovies);
@@ -434,7 +410,6 @@ export default function App() {
         }
       } catch (error) {
         console.error("Erro ao carregar catálogo:", error);
-
         if (!cancelled) {
           setSeries([]);
           setMovies([]);
@@ -447,35 +422,27 @@ export default function App() {
         }
       }
     }
-
     loadCatalog();
-
     return () => {
       cancelled = true;
     };
   }, []);
-
   useEffect(() => {
     if (!selectedSeries || selectedSeries.isLive || !selectedSeries.dbId) {
       setEpisodes([]);
       setEpisodesLoading(false);
       return;
     }
-
     let cancelled = false;
-
     async function loadEpisodes() {
       setEpisodesLoading(true);
-
       try {
         const { data, error } = await supabase
           .from("episodes")
           .select("*")
           .eq("series_id", selectedSeries.dbId)
           .order("episode_number", { ascending: true });
-
         if (error) throw error;
-
         if (!cancelled) {
           setEpisodes(
             (data || []).map((ep) => ({
@@ -489,153 +456,82 @@ export default function App() {
         }
       } catch (error) {
         console.error("Erro ao carregar episódios:", error);
-
-        if (!cancelled) {
-          setEpisodes([]);
-        }
+        if (!cancelled) setEpisodes([]);
       } finally {
-        if (!cancelled) {
-          setEpisodesLoading(false);
-        }
+        if (!cancelled) setEpisodesLoading(false);
       }
     }
-
     loadEpisodes();
-
     return () => {
       cancelled = true;
     };
   }, [selectedSeries]);
-
-  // PLAYER: reprodução, tratamento de erros e tentativa novamente.
   useEffect(() => {
     if (!playerOpen || !selectedEpisode || !videoRef.current) return;
-
     const video = videoRef.current;
     const url = selectedEpisode.video_url || "";
-
     let hls = null;
     let cancelled = false;
-
     setPlayerError("");
-
     if (!url) {
-      setPlayerError(
-        "Este conteúdo ainda não possui um link de vídeo."
-      );
+      setPlayerError("Este conteúdo ainda não possui um link de vídeo.");
       return;
     }
-
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
     }
-
     video.pause();
     video.removeAttribute("src");
     video.load();
-
-    const showPlaybackError = () => {
-      if (cancelled) return;
-
-      setPlayerError(
-        "O servidor não conseguiu entregar o vídeo. O link pode ter expirado, exigir uma verificação no navegador ou bloquear a reprodução incorporada."
-      );
-    };
-
+    const isHls = /\.m3u8(?:$|\?)/i.test(url);
     const handleVideoError = () => {
-      showPlaybackError();
+      if (!cancelled) {
+        setPlayerError(
+          "Não foi possível reproduzir este vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução."
+        );
+      }
     };
-
     video.addEventListener("error", handleVideoError);
-
-    // Detecta links HLS que terminam em .m3u8,
-    // inclusive quando possuem parâmetros na URL.
-    const isHls = /\.m3u8(?:$|[?#])/i.test(url);
-
     if (isHls && Hls.isSupported()) {
       hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: false,
-        manifestLoadingTimeOut: 20000,
-        levelLoadingTimeOut: 20000,
-        fragLoadingTimeOut: 30000,
-        manifestLoadingMaxRetry: 2,
-        levelLoadingMaxRetry: 2,
-        fragLoadingMaxRetry: 2
+        lowLatencyMode: true
       });
-
       hlsRef.current = hls;
-
       hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-        if (!cancelled) {
-          hls.loadSource(url);
+        if (!cancelled) hls.loadSource(url);
+      });
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        if (!cancelled) video.play().catch(() => {});
+      });
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (!cancelled && data.fatal) {
+          setPlayerError("Não foi possível carregar a transmissão.");
         }
       });
-
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        if (cancelled) return;
-
-        setPlayerError("");
-
-        video.play().catch(() => {
-          // Alguns navegadores exigem que o usuário toque em Reproduzir.
-        });
-      });
-
-      hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (cancelled || !data.fatal) return;
-
-        console.error("Erro HLS no DRAMOVIX:", {
-          type: data.type,
-          details: data.details,
-          responseCode: data.response?.code,
-          url
-        });
-
-        showPlaybackError();
-      });
-
       hls.attachMedia(video);
     } else {
-      // Para MP4 e formatos compatíveis com o navegador.
-      // Se o servidor devolver uma página HTML de verificação,
-      // o navegador não conseguirá reproduzi-la como vídeo.
       video.src = url;
       video.load();
-
-      video.play().catch((error) => {
-        console.warn(
-          "Reprodução automática não iniciada:",
-          error
-        );
-      });
+      video.play().catch(() => {});
     }
-
     return () => {
       cancelled = true;
-
       video.removeEventListener("error", handleVideoError);
-
       if (hls) {
         hls.destroy();
-
-        if (hlsRef.current === hls) {
-          hlsRef.current = null;
-        }
+        if (hlsRef.current === hls) hlsRef.current = null;
       }
-
       video.pause();
       video.removeAttribute("src");
       video.load();
     };
-  }, [playerOpen, selectedEpisode, playerAttempt]);
-
+  }, [playerOpen, selectedEpisode]);
   const matchesSearch = (item) =>
     !search.trim() ||
     normalize(item.title).includes(normalize(search)) ||
     normalize(item.description).includes(normalize(search));
-
   const genreCategories = [
     "Todas",
     "Romance",
@@ -651,7 +547,6 @@ export default function App() {
     "Mistério",
     "Ficção Científica"
   ];
-
   const filteredSeries = series
     .filter(matchesSearch)
     .filter(
@@ -662,7 +557,6 @@ export default function App() {
         ) ||
         normalize(item.title).includes(normalize(genreFilter))
     );
-
   const filteredMovies = movies
     .filter(matchesSearch)
     .filter(
@@ -673,55 +567,42 @@ export default function App() {
         ) ||
         normalize(item.title).includes(normalize(genreFilter))
     );
-
   const filteredLiveChannels = liveChannels.filter(matchesSearch);
-
   const cartoons = filteredSeries.filter(
     (item) => getContentType(item) === "desenhos"
   );
-
   const anime = filteredSeries.filter(
     (item) => getContentType(item) === "animes"
   );
-
   const doramas = filteredSeries.filter(
     (item) => getContentType(item) === "doramas"
   );
-
   const ordinarySeries = filteredSeries.filter(
     (item) => getContentType(item) === "series"
   );
-
   const favoriteSeries = series.filter((item) =>
     favorites.includes(item.id)
   );
-
   const favoriteMovies = movies.filter((item) =>
     favorites.includes(item.id)
   );
-
   const heroItem = series[0] || movies[0];
-
   const isLandscapePlayer = Boolean(
     selectedEpisode?.isMovie ||
-    selectedEpisode?.isLive ||
-    selectedSeries?.isLive
+      selectedEpisode?.isLive ||
+      selectedSeries?.isLive
   );
-
   function toggleFavorite(item) {
     if (!item) return;
-
     setFavorites((prev) =>
       prev.includes(item.id)
         ? prev.filter((id) => id !== item.id)
         : [...prev, item.id]
     );
   }
-
   function isFavorite(item) {
     return Boolean(item && favorites.includes(item.id));
   }
-
   function openSeries(item) {
     setSelectedSeries(item);
     setSelectedMovie(null);
@@ -729,10 +610,8 @@ export default function App() {
     setShowDescription(false);
     setPage("detalhes");
     setProfileOpen(false);
-
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-
   function openMovieDetails(item) {
     setSelectedMovie(item);
     setSelectedSeries(null);
@@ -740,31 +619,22 @@ export default function App() {
     setShowDescription(false);
     setPage("detalhes-filme");
     setProfileOpen(false);
-
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-
   function openPlayer(episode) {
     setSelectedEpisode(episode);
     setPlayerError("");
     setPlayerOpen(true);
     setEpisodeDrawerOpen(false);
-
     const historyItem = {
       id: episode.id,
-      title:
-        episode.title ||
-        selectedSeries?.title ||
-        "Conteúdo",
+      title: episode.title || selectedSeries?.title || "Conteúdo",
       contentTitle:
         selectedSeries?.title ||
         selectedMovie?.title ||
         episode.title ||
         "Conteúdo",
-      image:
-        selectedSeries?.image ||
-        selectedMovie?.image ||
-        DEFAULT_COVER,
+      image: selectedSeries?.image || selectedMovie?.image || "",
       watchedAt: new Date().toISOString(),
       contentType: episode.isMovie
         ? "Filme"
@@ -772,24 +642,18 @@ export default function App() {
           ? "Ao vivo"
           : "Série"
     };
-
     setWatchHistory((prev) =>
       [
         historyItem,
-        ...prev.filter(
-          (entry) => entry.id !== historyItem.id
-        )
+        ...prev.filter((entry) => entry.id !== historyItem.id)
       ].slice(0, 100)
     );
   }
-
   function openEpisode(episode) {
     openPlayer(episode);
   }
-
   function playMovie(movie) {
     if (!movie) return;
-
     openPlayer({
       id: movie.id,
       title: movie.title,
@@ -797,81 +661,54 @@ export default function App() {
       isMovie: true
     });
   }
-
   function openLive(item) {
     setSelectedSeries(item);
     setSelectedMovie(null);
-
     setSelectedEpisode({
       id: `${item.id}-stream`,
       title: item.title,
       video_url: item.video_url,
       isLive: true
     });
-
     setPlayerError("");
     setPlayerOpen(true);
   }
-
-  function retryPlayback() {
-    if (!selectedEpisode) return;
-
-    setPlayerError("");
-    setPlayerAttempt((attempt) => attempt + 1);
-  }
-
   function closePlayer() {
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
     }
-
     if (videoRef.current) {
       videoRef.current.pause();
       videoRef.current.removeAttribute("src");
       videoRef.current.load();
     }
-
     setPlayerOpen(false);
     setSelectedEpisode(null);
     setPlayerError("");
     setEpisodeDrawerOpen(false);
   }
-
   function playNextEpisode() {
     if (!selectedEpisode || !episodes.length) return;
-
     const index = episodes.findIndex(
       (ep) => String(ep.id) === String(selectedEpisode.id)
     );
-
     if (index >= 0 && index < episodes.length - 1) {
       openPlayer(episodes[index + 1]);
     }
   }
-
   function handleVideoEnded() {
-    if (!selectedEpisode?.isLive) {
-      playNextEpisode();
-    }
+    if (!selectedEpisode?.isLive) playNextEpisode();
   }
-
   function goToPage(nextPage) {
     setPage(nextPage);
-
     if (
-      [
-        "filmes",
-        "filmes-lista",
-        "desenhos",
-        "animes",
-        "doramas",
-        "tv"
-      ].includes(nextPage)
+      ["filmes", "filmes-lista", "desenhos", "animes", "doramas", "tv"].includes(
+        nextPage
+      )
     ) {
       setGenreFilter("Todas");
     }
-
     setSelectedSeries(null);
     setSelectedMovie(null);
     setSelectedEpisode(null);
@@ -879,43 +716,104 @@ export default function App() {
     setSearch("");
     setShowDescription(false);
     setProfileOpen(false);
-
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-
   function clearCache() {
     const confirmed = window.confirm(
       "Limpar cache local do DRAMOVIX? Seus favoritos e histórico também serão apagados deste navegador."
     );
-
     if (!confirmed) return;
-
     localStorage.removeItem("dramovix-history");
     localStorage.removeItem("dramovix-favorites");
     localStorage.removeItem("dramovix-language");
     localStorage.removeItem("dramovix-visitor-id");
-
     setWatchHistory([]);
     setFavorites([]);
     setLanguage("Português");
     setVisitorId(getVisitorId());
     setProfileOpen(false);
-
     window.alert("Cache local limpo.");
   }
-
+  function openAuth(mode = "signin") {
+    setAuthMode(mode);
+    setAuthMessage("");
+    setAuthError("");
+    setAuthPassword("");
+    setAuthOpen(true);
+    setProfileOpen(false);
+  }
+  async function submitAuth(event) {
+    event.preventDefault();
+    setAuthBusy(true);
+    setAuthMessage("");
+    setAuthError("");
+    try {
+      const email = authEmail.trim().toLowerCase();
+      if (!email || !authPassword) {
+        throw new Error("Preencha o e-mail e a senha.");
+      }
+      if (authMode === "signup") {
+        if (authPassword.length < 6) {
+          throw new Error("A senha precisa ter pelo menos 6 caracteres.");
+        }
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password: authPassword,
+          options: {
+            data: { full_name: authName.trim() },
+            emailRedirectTo: window.location.origin
+          }
+        });
+        if (error) throw error;
+        if (data?.session) {
+          setUser(data.user || data.session.user);
+          setAuthMessage(
+            "Conta criada com sucesso! Você já está conectado."
+          );
+          setTimeout(() => setAuthOpen(false), 900);
+        } else {
+          setAuthMessage(
+            "Cadastro iniciado! Confira seu e-mail e clique no link de confirmação para ativar a conta."
+          );
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password: authPassword
+        });
+        if (error) throw error;
+        setUser(data.user || null);
+        setAuthMessage("Login realizado com sucesso!");
+        setTimeout(() => setAuthOpen(false), 500);
+      }
+    } catch (error) {
+      setAuthError(
+        error?.message || "Não foi possível concluir. Tente novamente."
+      );
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+  async function signOut() {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      window.alert(`Não foi possível sair da conta: ${error.message}`);
+      return;
+    }
+    setUser(null);
+    setProfileOpen(false);
+    setAuthOpen(false);
+    setAuthMessage("");
+    setAuthError("");
+    window.alert("Você saiu da sua conta DRAMOVIX.");
+  }
   function renderGenreFilters() {
     return (
-      <div
-        className="dv-genre-filters"
-        aria-label="Filtrar por categoria"
-      >
+      <div className="dv-genre-filters" aria-label="Filtrar por categoria">
         {genreCategories.map((category) => (
           <button
             key={category}
-            className={
-              genreFilter === category ? "active" : ""
-            }
+            className={genreFilter === category ? "active" : ""}
             onClick={() => setGenreFilter(category)}
           >
             {category === "Todas"
@@ -928,26 +826,21 @@ export default function App() {
       </div>
     );
   }
-
   function renderCard(item, type = "series") {
     const favoriteTypeLabel =
       type === "movie"
         ? tr("Filmes")
         : type === "live"
           ? tr("TV Ao Vivo")
-          : (
-              {
-                desenhos: tr("Desenhos"),
-                animes: tr("Animes"),
-                doramas: tr("Doramas"),
-                series: tr("Séries")
-              }[getContentType(item)] || tr("Séries")
-            );
-
+          : ({
+              desenhos: tr("Desenhos"),
+              animes: tr("Animes"),
+              doramas: tr("Doramas"),
+              series: tr("Séries")
+            }[getContentType(item)] || tr("Séries"));
     const openItem = () => {
       if (type === "live") return openLive(item);
       if (type === "movie") return openMovieDetails(item);
-
       if (type === "history") {
         const original =
           series.find(
@@ -958,19 +851,15 @@ export default function App() {
             (entry) =>
               entry.title === (item.contentTitle || item.title)
           );
-
         if (original) {
           return original.isMovie
             ? openMovieDetails(original)
             : openSeries(original);
         }
-
         return;
       }
-
       return openSeries(item);
     };
-
     return (
       <article className="dv-card" key={item.id}>
         <button
@@ -978,31 +867,31 @@ export default function App() {
           onClick={openItem}
           aria-label={`Abrir ${item.title}`}
         >
-          <img
-            className="dv-card-image"
-            src={item.image || DEFAULT_COVER}
-            alt={item.title}
-            loading="lazy"
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = DEFAULT_COVER;
-            }}
-          />
-
+          {item.image ? (
+            <img
+              className="dv-card-image"
+              src={item.image}
+              alt={item.title}
+              loading="lazy"
+              onError={hideBrokenImage}
+            />
+          ) : (
+            <span
+              className="dv-card-image dv-image-placeholder"
+              aria-label="Capa indisponível"
+            />
+          )}
           {type === "live" && (
             <span className="dv-live-badge">AO VIVO</span>
           )}
-
           {isFavorite(item) && (
             <span className="dv-favorite-badge">♥</span>
           )}
         </button>
-
         <div className="dv-card-content">
           <h3 onClick={openItem} title={item.title}>
             {item.title}
           </h3>
-
           {page === "favoritos" && (
             <small className="dv-card-category">
               {favoriteTypeLabel}
@@ -1012,7 +901,6 @@ export default function App() {
       </article>
     );
   }
-
   function renderGrid(items, type = "series") {
     if (loading && type !== "live") {
       return (
@@ -1021,26 +909,21 @@ export default function App() {
         </p>
       );
     }
-
     if (!items.length) {
       return (
         <div className="dv-empty">
           <span>✦</span>
           <h3>{tr("Nenhum conteúdo encontrado")}</h3>
-          <p>
-            Tente novamente mais tarde ou escolha outra categoria.
-          </p>
+          <p>Tente novamente mais tarde ou escolha outra categoria.</p>
         </div>
       );
     }
-
     return (
       <div className="dv-grid">
         {items.map((item) => renderCard(item, type))}
       </div>
     );
   }
-
   const navItems = [
     ["filmes", "⌂", "Início"],
     ["filmes-tab", "▣", "Filmes"],
@@ -1050,7 +933,6 @@ export default function App() {
     ["doramas", "♡", "Doramas"],
     ["tv", "◉", "TV Ao Vivo"]
   ];
-
   return (
     <div className="dv-app">
       <header className="dv-header">
@@ -1061,23 +943,18 @@ export default function App() {
         >
           DRAMOVIX
         </button>
-
         <div className="dv-header-right-icons">
           <button
             className="dv-icon-btn"
             onClick={() => {
               setPage("explorar");
               setProfileOpen(false);
-              window.scrollTo({
-                top: 0,
-                behavior: "smooth"
-              });
+              window.scrollTo({ top: 0, behavior: "smooth" });
             }}
             aria-label="Pesquisar"
           >
             ⌕
           </button>
-
           <button
             className="dv-icon-btn"
             onClick={() => setProfileOpen((v) => !v)}
@@ -1087,11 +964,7 @@ export default function App() {
           </button>
         </div>
       </header>
-
-      <nav
-        className="dv-mobile-categories"
-        aria-label="Categorias principais"
-      >
+      <nav className="dv-mobile-categories" aria-label="Categorias principais">
         {navItems.map(([key, icon, label]) => (
           <button
             key={key}
@@ -1112,7 +985,6 @@ export default function App() {
           </button>
         ))}
       </nav>
-
       <aside className="dv-sidebar">
         <div className="dv-sidebar-label">
           {language === "English"
@@ -1121,7 +993,6 @@ export default function App() {
               ? "MENÚ PRINCIPAL"
               : "MENU PRINCIPAL"}
         </div>
-
         {navItems.map(([key, icon, label]) => (
           <button
             key={key}
@@ -1143,12 +1014,10 @@ export default function App() {
             <span>{tr(label)}</span>
           </button>
         ))}
-
         <div className="dv-sidebar-note">
           {tr("Sempre tem uma nova história.")}
         </div>
       </aside>
-
       {profileOpen && (
         <>
           <button
@@ -1156,19 +1025,17 @@ export default function App() {
             aria-label="Fechar menu"
             onClick={() => setProfileOpen(false)}
           />
-
-          <section
-            className="dv-profile-menu"
-            aria-label="Menu de perfil"
-          >
+          <section className="dv-profile-menu" aria-label="Menu de perfil">
             <div className="dv-profile-top">
               <div className="dv-profile-avatar">♙</div>
-
               <div>
-                <strong>{tr("Meu perfil")}</strong>
-                <small>{tr("Visitante DRAMOVIX")}</small>
+                <strong>
+                  {user?.user_metadata?.full_name ||
+                    user?.email?.split("@")[0] ||
+                    tr("Meu perfil")}
+                </strong>
+                <small>{user?.email || tr("Visitante DRAMOVIX")}</small>
               </div>
-
               <button
                 className="dv-profile-close"
                 onClick={() => setProfileOpen(false)}
@@ -1177,20 +1044,40 @@ export default function App() {
                 ×
               </button>
             </div>
-
-            <div className="dv-profile-id">
-              <small>{tr("Seu ID de visitante")}</small>
-              <strong>{visitorId}</strong>
-
+            {!user && (
+              <div className="dv-profile-id">
+                <small>{tr("Seu ID de visitante")}</small>
+                <strong>{visitorId}</strong>
+                <button
+                  onClick={() => navigator.clipboard?.writeText(visitorId)}
+                >
+                  {tr("Copiar ID")}
+                </button>
+              </div>
+            )}
+            {!user ? (
+              <>
+                <button
+                  className="dv-profile-auth-button"
+                  onClick={() => openAuth("signin")}
+                >
+                  Entrar na conta
+                </button>
+                <button
+                  className="dv-profile-auth-button dv-profile-auth-secondary"
+                  onClick={() => openAuth("signup")}
+                >
+                  Criar conta grátis
+                </button>
+              </>
+            ) : (
               <button
-                onClick={() =>
-                  navigator.clipboard?.writeText(visitorId)
-                }
+                className="dv-profile-auth-button dv-profile-auth-secondary"
+                onClick={signOut}
               >
-                {tr("Copiar ID")}
+                Sair da conta
               </button>
-            </div>
-
+            )}
             <button
               className="dv-profile-item"
               onClick={() => {
@@ -1202,11 +1089,9 @@ export default function App() {
               <span>{tr("Perfil")}</span>
               <b>›</b>
             </button>
-
             <div className="dv-profile-item dv-language-item">
               <span>🌐</span>
               <span>{tr("Mudança de linguagem")}</span>
-
               <select
                 aria-label="Idioma"
                 value={language}
@@ -1217,7 +1102,6 @@ export default function App() {
                 <option>Español</option>
               </select>
             </div>
-
             <button
               className="dv-profile-item"
               onClick={() => {
@@ -1229,7 +1113,6 @@ export default function App() {
               <span>{tr("Veja o histórico")}</span>
               <b>›</b>
             </button>
-
             <button
               className="dv-profile-item"
               onClick={() => {
@@ -1241,23 +1124,19 @@ export default function App() {
               <span>{tr("Minha Lista")}</span>
               <b>›</b>
             </button>
-
-            <button
-              className="dv-profile-item"
-              onClick={clearCache}
-            >
+            <button className="dv-profile-item" onClick={clearCache}>
               <span>⌫</span>
               <span>{tr("Limpar cache")}</span>
               <b>›</b>
             </button>
-
             <div className="dv-profile-bottom">
-              {tr("Você pode assistir sem criar uma conta.")}
+              {user
+                ? "Sua conta DRAMOVIX está conectada."
+                : tr("Você pode assistir sem criar uma conta.")}
             </div>
           </section>
         </>
       )}
-
       <main className="dv-main">
         {page === "detalhes" && selectedSeries && (
           <section className="dv-detail">
@@ -1267,25 +1146,22 @@ export default function App() {
             >
               ← {tr("Voltar ao catálogo")}
             </button>
-
             <div className="dv-detail-header">
-              <img
-                className="dv-detail-cover"
-                src={selectedSeries.image || DEFAULT_COVER}
-                alt={selectedSeries.title}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = DEFAULT_COVER;
-                }}
-              />
-
+              {selectedSeries.image ? (
+                <img
+                  className="dv-detail-cover"
+                  src={selectedSeries.image}
+                  alt={selectedSeries.title}
+                  onError={hideBrokenImage}
+                />
+              ) : (
+                <div className="dv-detail-cover dv-image-placeholder" />
+              )}
               <div className="dv-detail-info">
                 <span className="dv-eyebrow">
                   {selectedSeries.category || "SÉRIE"}
                 </span>
-
                 <h1>{selectedSeries.title}</h1>
-
                 <p>
                   {showDescription
                     ? selectedSeries.description ||
@@ -1294,26 +1170,20 @@ export default function App() {
                         selectedSeries.description ||
                         "Uma história incrível."
                       ).slice(0, 160) +
-                      (
-                        (selectedSeries.description || "").length > 160
-                          ? "..."
-                          : ""
-                      )}
+                      ((selectedSeries.description || "").length > 160
+                        ? "..."
+                        : "")}
                 </p>
-
                 {(selectedSeries.description || "").length > 160 && (
                   <button
                     className="dv-description-toggle"
-                    onClick={() =>
-                      setShowDescription((v) => !v)
-                    }
+                    onClick={() => setShowDescription((v) => !v)}
                   >
                     {showDescription
                       ? "Mostrar menos"
                       : "Ler descrição completa"}
                   </button>
                 )}
-
                 <div className="dv-detail-actions">
                   <button
                     className="dv-button-primary"
@@ -1324,7 +1194,6 @@ export default function App() {
                   >
                     {"▶ " + tr("Assistir 1º Episódio")}
                   </button>
-
                   <button
                     className="dv-description-toggle"
                     onClick={() => toggleFavorite(selectedSeries)}
@@ -1336,21 +1205,15 @@ export default function App() {
                 </div>
               </div>
             </div>
-
             <section className="dv-episodes">
               <div className="dv-section-heading">
                 <div>
                   <h2>{tr("Episódios")}</h2>
-                  <p>
-                    {episodes.length} episódio(s) disponível(is)
-                  </p>
+                  <p>{episodes.length} episódio(s) disponível(is)</p>
                 </div>
               </div>
-
               {episodesLoading ? (
-                <p className="dv-message">
-                  Carregando episódios...
-                </p>
+                <p className="dv-message">Carregando episódios...</p>
               ) : episodes.length ? (
                 <div className="dv-episode-list">
                   {episodes.map((ep, index) => (
@@ -1362,7 +1225,6 @@ export default function App() {
                       <span className="dv-episode-number">
                         {ep.episode_number || index + 1}
                       </span>
-
                       <span className="dv-episode-info">
                         <strong>
                           {ep.title || `Episódio ${index + 1}`}
@@ -1373,7 +1235,6 @@ export default function App() {
                             : tr("Em breve")}
                         </small>
                       </span>
-
                       <span className="dv-episode-play">▶</span>
                     </button>
                   ))}
@@ -1391,7 +1252,6 @@ export default function App() {
             </section>
           </section>
         )}
-
         {page === "detalhes-filme" && selectedMovie && (
           <section className="dv-detail">
             <button
@@ -1400,25 +1260,22 @@ export default function App() {
             >
               ← Voltar aos filmes
             </button>
-
             <div className="dv-detail-header">
-              <img
-                className="dv-detail-cover"
-                src={selectedMovie.image || DEFAULT_MOVIE_COVER}
-                alt={selectedMovie.title}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = DEFAULT_MOVIE_COVER;
-                }}
-              />
-
+              {selectedMovie.image ? (
+                <img
+                  className="dv-detail-cover"
+                  src={selectedMovie.image}
+                  alt={selectedMovie.title}
+                  onError={hideBrokenImage}
+                />
+              ) : (
+                <div className="dv-detail-cover dv-image-placeholder" />
+              )}
               <div className="dv-detail-info">
                 <span className="dv-eyebrow">
                   {selectedMovie.category || "FILME"}
                 </span>
-
                 <h1>{selectedMovie.title}</h1>
-
                 <p>
                   {showDescription
                     ? selectedMovie.description ||
@@ -1427,26 +1284,20 @@ export default function App() {
                         selectedMovie.description ||
                         "Prepare-se para descobrir esta história."
                       ).slice(0, 160) +
-                      (
-                        (selectedMovie.description || "").length > 160
-                          ? "..."
-                          : ""
-                      )}
+                      ((selectedMovie.description || "").length > 160
+                        ? "..."
+                        : "")}
                 </p>
-
                 {(selectedMovie.description || "").length > 160 && (
                   <button
                     className="dv-description-toggle"
-                    onClick={() =>
-                      setShowDescription((v) => !v)
-                    }
+                    onClick={() => setShowDescription((v) => !v)}
                   >
                     {showDescription
                       ? "Mostrar menos"
                       : "Ler descrição completa"}
                   </button>
                 )}
-
                 <div className="dv-detail-actions">
                   <button
                     className="dv-button-primary"
@@ -1454,7 +1305,6 @@ export default function App() {
                   >
                     {"▶ " + tr("Assistir filme")}
                   </button>
-
                   <button
                     className="dv-description-toggle"
                     onClick={() => toggleFavorite(selectedMovie)}
@@ -1468,30 +1318,27 @@ export default function App() {
             </div>
           </section>
         )}
-
         {page === "filmes" && (
           <>
             <section
               className="dv-hero"
               style={{
-                backgroundImage: `url("${heroItem?.image || DEFAULT_COVER}")`
+                backgroundImage: heroItem?.image
+                  ? `url("${heroItem.image}")`
+                  : "none"
               }}
             >
               <div className="dv-hero-overlay" />
-
               <div className="dv-hero-content">
                 <span className="dv-eyebrow">
                   {tr("EM DESTAQUE")}
                 </span>
-
                 <h1>{heroItem?.title || "DRAMOVIX"}</h1>
-
                 <p>
                   {heroItem?.description
                     ? heroItem.description.slice(0, 140)
                     : "Sempre tem uma nova história para descobrir."}
                 </p>
-
                 <button
                   className="dv-button-primary"
                   onClick={() =>
@@ -1505,14 +1352,12 @@ export default function App() {
                 </button>
               </div>
             </section>
-
             <section className="dv-section">
               <div className="dv-section-heading">
                 <h2>{tr("Categorias")}</h2>
               </div>
               {renderGenreFilters()}
             </section>
-
             <section className="dv-section">
               <div className="dv-section-heading">
                 <h2>{tr("Continue assistindo")}</h2>
@@ -1523,19 +1368,17 @@ export default function App() {
                   {tr("Ver histórico ›")}
                 </button>
               </div>
-
               {renderGrid(
                 watchHistory.slice(0, 4).map((entry) => ({
                   ...entry,
                   id: `history-${entry.id}`,
-                  image: entry.image,
+                  image: entry.image || "",
                   title: entry.contentTitle || entry.title,
                   _history: entry
                 })),
                 "history"
               )}
             </section>
-
             <section className="dv-section">
               <div className="dv-section-heading">
                 <h2>{tr("Desenhos")}</h2>
@@ -1548,7 +1391,6 @@ export default function App() {
               </div>
               {renderGrid(cartoons.slice(0, 4))}
             </section>
-
             <section className="dv-section">
               <div className="dv-section-heading">
                 <h2>{tr("Animes")}</h2>
@@ -1561,7 +1403,6 @@ export default function App() {
               </div>
               {renderGrid(anime.slice(0, 4))}
             </section>
-
             <section className="dv-section">
               <div className="dv-section-heading">
                 <h2>{tr("Filmes")}</h2>
@@ -1574,7 +1415,6 @@ export default function App() {
               </div>
               {renderGrid(filteredMovies.slice(0, 4), "movie")}
             </section>
-
             <section className="dv-section">
               <div className="dv-section-heading">
                 <h2>{tr("Séries")}</h2>
@@ -1589,7 +1429,6 @@ export default function App() {
             </section>
           </>
         )}
-
         {page === "filmes-lista" && (
           <section className="dv-section">
             <div className="dv-section-heading">
@@ -1598,12 +1437,10 @@ export default function App() {
                 <p>{tr("Filmes disponíveis no catálogo.")}</p>
               </div>
             </div>
-
             {renderGenreFilters()}
             {renderGrid(filteredMovies, "movie")}
           </section>
         )}
-
         {page === "series" && (
           <section className="dv-section">
             <div className="dv-section-heading">
@@ -1614,12 +1451,10 @@ export default function App() {
                 </p>
               </div>
             </div>
-
             {renderGenreFilters()}
             {renderGrid(ordinarySeries)}
           </section>
         )}
-
         {page === "desenhos" && (
           <section className="dv-section">
             <div className="dv-section-heading">
@@ -1628,12 +1463,10 @@ export default function App() {
                 <p>{tr("Desenhos e animações para curtir.")}</p>
               </div>
             </div>
-
             {renderGenreFilters()}
             {renderGrid(cartoons)}
           </section>
         )}
-
         {page === "animes" && (
           <section className="dv-section">
             <div className="dv-section-heading">
@@ -1642,12 +1475,10 @@ export default function App() {
                 <p>{tr("Animações japonesas.")}</p>
               </div>
             </div>
-
             {renderGenreFilters()}
             {renderGrid(anime)}
           </section>
         )}
-
         {page === "doramas" && (
           <section className="dv-section">
             <div className="dv-section-heading">
@@ -1656,47 +1487,36 @@ export default function App() {
                 <p>{tr("Séries asiáticas de sucesso.")}</p>
               </div>
             </div>
-
             {renderGenreFilters()}
             {renderGrid(doramas)}
           </section>
         )}
-
         {page === "tv" && (
           <section className="dv-section">
             <div className="dv-section-heading">
               <div>
                 <h2>{tr("TV AO VIVO")}</h2>
-                <p>
-                  {tr("Assista às transmissões disponíveis.")}
-                </p>
+                <p>{tr("Assista às transmissões disponíveis.")}</p>
               </div>
             </div>
-
             {liveChannelsLoading ? (
-              <p className="dv-message">
-                Carregando canais ao vivo...
-              </p>
+              <p className="dv-message">Carregando canais ao vivo...</p>
             ) : (
               renderGrid(
                 [
                   ...filteredLiveChannels,
-                  ...(
-                    !search &&
-                    !liveChannels.some(
-                      (item) =>
-                        normalize(item.title) === "z nation"
-                    )
-                      ? [LIVE_SERIES]
-                      : []
+                  ...(!search &&
+                  !liveChannels.some(
+                    (item) => normalize(item.title) === "z nation"
                   )
+                    ? [LIVE_SERIES]
+                    : [])
                 ],
                 "live"
               )
             )}
           </section>
         )}
-
         {page === "explorar" && (
           <section className="dv-section">
             <div className="dv-section-heading">
@@ -1709,7 +1529,6 @@ export default function App() {
                 </p>
               </div>
             </div>
-
             <input
               className="dv-search-input"
               type="search"
@@ -1718,37 +1537,27 @@ export default function App() {
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
             />
-
-            <h3 className="dv-subheading">
-              {tr("Filmes")}
-            </h3>
+            <h3 className="dv-subheading">{tr("Filmes")}</h3>
             {renderGrid(filteredMovies, "movie")}
-
             <h3 className="dv-subheading">
               {tr("Séries, desenhos, animes e doramas")}
             </h3>
             {renderGrid(filteredSeries)}
           </section>
         )}
-
         {page === "favoritos" && (
           <section className="dv-section">
             <div className="dv-section-heading">
               <h2>{tr("Minha Lista")}</h2>
             </div>
-
             <h3 className="dv-subheading">
               {tr("Séries, desenhos, animes e doramas")}
             </h3>
             {renderGrid(favoriteSeries)}
-
-            <h3 className="dv-subheading">
-              {tr("Filmes")}
-            </h3>
+            <h3 className="dv-subheading">{tr("Filmes")}</h3>
             {renderGrid(favoriteMovies, "movie")}
           </section>
         )}
-
         {page === "historico" && (
           <section className="dv-section">
             <div className="dv-section-heading">
@@ -1758,7 +1567,6 @@ export default function App() {
                   {tr("Conteúdos reproduzidos neste navegador.")}
                 </p>
               </div>
-
               <button
                 className="dv-see-all"
                 onClick={() => {
@@ -1769,7 +1577,6 @@ export default function App() {
                 {tr("Limpar histórico")}
               </button>
             </div>
-
             {!watchHistory.length ? (
               <div className="dv-empty">
                 <span>◷</span>
@@ -1789,14 +1596,11 @@ export default function App() {
                     onClick={() => {
                       const match =
                         series.find(
-                          (item) =>
-                            item.title === entry.contentTitle
+                          (item) => item.title === entry.contentTitle
                         ) ||
                         movies.find(
-                          (item) =>
-                            item.title === entry.contentTitle
+                          (item) => item.title === entry.contentTitle
                         );
-
                       if (match) {
                         match.isMovie
                           ? openMovieDetails(match)
@@ -1804,11 +1608,15 @@ export default function App() {
                       }
                     }}
                   >
-                    <img
-                      src={entry.image || DEFAULT_COVER}
-                      alt=""
-                    />
-
+                    {entry.image ? (
+                      <img
+                        src={entry.image}
+                        alt=""
+                        onError={hideBrokenImage}
+                      />
+                    ) : (
+                      <span className="dv-history-placeholder" />
+                    )}
                     <span>
                       <strong>
                         {entry.contentTitle || entry.title}
@@ -1817,7 +1625,6 @@ export default function App() {
                         {new Date(entry.watchedAt).toLocaleString()}
                       </small>
                     </span>
-
                     <b>›</b>
                   </button>
                 ))}
@@ -1825,50 +1632,72 @@ export default function App() {
             )}
           </section>
         )}
-
         {page === "perfil" && (
           <section className="dv-section dv-account-page">
             <div className="dv-section-heading">
               <h2>{tr("Perfil")}</h2>
             </div>
-
             <div className="dv-account-card">
               <div className="dv-profile-avatar">♙</div>
-              <h2>{tr("Visitante DRAMOVIX")}</h2>
-              <p>
-                {tr("Você pode assistir sem criar uma conta.")}
-              </p>
-
-              <small>{tr("Seu ID de visitante")}</small>
-              <strong>{visitorId}</strong>
-
-              <button
-                className="dv-button-primary"
-                onClick={() =>
-                  navigator.clipboard?.writeText(visitorId)
-                }
-              >
-                {tr("Copiar ID")}
-              </button>
-
-              <p className="dv-muted">
-                {tr(
-                  "O ID fica salvo neste navegador. Para sincronizar seus dados entre dispositivos, futuramente será necessário criar uma conta."
-                )}
-              </p>
+              <h2>
+                {user?.user_metadata?.full_name ||
+                  user?.email?.split("@")[0] ||
+                  tr("Visitante DRAMOVIX")}
+              </h2>
+              {user ? (
+                <>
+                  <p>Conta DRAMOVIX conectada</p>
+                  <small>E-mail da conta</small>
+                  <strong className="dv-account-email">
+                    {user.email}
+                  </strong>
+                  <button className="dv-button-primary" onClick={signOut}>
+                    Sair da conta
+                  </button>
+                  <p className="dv-muted">
+                    Sua conta permite identificar você no DRAMOVIX. Os
+                    favoritos e o histórico atuais ainda ficam salvos
+                    neste navegador.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p>{tr("Você pode assistir sem criar uma conta.")}</p>
+                  <small>{tr("Seu ID de visitante")}</small>
+                  <strong>{visitorId}</strong>
+                  <button
+                    className="dv-button-primary"
+                    onClick={() => navigator.clipboard?.writeText(visitorId)}
+                  >
+                    {tr("Copiar ID")}
+                  </button>
+                  <button
+                    className="dv-profile-auth-button"
+                    onClick={() => openAuth("signin")}
+                  >
+                    Entrar na conta
+                  </button>
+                  <button
+                    className="dv-profile-auth-button dv-profile-auth-secondary"
+                    onClick={() => openAuth("signup")}
+                  >
+                    Criar conta grátis
+                  </button>
+                  <p className="dv-muted">
+                    {tr(
+                      "O ID fica salvo neste navegador. Para sincronizar seus dados entre dispositivos, futuramente será necessário criar uma conta."
+                    )}
+                  </p>
+                </>
+              )}
             </div>
           </section>
         )}
       </main>
-
       <footer className="dv-footer">
         DRAMOVIX · Sempre tem uma nova história.
       </footer>
-
-      <nav
-        className="dv-bottom-nav"
-        aria-label="Navegação inferior"
-      >
+      <nav className="dv-bottom-nav" aria-label="Navegação inferior">
         <button
           className={page === "filmes" ? "active" : ""}
           onClick={() => goToPage("filmes")}
@@ -1876,7 +1705,6 @@ export default function App() {
           <span>⌂</span>
           <small>{tr("Início")}</small>
         </button>
-
         <button
           className={page === "filmes-lista" ? "active" : ""}
           onClick={() => goToPage("filmes-lista")}
@@ -1884,22 +1712,17 @@ export default function App() {
           <span>▣</span>
           <small>{tr("Filmes")}</small>
         </button>
-
         <button
           className={page === "explorar" ? "active" : ""}
           onClick={() => {
             setPage("explorar");
             setProfileOpen(false);
-            window.scrollTo({
-              top: 0,
-              behavior: "smooth"
-            });
+            window.scrollTo({ top: 0, behavior: "smooth" });
           }}
         >
           <span>⌕</span>
           <small>{tr("Buscar")}</small>
         </button>
-
         <button
           className={page === "favoritos" ? "active" : ""}
           onClick={() => goToPage("favoritos")}
@@ -1907,7 +1730,6 @@ export default function App() {
           <span>♡</span>
           <small>{tr("Minha Lista")}</small>
         </button>
-
         <button
           className={page === "tv" ? "active" : ""}
           onClick={() => goToPage("tv")}
@@ -1916,14 +1738,11 @@ export default function App() {
           <small>{tr("TV Ao Vivo")}</small>
         </button>
       </nav>
-
       {playerOpen && (
         <div
           className="dv-player-overlay"
           onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              closePlayer();
-            }
+            if (e.target === e.currentTarget) closePlayer();
           }}
         >
           <div
@@ -1940,7 +1759,6 @@ export default function App() {
                     selectedMovie?.title ||
                     "Reproduzindo"}
                 </strong>
-
                 <small>
                   {selectedEpisode?.isLive
                     ? "Ao vivo"
@@ -1949,7 +1767,6 @@ export default function App() {
                       : selectedSeries?.title || "DRAMOVIX"}
                 </small>
               </div>
-
               <button
                 className="dv-player-close"
                 onClick={closePlayer}
@@ -1958,7 +1775,6 @@ export default function App() {
                 ×
               </button>
             </div>
-
             <div
               className={`dv-video-wrap ${
                 isLandscapePlayer
@@ -1976,38 +1792,19 @@ export default function App() {
                 onEnded={handleVideoEnded}
               />
             </div>
-
             {playerError && (
               <div className="dv-player-error" role="alert">
-                <p>{playerError}</p>
-
-                <button
-                  type="button"
-                  className="dv-button-primary"
-                  onClick={retryPlayback}
-                >
-                  ↻ Tentar novamente
-                </button>
-
-                <p className="dv-muted">
-                  Se o erro continuar, a fonte pode exigir uma
-                  verificação ou uma autorização que o player não
-                  recebeu.
-                </p>
+                {playerError}
               </div>
             )}
-
             {episodeDrawerOpen && episodes.length > 0 && (
               <div className="dv-episode-drawer">
                 <div>
                   <strong>{tr("Selecionar episódio")}</strong>
-                  <button
-                    onClick={() => setEpisodeDrawerOpen(false)}
-                  >
+                  <button onClick={() => setEpisodeDrawerOpen(false)}>
                     ✕
                   </button>
                 </div>
-
                 {episodes.map((ep, i) => (
                   <button
                     key={ep.id || i}
@@ -2024,20 +1821,16 @@ export default function App() {
                 ))}
               </div>
             )}
-
             <div className="dv-player-bottom">
               {!selectedEpisode?.isLive &&
               !selectedEpisode?.isMovie &&
               episodes.length > 0 ? (
                 <button
                   className="dv-episode-picker"
-                  onClick={() =>
-                    setEpisodeDrawerOpen((v) => !v)
-                  }
+                  onClick={() => setEpisodeDrawerOpen((v) => !v)}
                 >
                   EP.{selectedEpisode?.episode_number || 1} / EP.
-                  {episodes.length}{" "}
-                  {episodeDrawerOpen ? "⌄" : "⌃"}
+                  {episodes.length} {episodeDrawerOpen ? "⌄" : "⌃"}
                 </button>
               ) : (
                 <span>
@@ -2046,7 +1839,6 @@ export default function App() {
                     : tr("Filme · DRAMOVIX")}
                 </span>
               )}
-
               {!selectedEpisode?.isLive &&
                 !selectedEpisode?.isMovie && (
                   <button
@@ -2056,8 +1848,7 @@ export default function App() {
                       !episodes.length ||
                       episodes.findIndex(
                         (ep) =>
-                          String(ep.id) ===
-                          String(selectedEpisode?.id)
+                          String(ep.id) === String(selectedEpisode?.id)
                       ) >=
                         episodes.length - 1
                     }
@@ -2067,6 +1858,138 @@ export default function App() {
                 )}
             </div>
           </div>
+        </div>
+      )}
+      {authOpen && (
+        <div
+          className="dv-auth-overlay"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setAuthOpen(false);
+            }
+          }}
+        >
+          <section
+            className="dv-auth-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dv-auth-title"
+          >
+            <button
+              className="dv-auth-close"
+              type="button"
+              onClick={() => setAuthOpen(false)}
+              aria-label="Fechar"
+            >
+              ×
+            </button>
+            <div className="dv-auth-brand">DRAMOVIX</div>
+            <h2 id="dv-auth-title">
+              {authMode === "signup"
+                ? "Crie sua conta grátis"
+                : "Entre na sua conta"}
+            </h2>
+            <p className="dv-auth-subtitle">
+              {authMode === "signup"
+                ? "Crie sua conta para se identificar no DRAMOVIX."
+                : "Entre para acessar sua conta DRAMOVIX."}
+            </p>
+            <form className="dv-auth-form" onSubmit={submitAuth}>
+              {authMode === "signup" && (
+                <label>
+                  Nome
+                  <input
+                    className="dv-auth-input"
+                    type="text"
+                    autoComplete="name"
+                    value={authName}
+                    onChange={(event) => setAuthName(event.target.value)}
+                    placeholder="Como podemos te chamar?"
+                  />
+                </label>
+              )}
+              <label>
+                E-mail
+                <input
+                  className="dv-auth-input"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={authEmail}
+                  onChange={(event) => setAuthEmail(event.target.value)}
+                  placeholder="voce@exemplo.com"
+                />
+              </label>
+              <label>
+                Senha
+                <input
+                  className="dv-auth-input"
+                  type="password"
+                  autoComplete={
+                    authMode === "signup"
+                      ? "new-password"
+                      : "current-password"
+                  }
+                  required
+                  minLength={6}
+                  value={authPassword}
+                  onChange={(event) =>
+                    setAuthPassword(event.target.value)
+                  }
+                  placeholder={
+                    authMode === "signup"
+                      ? "Pelo menos 6 caracteres"
+                      : "Sua senha"
+                  }
+                />
+              </label>
+              {authError && (
+                <p className="dv-auth-error" role="alert">
+                  {authError}
+                </p>
+              )}
+              {authMessage && (
+                <p className="dv-auth-message" role="status">
+                  {authMessage}
+                </p>
+              )}
+              <button
+                className="dv-auth-submit"
+                type="submit"
+                disabled={authBusy}
+              >
+                {authBusy
+                  ? "Aguarde..."
+                  : authMode === "signup"
+                    ? "Criar conta grátis"
+                    : "Entrar"}
+              </button>
+            </form>
+            <div className="dv-auth-switch">
+              {authMode === "signup"
+                ? "Já tem uma conta?"
+                : "Ainda não tem uma conta?"}{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode(
+                    authMode === "signup" ? "signin" : "signup"
+                  );
+                  setAuthMessage("");
+                  setAuthError("");
+                  setAuthPassword("");
+                }}
+              >
+                {authMode === "signup" ? "Entrar" : "Criar conta"}
+              </button>
+            </div>
+            {authMode === "signup" && (
+              <small className="dv-auth-terms">
+                Ao se cadastrar, você poderá precisar confirmar seu
+                e-mail antes de entrar.
+              </small>
+            )}
+          </section>
         </div>
       )}
     </div>
