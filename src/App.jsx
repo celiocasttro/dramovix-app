@@ -2111,7 +2111,6 @@ export default function App() {
                     user?.email?.split("@")[0] ||
                     tr("Meu perfil")}
                 </strong>
-                <small>{user?.email || tr("Visitante DRAMOVIX")}</small>
               </div>
               <button
                 className="dv-profile-close"
