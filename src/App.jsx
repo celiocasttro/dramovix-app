@@ -3156,10 +3156,10 @@ export default function App() {
             <a className="dv-donation-payment-link" href="https://nubank.com.br/cobrar/7m0g1/6ad6e05e-699f-43b8-8df8-2bafba9d9afd" target="_blank" rel="noopener noreferrer">💜 Quero apoiar pelo Pix</a>
             <p className="dv-donation-link-note">O link abre a página de cobrança do Nubank ou direciona conforme as opções disponíveis no seu aparelho.</p>
             <div className="dv-donation-pix-card">
-              <span className="dv-donation-pix-label">PIX · NUBANK · OUTROS BANCOS</span>
-              <strong className="dv-donation-pix-key">14492410-f3de-46e0-9e2e-ed52f5774788</strong>
-              <button className="dv-donation-copy" type="button" onClick={async () => { try { await navigator.clipboard.writeText("14492410-f3de-46e0-9e2e-ed52f5774788"); setPixCopied(true); } catch { setPixCopied(false); } }}>
-                {pixCopied ? "✓ Chave Pix copiada!" : "▣ Copiar chave Pix para outro valor"}
+              <span className="dv-donation-pix-label">PIX COPIA E COLA · QUALQUER BANCO</span>
+              <strong className="dv-donation-pix-key">00020126360014BR.GOV.BCB.PIX0114+55479880061055204000053039865802BR5925Mauricelio da Silva Castr6009SAO PAULO62140510FzsqYa4XeW6304FEA9</strong>
+              <button className="dv-donation-copy" type="button" onClick={async () => { try { await navigator.clipboard.writeText("00020126360014BR.GOV.BCB.PIX0114+55479880061055204000053039865802BR5925Mauricelio da Silva Castr6009SAO PAULO62140510FzsqYa4XeW6304FEA9"); setPixCopied(true); } catch { setPixCopied(false); } }}>
+                {pixCopied ? "✓ Chave Pix copiada!" : "▣ Copiar código Pix"}
               </button>
             </div>
             <p className="dv-donation-instructions">A contribuição é livre. Se preferir transferir por chave Pix, copie a chave, abra o app do seu banco e informe o valor que desejar. Antes de confirmar, confira o nome do destinatário exibido pelo banco.</p>
