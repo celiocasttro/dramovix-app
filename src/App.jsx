@@ -186,15 +186,6 @@ export default function App() {
   const selectedEpisodeRef = useRef(null);
   const advancingEpisodeRef = useRef(false);
   useEffect(() => {
-    // Mostra o convite de apoio apenas na primeira visita deste navegador.
-    if (localStorage.getItem("dramovix-support-welcome-seen") === "1") return;
-    const timer = window.setTimeout(() => {
-      setDonationOpen(true);
-      localStorage.setItem("dramovix-support-welcome-seen", "1");
-    }, 3500);
-    return () => window.clearTimeout(timer);
-  }, []);
-  useEffect(() => {
     localStorage.setItem("dramovix-favorites", JSON.stringify(favorites));
   }, [favorites]);
   useEffect(() => {
@@ -2005,6 +1996,15 @@ export default function App() {
           aria-label="DRAMOVIX início"
         >
           DRAMOVIX
+        </button>
+        <button
+          className="dv-header-support"
+          type="button"
+          onClick={() => { setDonationOpen(true); setPixCopied(false); }}
+          aria-label="Apoie o DRAMOVIX"
+          title="Apoie o DRAMOVIX"
+        >
+          <span aria-hidden="true">♥</span> Apoie
         </button>
         <div className="dv-header-right-icons">
           <button
