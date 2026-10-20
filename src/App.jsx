@@ -119,6 +119,7 @@ export default function App() {
     sharedRequestId ? "solicitacoes" : sharedSeriesId ? "filmes" : "filmes"
   );
   const [profileOpen, setProfileOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [profileSection, setProfileSection] = useState("perfil");
   const [donationOpen, setDonationOpen] = useState(false);
   const [pixCopied, setPixCopied] = useState(false);
@@ -2871,6 +2872,27 @@ export default function App() {
       <footer className="dv-footer">
         DRAMOVIX · Sempre tem uma nova história.
       </footer>
+      {moreMenuOpen && (
+        <div className="dv-more-menu-layer">
+          <button className="dv-more-menu-scrim" type="button" aria-label="Fechar menu Mais" onClick={() => setMoreMenuOpen(false)} />
+          <section className="dv-more-menu" aria-label="Mais opções">
+            <div className="dv-more-menu-heading">
+              <div><strong>Mais opções</strong><small>Explore outras áreas do DRAMOVIX</small></div>
+              <button type="button" onClick={() => setMoreMenuOpen(false)} aria-label="Fechar">×</button>
+            </div>
+            <div className="dv-more-menu-grid">
+              <button type="button" onClick={() => { setMoreMenuOpen(false); goToPage("series"); }}><span>▤</span>Séries</button>
+              <button type="button" onClick={() => { setMoreMenuOpen(false); goToPage("desenhos"); }}><span>🎨</span>Desenhos</button>
+              <button type="button" onClick={() => { setMoreMenuOpen(false); goToPage("animes"); }}><span>🎌</span>Anime</button>
+              <button type="button" onClick={() => { setMoreMenuOpen(false); goToPage("doramas"); }}><span>♡</span>Doramas</button>
+              <button type="button" onClick={() => { setMoreMenuOpen(false); goToPage("tv"); }}><span>◉</span>TV ao Vivo</button>
+              <button type="button" onClick={() => { setMoreMenuOpen(false); openRequestsPage(); }}><span>＋</span>Pedidos</button>
+              <button type="button" onClick={() => { setMoreMenuOpen(false); setDonationOpen(true); setPixCopied(false); }}><span>♥</span>Apoie</button>
+              <button type="button" onClick={() => { setMoreMenuOpen(false); setProfileOpen(true); }}><span>♙</span>Perfil e conta</button>
+            </div>
+          </section>
+        </div>
+      )}
       <nav className="dv-bottom-nav" aria-label="Navegação inferior">
         <button
           className={page === "filmes" ? "active" : ""}
@@ -2912,11 +2934,13 @@ export default function App() {
           <small>Pedidos</small>
         </button>
         <button
-          className={page === "tv" ? "active" : ""}
-          onClick={() => goToPage("tv")}
+          className={moreMenuOpen || ["series", "desenhos", "animes", "doramas", "tv", "solicitacoes"].includes(page) ? "active" : ""}
+          onClick={() => setMoreMenuOpen((open) => !open)}
+          aria-expanded={moreMenuOpen}
+          aria-label="Mais opções"
         >
-          <span>◉</span>
-          <small>{tr("TV Ao Vivo")}</small>
+          <span>☰</span>
+          <small>Mais</small>
         </button>
       </nav>
       {requestFormOpen && (
