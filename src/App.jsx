@@ -160,6 +160,7 @@ export default function App() {
   const [episodesLoading, setEpisodesLoading] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerError, setPlayerError] = useState("");
+  const [selectedVideoOption, setSelectedVideoOption] = useState(0);
   const [showDescription, setShowDescription] = useState(false);
   const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false);
   // Solicitações de séries
@@ -646,7 +647,8 @@ export default function App() {
   useEffect(() => {
     if (!playerOpen || !selectedEpisode || !videoRef.current) return;
     const video = videoRef.current;
-    const url = selectedEpisode.video_url || "";
+    const videoOptions = Array.isArray(selectedEpisode.video_options) ? selectedEpisode.video_options : [];
+    const url = videoOptions[selectedVideoOption]?.url || selectedEpisode.video_url || "";
     const generation = ++playerGenerationRef.current;
     let cancelled = false;
     let hls = null;
@@ -764,7 +766,7 @@ export default function App() {
       video.removeAttribute("src");
       video.load();
     };
-  }, [playerOpen, selectedEpisode]);
+  }, [playerOpen, selectedEpisode, selectedVideoOption]);
   const matchesSearch = (item) =>
     !search.trim() ||
     normalize(item.title).includes(normalize(search)) ||
@@ -911,6 +913,7 @@ export default function App() {
     advancingEpisodeRef.current = false;
     selectedEpisodeRef.current = episode;
     setSelectedEpisode(episode);
+    setSelectedVideoOption(0);
     setPlayerError("");
     setPlayerOpen(true);
     setEpisodeDrawerOpen(false);
@@ -3074,6 +3077,26 @@ export default function App() {
                 ×
               </button>
             </div>
+            {Array.isArray(selectedEpisode?.video_options) && selectedEpisode.video_options.length > 1 && (
+              <div className="dv-player-options" aria-label="Escolher opção de reprodução">
+                <span>Se o vídeo não funcionar, escolha outra opção:</span>
+                <div>
+                  {selectedEpisode.video_options.map((option, index) => (
+                    <button
+                      key={option.label || index}
+                      type="button"
+                      className={selectedVideoOption === index ? "selected" : ""}
+                      onClick={() => {
+                        setSelectedVideoOption(index);
+                        setPlayerError("");
+                      }}
+                    >
+                      ▶ {option.label || `Player ${index + 1}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div
               className={`dv-video-wrap ${
                 isLandscapePlayer
