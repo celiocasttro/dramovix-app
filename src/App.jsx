@@ -112,9 +112,11 @@ export default function App() {
   const [selectedEpisode, setSelectedEpisode] = useState(null);
   const [search, setSearch] = useState("");
   const [genreFilter, setGenreFilter] = useState("Todas");
-  const sharedRequestId = new URLSearchParams(window.location.search).get("solicitacao");
+  const initialUrlParams = new URLSearchParams(window.location.search);
+  const sharedRequestId = initialUrlParams.get("solicitacao");
+  const sharedSeriesId = initialUrlParams.get("serie");
   const [page, setPage] = useState(() =>
-    sharedRequestId ? "solicitacoes" : "filmes"
+    sharedRequestId ? "solicitacoes" : sharedSeriesId ? "filmes" : "filmes"
   );
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileSection, setProfileSection] = useState("perfil");
@@ -390,6 +392,22 @@ export default function App() {
       authListener?.subscription?.unsubscribe();
     };
   }, []);
+  useEffect(() => {
+    if (!sharedSeriesId || loading || !series.length) return;
+    const match = series.find((item) =>
+      String(item.id) === String(sharedSeriesId) ||
+      String(item.dbId ?? "") === String(sharedSeriesId)
+    );
+    if (match) {
+      setSelectedSeries(match);
+      setSelectedMovie(null);
+      setSelectedEpisode(null);
+      setShowDescription(false);
+      setPage("detalhes");
+      setProfileOpen(false);
+    }
+  }, [sharedSeriesId, loading, series]);
+
   useEffect(() => {
     let cancelled = false;
     async function loadCatalog() {
@@ -852,7 +870,31 @@ export default function App() {
     setShowDescription(false);
     setPage("detalhes");
     setProfileOpen(false);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("solicitacao");
+    url.searchParams.set("serie", String(item.id));
+    window.history.replaceState({}, "", url);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  async function shareSeries(item) {
+    if (!item) return;
+    const shareUrl = new URL(window.location.origin + window.location.pathname);
+    shareUrl.searchParams.set("serie", String(item.id));
+    const shareText = `Confira "${item.title}" no DRAMOVIX!`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: item.title, text: shareText, url: shareUrl.toString() });
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(`${shareText} ${shareUrl.toString()}`);
+        window.alert("Link da série copiado! Agora é só compartilhar.");
+      } else {
+        window.prompt("Copie o link para compartilhar esta série:", shareUrl.toString());
+      }
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        window.prompt("Copie o link para compartilhar esta série:", shareUrl.toString());
+      }
+    }
   }
   function openMovieDetails(item) {
     setSelectedMovie(item);
@@ -2306,8 +2348,14 @@ export default function App() {
                     onClick={() => toggleFavorite(selectedSeries)}
                   >
                     {isFavorite(selectedSeries)
-                      ? "♥ Na minha lista"
-                      : "♡ Minha lista"}
+                      ? "♥ Salva"
+                      : "♡ Salvar"}
+                  </button>
+                  <button
+                    className="dv-description-toggle dv-share-series"
+                    onClick={() => shareSeries(selectedSeries)}
+                  >
+                    ↗ Compartilhar
                   </button>
                 </div>
               </div>
