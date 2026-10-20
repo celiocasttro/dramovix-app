@@ -2048,6 +2048,15 @@ export default function App() {
         >
           <span aria-hidden="true">♥</span> Apoie
         </button>
+        <button
+          className="dv-header-support dv-header-requests"
+          type="button"
+          onClick={() => goToPage("solicitacoes")}
+          aria-label="Ver pedidos de séries"
+          title="Pedidos de séries"
+        >
+          <span aria-hidden="true">▣</span> Pedidos
+        </button>
         <div className="dv-header-right-icons">
           <button
             className="dv-icon-btn"
