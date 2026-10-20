@@ -852,6 +852,8 @@ export default function App() {
     favorites.includes(item.id)
   );
   const heroItem = series[0] || movies[0];
+  // Destaque exclusivo para TV ao Vivo, separado do destaque principal.
+  const liveHeroItem = liveChannels.find((item) => item.video_url || item.isLive) || LIVE_SERIES;
   const isLandscapePlayer = Boolean(
     selectedEpisode?.isMovie ||
       selectedEpisode?.isLive ||
@@ -2692,6 +2694,32 @@ export default function App() {
           </section>
         )}
         {page === "tv" && (
+          <>
+          <section
+            className="dv-hero"
+            style={{
+              backgroundImage: liveHeroItem?.image
+                ? `url("${liveHeroItem.image}")`
+                : "none"
+            }}
+          >
+            <div className="dv-hero-overlay" />
+            <div className="dv-hero-content">
+              <span className="dv-eyebrow">TV AO VIVO</span>
+              <h1>{liveHeroItem?.title || "TV ao Vivo"}</h1>
+              <p>
+                {liveHeroItem?.description
+                  ? liveHeroItem.description.slice(0, 140)
+                  : "Assista às transmissões disponíveis."}
+              </p>
+              <button
+                className="dv-button-primary"
+                onClick={() => openLive(liveHeroItem)}
+              >
+                ▶ Assistir ao vivo
+              </button>
+            </div>
+          </section>
           <section className="dv-section">
             <div className="dv-section-heading">
               <div>
@@ -2716,6 +2744,7 @@ export default function App() {
               )
             )}
           </section>
+          </>
         )}
         {page === "explorar" && (
           <section className="dv-section">
