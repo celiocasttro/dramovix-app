@@ -160,7 +160,6 @@ export default function App() {
   const [episodesLoading, setEpisodesLoading] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerError, setPlayerError] = useState("");
-  const [selectedVideoOption, setSelectedVideoOption] = useState(0);
   const [showDescription, setShowDescription] = useState(false);
   const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false);
   // Solicitações de séries
@@ -765,7 +764,7 @@ export default function App() {
       video.removeAttribute("src");
       video.load();
     };
-  }, [playerOpen, selectedEpisode, selectedVideoOption]);
+  }, [playerOpen, selectedEpisode]);
   const matchesSearch = (item) =>
     !search.trim() ||
     normalize(item.title).includes(normalize(search)) ||
@@ -912,7 +911,6 @@ export default function App() {
     advancingEpisodeRef.current = false;
     selectedEpisodeRef.current = episode;
     setSelectedEpisode(episode);
-    setSelectedVideoOption(0);
     setPlayerError("");
     setPlayerOpen(true);
     setEpisodeDrawerOpen(false);
