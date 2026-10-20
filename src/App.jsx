@@ -706,7 +706,18 @@ export default function App() {
     video.addEventListener("canplay", scheduleAutoplay);
     video.addEventListener("playing", handlePlaying);
     const isHls = /\.m3u8(?:$|[?#])/i.test(url);
-    if (isHls && Hls.isSupported()) {
+    const nativeHlsSupported = Boolean(
+      video.canPlayType("application/vnd.apple.mpegurl")
+    );
+    // No Safari/iOS moderno, prioriza o HLS nativo quando há Managed Media Source.
+    // Isso pode evitar falhas de CORS que ocorrem ao buscar cada segmento via HLS.js.
+    const preferNativeHls =
+      isHls && nativeHlsSupported && "ManagedMediaSource" in window;
+    if (preferNativeHls) {
+      video.src = url;
+      video.load();
+      scheduleAutoplay();
+    } else if (isHls && Hls.isSupported()) {
       hls = new Hls({
         enableWorker: true,
         lowLatencyMode: false,
@@ -757,10 +768,12 @@ export default function App() {
         }
       });
       hls.attachMedia(video);
-    } else {
+    } else if (!isHls || nativeHlsSupported) {
       video.src = url;
       video.load();
       scheduleAutoplay();
+    } else {
+      setPlayerError("Este navegador não oferece suporte à reprodução HLS deste vídeo.");
     }
     return () => {
       cancelled = true;
