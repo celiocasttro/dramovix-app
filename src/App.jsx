@@ -1792,7 +1792,7 @@ export default function App() {
                           type="button"
                           className={`dv-request-like ${
                             likes.likedByMe ? "active" : ""
-                          }`}
+                          }`
                           disabled={Boolean(likesBusy[request.id])}
                           onClick={() => toggleRequestLike(request)}
                         >
