@@ -962,6 +962,8 @@ button, input { -webkit-appearance: none; appearance: none; }
 .dv-donation-payment-link { padding: 10px 12px; font-size: 12px; }
 @media (max-width: 480px) {
   .dv-header-support { padding: 6px 8px; font-size: 11px; }
+  .dv-header-requests { gap: 3px; }
+  .dv-header-requests span { font-size: 11px; }
   .dv-donation-modal { padding: 22px 15px 16px; }
   .dv-donation-modal h2 { font-size: 18px; }
 }
