@@ -738,3 +738,33 @@ button, input { -webkit-appearance: none; appearance: none; }
     min-height: 116px;
   }
 }
+
+
+/* Avatar compacto tanto no menu do usuário quanto na página Meu perfil */
+.dv-avatar-wrap-menu .dv-profile-avatar {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  flex: 0 0 48px !important;
+}
+.dv-avatar-wrap-large .dv-profile-avatar-large {
+  width: 72px !important;
+  height: 72px !important;
+  min-width: 72px !important;
+  min-height: 72px !important;
+  flex: 0 0 72px !important;
+}
+.dv-avatar-wrap .dv-avatar-edit {
+  width: 25px;
+  height: 25px;
+  font-size: 14px;
+}
+@media (max-width: 480px) {
+  .dv-avatar-wrap-large .dv-profile-avatar-large {
+    width: 72px !important;
+    height: 72px !important;
+    min-width: 72px !important;
+    min-height: 72px !important;
+  }
+}
