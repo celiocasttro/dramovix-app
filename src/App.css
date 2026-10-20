@@ -802,3 +802,48 @@ button, input { -webkit-appearance: none; appearance: none; }
     font-size: 11px;
   }
 }
+
+
+/* Navegação interna entre Perfil e Conta */
+.dv-profile-summary { gap: 14px; }
+.dv-account-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 15px 16px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 12px;
+  background: #120d0d;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+.dv-account-option:hover { border-color: rgba(229,9,20,.6); background: #1b0b0b; }
+.dv-account-option span { display: grid; gap: 5px; min-width: 0; }
+.dv-account-option strong { font-size: 14px; }
+.dv-account-option small { color: #999; font-size: 11px; line-height: 1.5; }
+.dv-account-option b { color: #e50914; font-size: 25px; }
+.dv-account-details { align-items: stretch; text-align: left; }
+.dv-account-back {
+  align-self: flex-start;
+  margin: 0 0 12px;
+  padding: 7px 0;
+  border: 0;
+  background: transparent;
+  color: #fca5a5;
+  font-size: 12px;
+  cursor: pointer;
+}
+.dv-account-back:hover { color: #fff; }
+.dv-account-detail-row {
+  display: grid;
+  gap: 6px;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.dv-account-detail-row small { color: #999; font-size: 11px; }
+.dv-account-detail-row strong { color: #fff; font-size: 13px; overflow-wrap: anywhere; }
+.dv-account-details .dv-muted { margin: 12px 0; }
