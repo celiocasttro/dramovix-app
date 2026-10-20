@@ -117,6 +117,7 @@ export default function App() {
     sharedRequestId ? "solicitacoes" : "filmes"
   );
   const [profileOpen, setProfileOpen] = useState(false);
+  const [profileSection, setProfileSection] = useState("perfil");
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarMessage, setAvatarMessage] = useState("");
   const [avatarOptionsOpen, setAvatarOptionsOpen] = useState(false);
@@ -2717,83 +2718,73 @@ export default function App() {
         {page === "perfil" && (
           <section className="dv-section dv-account-page">
             <div className="dv-section-heading">
-              <h2>{tr("Perfil")}</h2>
+              <h2>{profileSection === "conta" ? "Conta" : tr("Perfil")}</h2>
             </div>
-            <div className="dv-account-card">
-              <div className="dv-avatar-wrap dv-avatar-wrap-large">
-                <div className="dv-profile-avatar dv-profile-avatar-large">
-                  {user?.user_metadata?.avatar_url ? (
-                    <img src={user.user_metadata.avatar_url} alt="Foto de perfil" onError={hideBrokenImage} />
-                  ) : (
-                    "♙"
+            {profileSection === "perfil" ? (
+              <div className="dv-account-card dv-profile-summary">
+                <div className="dv-avatar-wrap dv-avatar-wrap-large">
+                  <div className="dv-profile-avatar dv-profile-avatar-large">
+                    {user?.user_metadata?.avatar_url ? (
+                      <img src={user.user_metadata.avatar_url} alt="Foto de perfil" onError={hideBrokenImage} />
+                    ) : (
+                      "♙"
+                    )}
+                  </div>
+                  {user && (
+                    <button type="button" className="dv-avatar-edit" aria-label="Editar foto de perfil" title="Editar foto" onClick={() => setAvatarOptionsOpen((open) => !open)}>✎</button>
+                  )}
+                  {user && avatarOptionsOpen && (
+                    <div className="dv-avatar-popover dv-avatar-popover-large">
+                      <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={avatarBusy}>📷 {avatarBusy ? "Salvando..." : "Mudar foto"}</button>
+                      {user.user_metadata?.avatar_url && <button type="button" onClick={removeAvatar} disabled={avatarBusy}>🗑️ Remover foto</button>}
+                      <small>JPG, PNG ou WEBP · até 5 MB</small>
+                      {avatarMessage && <small className="dv-avatar-message">{avatarMessage}</small>}
+                    </div>
                   )}
                 </div>
-                {user && (
-                  <button type="button" className="dv-avatar-edit" aria-label="Editar foto de perfil" title="Editar foto" onClick={() => setAvatarOptionsOpen((open) => !open)}>✎</button>
-                )}
-                {user && avatarOptionsOpen && (
-                  <div className="dv-avatar-popover dv-avatar-popover-large">
-                    <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={avatarBusy}>📷 {avatarBusy ? "Salvando..." : "Mudar foto"}</button>
-                    {user.user_metadata?.avatar_url && <button type="button" onClick={removeAvatar} disabled={avatarBusy}>🗑️ Remover foto</button>}
-                    <small>JPG, PNG ou WEBP · até 5 MB</small>
-                    {avatarMessage && <small className="dv-avatar-message">{avatarMessage}</small>}
-                  </div>
+                <input ref={avatarInputRef} className="dv-avatar-hidden-input" type="file" accept="image/*" onChange={handleAvatarUpload} disabled={avatarBusy} />
+                <h2>
+                  {user?.user_metadata?.full_name ||
+                    user?.email?.split("@")[0] ||
+                    tr("Visitante DRAMOVIX")}
+                </h2>
+                <button className="dv-account-option" type="button" onClick={() => { setAvatarOptionsOpen(false); setProfileSection("conta"); }}>
+                  <span><strong>Conta</strong><small>Dados do cadastro e e-mail conectado</small></span>
+                  <b>›</b>
+                </button>
+              </div>
+            ) : (
+              <div className="dv-account-card dv-account-details">
+                <button className="dv-account-back" type="button" onClick={() => setProfileSection("perfil")}>‹ Voltar ao perfil</button>
+                {user ? (
+                  <>
+                    <div className="dv-account-detail-row">
+                      <small>Nome</small>
+                      <strong>{user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuário DRAMOVIX"}</strong>
+                    </div>
+                    <div className="dv-account-detail-row">
+                      <small>E-mail conectado</small>
+                      <strong className="dv-account-email">{user.email}</strong>
+                    </div>
+                    <div className="dv-account-detail-row">
+                      <small>Cadastro realizado em</small>
+                      <strong>{user.created_at ? new Date(user.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : "Informação indisponível"}</strong>
+                    </div>
+                    <p className="dv-muted">Sua conta identifica você no DRAMOVIX. Seus favoritos e histórico atuais ainda ficam salvos neste navegador.</p>
+                    <button className="dv-button-primary" onClick={signOut}>Sair da conta</button>
+                  </>
+                ) : (
+                  <>
+                    <h3>Você está navegando como visitante</h3>
+                    <p>Entre em uma conta ou crie uma conta grátis para ver os dados do cadastro aqui.</p>
+                    <small>{tr("Seu ID de visitante")}</small>
+                    <strong>{visitorId}</strong>
+                    <button className="dv-button-primary" onClick={() => openAuth("signin")}>Entrar na conta</button>
+                    <button className="dv-profile-auth-button dv-profile-auth-secondary" onClick={() => openAuth("signup")}>Criar conta grátis</button>
+                  </>
                 )}
               </div>
-              <input ref={avatarInputRef} className="dv-avatar-hidden-input" type="file" accept="image/*" onChange={handleAvatarUpload} disabled={avatarBusy} />
-              <h2>
-                {user?.user_metadata?.full_name ||
-                  user?.email?.split("@")[0] ||
-                  tr("Visitante DRAMOVIX")}
-              </h2>
-              {user ? (
-                <>
-                  <p>Conta DRAMOVIX conectada</p>
-                  <small>E-mail da conta</small>
-                  <strong className="dv-account-email">{user.email}</strong>
-                  
-                  <button className="dv-button-primary" onClick={signOut}>
-                    Sair da conta
-                  </button>
-                  <p className="dv-muted">
-                    Sua conta permite identificar você no DRAMOVIX. Os
-                    favoritos e o histórico atuais ainda ficam salvos neste
-                    navegador.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p>{tr("Você pode assistir sem criar uma conta.")}</p>
-                  <small>{tr("Seu ID de visitante")}</small>
-                  <strong>{visitorId}</strong>
-                  <button
-                    className="dv-button-primary"
-                    onClick={() =>
-                      navigator.clipboard?.writeText(visitorId)
-                    }
-                  >
-                    {tr("Copiar ID")}
-                  </button>
-                  <button
-                    className="dv-profile-auth-button"
-                    onClick={() => openAuth("signin")}
-                  >
-                    Entrar na conta
-                  </button>
-                  <button
-                    className="dv-profile-auth-button dv-profile-auth-secondary"
-                    onClick={() => openAuth("signup")}
-                  >
-                    Criar conta grátis
-                  </button>
-                  <p className="dv-muted">
-                    {tr(
-                      "O ID fica salvo neste navegador. Para sincronizar seus dados entre dispositivos, futuramente será necessário criar uma conta."
-                    )}
-                  </p>
-                </>
-              )}
-            </div>
+            )}
           </section>
         )}
       </main>
