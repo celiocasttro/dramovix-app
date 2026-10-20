@@ -965,3 +965,12 @@ button, input { -webkit-appearance: none; appearance: none; }
   .dv-donation-modal { padding: 22px 15px 16px; }
   .dv-donation-modal h2 { font-size: 18px; }
 }
+
+
+/* Ações de salvar e compartilhar série */
+.dv-detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.dv-share-series { white-space: nowrap; }
+@media (max-width: 480px) {
+  .dv-detail-actions { gap: 7px; }
+  .dv-detail-actions > button { font-size: 12px; }
+}
