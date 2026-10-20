@@ -768,3 +768,37 @@ button, input { -webkit-appearance: none; appearance: none; }
     min-height: 72px !important;
   }
 }
+
+
+/* Nome e e-mail lado a lado no menu do usuário */
+.dv-profile-identity {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.dv-profile-identity strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.dv-profile-identity small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #aaa;
+}
+/* No menu do ícone do usuário não aparece o lápis; ele fica apenas em Meu perfil */
+.dv-avatar-wrap-menu .dv-avatar-edit,
+.dv-avatar-wrap-menu .dv-avatar-popover {
+  display: none !important;
+}
+@media (max-width: 480px) {
+  .dv-profile-identity {
+    gap: 3px 7px;
+  }
+  .dv-profile-identity strong,
+  .dv-profile-identity small {
+    font-size: 11px;
+  }
+}
