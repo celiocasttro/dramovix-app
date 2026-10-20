@@ -1254,6 +1254,10 @@ export default function App() {
         .insert({
           request_id: request.id,
           user_id: user.id,
+          author_name:
+            user.user_metadata?.full_name?.trim() ||
+            user.email?.split("@")[0] ||
+            "Membro DRAMOVIX",
           content
         })
         .select()
@@ -1727,11 +1731,12 @@ export default function App() {
                               <div className="dv-request-comment-body">
                                 <div className="dv-request-comment-meta">
                                   <strong>
-                                    {comment.user_id === user?.id
-                                      ? user?.user_metadata?.full_name ||
-                                        user?.email?.split("@")[0] ||
-                                        "Você"
-                                      : "Membro DRAMOVIX"}
+                                    {comment.author_name ||
+                                      (comment.user_id === user?.id
+                                        ? user?.user_metadata?.full_name ||
+                                          user?.email?.split("@")[0] ||
+                                          "Você"
+                                        : "Membro DRAMOVIX")}
                                   </strong>
                                   <small>
                                     {formatDate(comment.created_at)}
