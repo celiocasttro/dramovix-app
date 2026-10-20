@@ -213,8 +213,8 @@ button, input { -webkit-appearance: none; appearance: none; }
   .dv-mobile-categories button span { font-size: 13px; }
   .dv-mobile-categories button.active { border-color: var(--red-primary); background: rgba(229,9,20,.2); color: #fff; }
   .dv-header { top: 0; }
-  .dv-bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
-  .dv-bottom-nav button small { font-size: 8.5px; }
+  .dv-bottom-nav { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  .dv-bottom-nav button small { font-size: 9px; }
   .dv-profile-menu { top: 62px; }
 }
 
