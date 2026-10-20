@@ -651,6 +651,7 @@ export default function App() {
     let cancelled = false;
     let hls = null;
     let autoplayTimer = null;
+    let nativeFallbackAttempted = false;
     selectedEpisodeRef.current = selectedEpisode;
     advancingEpisodeRef.current = false;
     setPlayerError("");
@@ -727,10 +728,24 @@ export default function App() {
         if (!isCurrentPlayer()) return;
         if (data.fatal) {
           if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-            setPlayerError(
-              "Não foi possível carregar o vídeo. O link pode ter expirado ou o servidor pode estar indisponível."
-            );
-            hls.startLoad();
+            // Tenta o player HLS nativo quando o servidor bloqueia requisições via HLS.js.
+            if (
+              !nativeFallbackAttempted &&
+              video.canPlayType("application/vnd.apple.mpegurl")
+            ) {
+              nativeFallbackAttempted = true;
+              hls.destroy();
+              if (hlsRef.current === hls) hlsRef.current = null;
+              hls = null;
+              video.src = url;
+              video.load();
+              scheduleAutoplay();
+            } else {
+              setPlayerError(
+                "Não foi possível carregar o vídeo. O link pode ter expirado ou o servidor pode estar indisponível."
+              );
+              hls.startLoad();
+            }
           } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
             hls.recoverMediaError();
           } else {
