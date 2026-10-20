@@ -456,3 +456,109 @@ button, input { -webkit-appearance: none; appearance: none; }
     font-size: 22px;
   }
 }
+
+/* =========================================
+   SOLICITAÇÕES DE SÉRIES — COMUNIDADE DRAMOVIX
+========================================= */
+.dv-requests-page { max-width: 1050px; margin-left: auto; margin-right: auto; }
+.dv-requests-heading { align-items: center; margin-top: 12px; }
+.dv-requests-heading > div { min-width: 0; }
+.dv-requests-heading h2 { margin-top: 6px; font-size: clamp(21px, 3vw, 29px); }
+.dv-requests-heading p { max-width: 620px; line-height: 1.6; }
+.dv-requests-heading > button { flex-shrink: 0; }
+.dv-requests-info { display: flex; align-items: center; gap: 14px; margin: 18px 0 20px; padding: 17px; border: 1px solid rgba(229,9,20,.28); border-radius: 12px; background: linear-gradient(110deg, rgba(229,9,20,.14), rgba(24,12,12,.72)); }
+.dv-requests-info > span { display: grid; place-items: center; width: 48px; height: 48px; flex-shrink: 0; border-radius: 12px; background: rgba(229,9,20,.17); font-size: 25px; }
+.dv-requests-info strong { color: #fff; font-size: 14px; }
+.dv-requests-info p { margin: 5px 0 0; color: var(--text-muted); font-size: 12px; line-height: 1.6; }
+.dv-request-login-notice { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin: 16px 0; padding: 15px; border: 1px solid rgba(229,9,20,.35); border-radius: 10px; background: #100707; }
+.dv-request-login-notice p { margin: 0; color: #d4d4d8; font-size: 12px; line-height: 1.6; }
+.dv-request-login-notice .dv-button-primary { flex-shrink: 0; }
+.dv-request-feedback { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0; padding: 12px 14px; border: 1px solid rgba(74,222,128,.3); border-radius: 9px; background: rgba(22,101,52,.15); color: #bbf7d0; font-size: 12px; line-height: 1.5; }
+.dv-request-feedback button { flex-shrink: 0; padding: 0 4px; border: 0; background: transparent; color: inherit; font-size: 20px; }
+.dv-request-toolbar { display: grid; grid-template-columns: minmax(0,1fr) minmax(145px,.35fr) minmax(145px,.35fr); align-items: center; gap: 10px; margin: 18px 0; }
+.dv-request-toolbar .dv-search-input { min-width: 0; margin: 0; }
+.dv-request-toolbar select { width: 100%; min-width: 0; min-height: 45px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; outline: none; background: #120505; color: #f7f5fc; font-size: 12px; }
+.dv-request-toolbar select:focus { border-color: var(--red-primary); }
+.dv-request-list { display: grid; gap: 14px; margin: 15px 0 25px; }
+.dv-request-card { min-width: 0; overflow: hidden; border: 1px solid rgba(255,255,255,.09); border-radius: 13px; background: linear-gradient(145deg,#100707,#090909 70%); transition: border-color .2s ease, transform .2s ease; }
+.dv-request-card:hover { border-color: rgba(229,9,20,.32); }
+.dv-request-card-main { display: flex; align-items: flex-start; gap: 16px; padding: 16px; }
+.dv-request-cover { display: block; width: 112px; height: 154px; flex: 0 0 112px; object-fit: cover; border: 1px solid rgba(255,255,255,.08); border-radius: 8px; background: #171010; }
+.dv-request-cover.dv-image-placeholder { display: grid; place-items: center; color: #fca5a5; font-size: 32px; }
+.dv-request-content { flex: 1; min-width: 0; }
+.dv-request-card-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin: 1px 0 8px; }
+.dv-request-card-top > small { color: #777; font-size: 10px; }
+.dv-request-content h3 { margin: 0 0 9px; color: #fff; font-family: 'Outfit',sans-serif; font-size: 18px; line-height: 1.3; overflow-wrap: anywhere; }
+.dv-request-status { display: inline-flex; align-items: center; gap: 5px; width: fit-content; max-width: 100%; padding: 5px 9px; border: 1px solid rgba(156,163,175,.25); border-radius: 999px; background: rgba(156,163,175,.1); color: #d1d5db; font-size: 10px; font-weight: 800; line-height: 1.2; }
+.dv-request-status::before { content: ''; width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: currentColor; }
+.dv-request-status--received { border-color: rgba(156,163,175,.25); background: rgba(156,163,175,.1); color: #d1d5db; }
+.dv-request-status--searching { border-color: rgba(96,165,250,.3); background: rgba(37,99,235,.13); color: #93c5fd; }
+.dv-request-status--preparing { border-color: rgba(251,191,36,.3); background: rgba(180,83,9,.14); color: #fcd34d; }
+.dv-request-status--available { border-color: rgba(74,222,128,.3); background: rgba(22,101,52,.17); color: #86efac; }
+.dv-request-status--unavailable { border-color: rgba(248,113,113,.3); background: rgba(127,29,29,.18); color: #fca5a5; }
+.dv-request-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+.dv-request-tags span { display: inline-flex; padding: 4px 8px; border: 1px solid rgba(229,9,20,.27); border-radius: 999px; background: rgba(229,9,20,.09); color: #fca5a5; font-size: 10px; font-weight: 700; }
+.dv-request-description { margin: 8px 0 12px; color: #a1a1aa; font-size: 12px; line-height: 1.65; white-space: pre-line; overflow-wrap: anywhere; }
+.dv-request-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
+.dv-request-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 34px; padding: 7px 10px; border: 1px solid rgba(255,255,255,.1); border-radius: 7px; background: #130b0b; color: #d4d4d8; font-size: 11px; font-weight: 700; }
+.dv-request-actions button:hover { border-color: rgba(229,9,20,.5); background: #210909; color: #fff; }
+.dv-request-actions .dv-request-like { color: #fca5a5; }
+.dv-request-actions .dv-request-like.active { border-color: rgba(229,9,20,.5); background: rgba(229,9,20,.18); color: #ff6670; }
+.dv-request-actions .dv-request-like span { min-width: 16px; padding: 2px 5px; border-radius: 999px; background: rgba(255,255,255,.08); color: #fff; text-align: center; }
+.dv-request-actions button:disabled { opacity: .5; }
+.dv-request-comments { padding: 15px 16px 16px; border-top: 1px solid rgba(255,255,255,.08); background: rgba(0,0,0,.2); }
+.dv-request-comments h4 { margin: 0 0 13px; color: #fff; font-family: 'Outfit',sans-serif; font-size: 14px; }
+.dv-request-comment-list { display: grid; gap: 12px; }
+.dv-request-comment { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.dv-request-comment-avatar { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border: 1px solid rgba(229,9,20,.22); border-radius: 50%; background: rgba(229,9,20,.13); color: #fca5a5; font-size: 17px; }
+.dv-request-comment-body { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: #100b0b; }
+.dv-request-comment-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.dv-request-comment-meta strong { color: #f3f4f6; font-size: 11px; overflow-wrap: anywhere; }
+.dv-request-comment-meta small { color: #777; font-size: 10px; }
+.dv-request-comment-body p { margin: 7px 0 0; color: #d4d4d8; font-size: 12px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.dv-request-delete-comment { margin-top: 8px; padding: 4px 0; border: 0; background: transparent; color: #fca5a5; font-size: 10px; }
+.dv-request-delete-comment:hover { color: #fff; text-decoration: underline; }
+.dv-request-no-comments { padding: 15px 10px; color: #888; text-align: center; font-size: 12px; }
+.dv-request-comment-form { display: flex; align-items: stretch; gap: 8px; margin-top: 14px; }
+.dv-request-comment-form textarea { flex: 1; min-width: 0; min-height: 43px; max-height: 150px; resize: vertical; padding: 11px 12px; border: 1px solid rgba(255,255,255,.12); border-radius: 8px; outline: none; background: #080808; color: #fff; font-size: 12px; line-height: 1.5; }
+.dv-request-comment-form textarea:focus { border-color: var(--red-primary); }
+.dv-request-comment-form textarea:disabled { opacity: .55; cursor: not-allowed; }
+.dv-request-comment-form .dv-button-primary { align-self: flex-end; min-height: 43px; padding: 10px 13px; font-size: 11px; }
+.dv-request-login-link { display: inline-block; margin-top: 9px; padding: 0; border: 0; background: transparent; color: #fca5a5; font-size: 11px; font-weight: 700; }
+.dv-request-login-link:hover { color: #fff; text-decoration: underline; }
+.dv-request-footer-note { margin: 20px 0 0; color: #777; font-size: 10px; line-height: 1.6; text-align: center; }
+.dv-request-error { border: 1px solid rgba(229,9,20,.18); border-radius: 12px; background: #0c0707; }
+.dv-request-modal { width: min(100%, 500px); }
+.dv-request-modal .dv-auth-form label { min-width: 0; }
+.dv-request-modal textarea.dv-auth-input { min-height: 100px; resize: vertical; }
+
+@media (max-width: 767px) {
+  .dv-requests-heading { align-items: flex-start; flex-direction: column; gap: 13px; }
+  .dv-requests-heading > button { width: 100%; }
+  .dv-requests-info { align-items: flex-start; gap: 10px; padding: 13px; }
+  .dv-requests-info > span { width: 40px; height: 40px; font-size: 21px; }
+  .dv-requests-info strong { font-size: 12px; }
+  .dv-requests-info p { font-size: 11px; }
+  .dv-request-login-notice { align-items: stretch; flex-direction: column; gap: 12px; }
+  .dv-request-login-notice .dv-button-primary { width: 100%; }
+  .dv-request-toolbar { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 8px; }
+  .dv-request-toolbar .dv-search-input { grid-column: 1 / -1; }
+  .dv-request-toolbar select { min-height: 42px; padding: 9px 8px; font-size: 11px; }
+  .dv-request-card-main { gap: 11px; padding: 11px; }
+  .dv-request-cover { width: 84px; height: 122px; flex-basis: 84px; }
+  .dv-request-content h3 { font-size: 15px; }
+  .dv-request-card-top { align-items: flex-start; flex-direction: column; gap: 6px; }
+  .dv-request-card-top > small { font-size: 9px; }
+  .dv-request-actions { gap: 6px; }
+  .dv-request-actions button { min-height: 32px; padding: 6px 8px; font-size: 10px; }
+  .dv-request-comments { padding: 12px 10px; }
+  .dv-request-comment-form { flex-direction: column; }
+  .dv-request-comment-form .dv-button-primary { width: 100%; }
+}
+@media (max-width: 380px) {
+  .dv-request-card-main { gap: 8px; padding: 9px; }
+  .dv-request-cover { width: 70px; height: 105px; flex-basis: 70px; }
+  .dv-request-content h3 { font-size: 13px; }
+  .dv-request-actions button { font-size: 9px; padding: 6px; }
+  .dv-request-actions { gap: 5px; }
+}
