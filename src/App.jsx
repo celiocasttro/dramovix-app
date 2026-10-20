@@ -2909,29 +2909,11 @@ export default function App() {
           <small>{tr("Filmes")}</small>
         </button>
         <button
-          className={page === "explorar" ? "active" : ""}
-          onClick={() => {
-            setPage("explorar");
-            setProfileOpen(false);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-        >
-          <span>⌕</span>
-          <small>{tr("Buscar")}</small>
-        </button>
-        <button
           className={page === "favoritos" ? "active" : ""}
           onClick={() => goToPage("favoritos")}
         >
           <span>♡</span>
           <small>{tr("Minha Lista")}</small>
-        </button>
-        <button
-          className={page === "solicitacoes" ? "active" : ""}
-          onClick={openRequestsPage}
-        >
-          <span>＋</span>
-          <small>Pedidos</small>
         </button>
         <button
           className={moreMenuOpen || ["series", "desenhos", "animes", "doramas", "tv", "solicitacoes"].includes(page) ? "active" : ""}
