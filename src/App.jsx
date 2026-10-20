@@ -108,7 +108,10 @@ export default function App() {
   const [selectedEpisode, setSelectedEpisode] = useState(null);
   const [search, setSearch] = useState("");
   const [genreFilter, setGenreFilter] = useState("Todas");
-  const [page, setPage] = useState("filmes");
+  const sharedRequestId = new URLSearchParams(window.location.search).get("solicitacao");
+  const [page, setPage] = useState(() =>
+    sharedRequestId ? "solicitacoes" : "filmes"
+  );
   const [profileOpen, setProfileOpen] = useState(false);
   const [user, setUser] = useState(null);
   const isDramovixAdmin =
@@ -1418,6 +1421,22 @@ export default function App() {
       </span>
     );
   }
+  useEffect(() => {
+    if (!sharedRequestId || page !== "solicitacoes" || requestsLoading) return;
+    const targetRequest = requests.find(
+      (request) => String(request.id) === String(sharedRequestId)
+    );
+    if (!targetRequest) return;
+    setExpandedRequest(targetRequest.id);
+    const timer = window.setTimeout(() => {
+      document.getElementById(`solicitacao-${sharedRequestId}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [sharedRequestId, page, requests, requestsLoading]);
+
   function renderRequestsPage() {
     return (
       <section className="dv-section dv-requests-page">
@@ -1546,6 +1565,7 @@ export default function App() {
               return (
                 <article
                   className="dv-request-card"
+                  id={`solicitacao-${request.id}`}
                   key={request.id}
                 >
                   <div className="dv-request-card-main">
@@ -1648,8 +1668,8 @@ export default function App() {
                           type="button"
                           className="dv-request-share"
                           onClick={async () => {
-                            const shareUrl = window.location.origin;
-                            const shareText = `Confira a solicitação da série "${request.title}" no DRAMOVIX!`;
+                            const shareUrl = `${window.location.origin}/?pagina=solicitacoes&solicitacao=${encodeURIComponent(request.id)}`;
+                            const shareText = `Confira a solicitação da série "${request.title}" no DRAMOVIX! Acesse o link para encontrar este pedido no DRAMOVIX:`;
                             try {
                               if (navigator.share) {
                                 await navigator.share({
