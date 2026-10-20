@@ -2895,25 +2895,32 @@ export default function App() {
       )}
       <nav className="dv-bottom-nav" aria-label="Navegação inferior">
         <button
-          className={page === "filmes" ? "active" : ""}
+          className={["filmes", "filmes-lista"].includes(page) ? "active" : ""}
           onClick={() => goToPage("filmes")}
         >
-          <span>⌂</span>
+          <span aria-hidden="true">⌂</span>
           <small>{tr("Início")}</small>
         </button>
         <button
-          className={page === "filmes-lista" ? "active" : ""}
-          onClick={() => goToPage("filmes-lista")}
+          className={page === "explorar" ? "active" : ""}
+          onClick={() => { setMoreMenuOpen(false); setPage("explorar"); setProfileOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}
         >
-          <span>▣</span>
-          <small>{tr("Filmes")}</small>
+          <span aria-hidden="true">⌕</span>
+          <small>Para você</small>
         </button>
         <button
           className={page === "favoritos" ? "active" : ""}
           onClick={() => goToPage("favoritos")}
         >
-          <span>♡</span>
+          <span aria-hidden="true">♧</span>
           <small>{tr("Minha Lista")}</small>
+        </button>
+        <button
+          className={profileOpen ? "active" : ""}
+          onClick={() => { setMoreMenuOpen(false); setProfileOpen(true); }}
+        >
+          <span aria-hidden="true">♙</span>
+          <small>Perfil</small>
         </button>
         <button
           className={moreMenuOpen || ["series", "desenhos", "animes", "doramas", "tv", "solicitacoes"].includes(page) ? "active" : ""}
@@ -2921,7 +2928,7 @@ export default function App() {
           aria-expanded={moreMenuOpen}
           aria-label="Mais opções"
         >
-          <span>☰</span>
+          <span aria-hidden="true">☰</span>
           <small>Mais</small>
         </button>
       </nav>
