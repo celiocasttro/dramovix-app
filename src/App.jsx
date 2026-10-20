@@ -2103,19 +2103,8 @@ export default function App() {
                     "♙"
                   )}
                 </div>
-                {user && (
-                  <button type="button" className="dv-avatar-edit" aria-label="Editar foto de perfil" title="Editar foto" onClick={() => setAvatarOptionsOpen((open) => !open)}>✎</button>
-                )}
-                {user && avatarOptionsOpen && (
-                  <div className="dv-avatar-popover">
-                    <label className="dv-avatar-popover-upload">📷 {avatarBusy ? "Salvando..." : "Mudar foto"}<input type="file" accept="image/*" onChange={handleAvatarUpload} disabled={avatarBusy} /></label>
-                    {user.user_metadata?.avatar_url && <button type="button" onClick={removeAvatar} disabled={avatarBusy}>🗑️ Remover foto</button>}
-                    <small>JPG, PNG ou WEBP · até 5 MB</small>
-                    {avatarMessage && <small className="dv-avatar-message">{avatarMessage}</small>}
-                  </div>
-                )}
               </div>
-              <div>
+              <div className="dv-profile-identity">
                 <strong>
                   {user?.user_metadata?.full_name ||
                     user?.email?.split("@")[0] ||
