@@ -917,3 +917,51 @@ button, input { -webkit-appearance: none; appearance: none; }
 }
 .dv-donation-payment-link:hover { filter: brightness(1.13); transform: translateY(-1px); }
 .dv-donation-link-note { margin: 0 0 15px; color: #a9a0ad; font-size: 10px; line-height: 1.5; }
+
+
+/* Apoio discreto ao lado da marca no cabeçalho */
+.dv-header-support {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 77, 91, .35);
+  border-radius: 999px;
+  background: rgba(229, 9, 20, .09);
+  color: #ffc4c8;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dv-header-support span { color: #ff4d5b; font-size: 13px; }
+.dv-header-support:hover { background: rgba(229, 9, 20, .2); }
+.dv-donation-overlay {
+  background: rgba(0, 0, 0, .56);
+  backdrop-filter: blur(3px);
+  padding: 12px;
+}
+.dv-donation-modal {
+  width: min(100%, 350px);
+  max-height: 78vh;
+  padding: 22px 18px 17px;
+  border-radius: 16px;
+}
+.dv-donation-heart { width: 38px; height: 38px; margin-bottom: 8px; border-radius: 12px; font-size: 22px; }
+.dv-donation-eyebrow { margin-bottom: 5px; font-size: 9px; letter-spacing: 1.3px; }
+.dv-donation-modal h2 { margin-bottom: 8px; font-size: 19px; line-height: 1.25; }
+.dv-donation-message { margin-bottom: 12px; font-size: 12px; line-height: 1.5; }
+.dv-donation-pix-card { gap: 9px; padding: 12px; }
+.dv-donation-pix-label { font-size: 9px; letter-spacing: 1px; }
+.dv-donation-pix-key { font-size: 11px; }
+.dv-donation-copy { padding: 10px; font-size: 12px; }
+.dv-donation-instructions { margin-top: 10px; font-size: 10px; line-height: 1.45; }
+.dv-donation-thanks { margin-top: 10px; font-size: 11px; }
+.dv-donation-link-note { margin: 6px 0 10px; font-size: 10px; line-height: 1.4; }
+.dv-donation-payment-link { padding: 10px 12px; font-size: 12px; }
+@media (max-width: 480px) {
+  .dv-header-support { padding: 6px 8px; font-size: 11px; }
+  .dv-donation-modal { padding: 22px 15px 16px; }
+  .dv-donation-modal h2 { font-size: 18px; }
+}
