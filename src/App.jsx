@@ -16,11 +16,15 @@ const LIVE_SERIES = {
 };
 const REQUEST_STATUSES = [
   "Recebida",
-  "Em busca",
-  "Em preparação",
-  "Disponível",
+  "Em andamento",
+  "Série postada",
   "Indisponível"
 ];
+function getRequestStatusLabel(status) {
+  if (status === "Em busca" || status === "Em preparação") return "Em andamento";
+  if (status === "Disponível") return "Série postada";
+  return REQUEST_STATUSES.includes(status) ? status : "Recebida";
+}
 const normalize = (value = "") =>
   String(value)
     .normalize("NFD")
@@ -113,6 +117,8 @@ export default function App() {
     sharedRequestId ? "solicitacoes" : "filmes"
   );
   const [profileOpen, setProfileOpen] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarMessage, setAvatarMessage] = useState("");
   const [user, setUser] = useState(null);
   const isDramovixAdmin =
     normalize(user?.email || "") === "celiocastroreal@gmail.com";
@@ -808,7 +814,7 @@ export default function App() {
         normalize(request.description || "").includes(query);
       const matchesStatus =
         requestStatusFilter === "Todas" ||
-        request.status === requestStatusFilter;
+        getRequestStatusLabel(request.status) === requestStatusFilter;
       return matchesQuery && matchesStatus;
     })
     .sort((a, b) => {
@@ -1048,6 +1054,74 @@ export default function App() {
       setAuthBusy(false);
     }
   }
+  async function handleAvatarUpload(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!user || !file) return;
+    if (!file.type.startsWith("image/")) {
+      setAvatarMessage("Escolha um arquivo de imagem.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarMessage("A foto deve ter no máximo 5 MB.");
+      return;
+    }
+    setAvatarBusy(true);
+    setAvatarMessage("");
+    try {
+      const extension = (file.name.split(".").pop() || "jpg")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "") || "jpg";
+      const filePath = `${user.id}/avatar.${extension}`;
+      const { error: uploadError } = await supabase.storage
+        .from("profile-photos")
+        .upload(filePath, file, {
+          upsert: true,
+          contentType: file.type,
+          cacheControl: "3600"
+        });
+      if (uploadError) throw uploadError;
+      const { data: publicData } = supabase.storage
+        .from("profile-photos")
+        .getPublicUrl(filePath);
+      const avatarUrl = `${publicData.publicUrl}?v=${Date.now()}`;
+      const { data, error } = await supabase.auth.updateUser({
+        data: { avatar_url: avatarUrl }
+      });
+      if (error) throw error;
+      setUser(data.user || { ...user, user_metadata: { ...user.user_metadata, avatar_url: avatarUrl } });
+      setAvatarMessage("Foto de perfil atualizada!");
+    } catch (error) {
+      console.error("Erro ao atualizar foto de perfil:", error);
+      setAvatarMessage(
+        error?.message?.includes("Bucket not found")
+          ? "O armazenamento das fotos ainda não foi configurado no Supabase."
+          : error?.message || "Não foi possível atualizar a foto."
+      );
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+  async function removeAvatar() {
+    if (!user) return;
+    setAvatarBusy(true);
+    setAvatarMessage("");
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { avatar_url: null }
+      });
+      if (error) throw error;
+      setUser({
+        ...user,
+        user_metadata: { ...user.user_metadata, avatar_url: null }
+      });
+      setAvatarMessage("Foto removida. O avatar padrão foi restaurado.");
+    } catch (error) {
+      setAvatarMessage(error?.message || "Não foi possível remover a foto.");
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
   async function signOut() {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -1199,6 +1273,56 @@ export default function App() {
       setLikesBusy((prev) => ({ ...prev, [request.id]: false }));
     }
   }
+  async function deleteRequest(request) {
+    if (!isDramovixAdmin) {
+      window.alert("Você não tem permissão para excluir solicitações.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Tem certeza que deseja excluir a solicitação "${request.title}"? Essa ação não pode ser desfeita e removerá também os comentários e curtidas desse pedido.`
+    );
+    if (!confirmed) return;
+
+    try {
+      const { error: commentsError } = await supabase
+        .from("series_request_comments")
+        .delete()
+        .eq("request_id", request.id);
+      if (commentsError) throw commentsError;
+
+      const { error: likesError } = await supabase
+        .from("series_request_likes")
+        .delete()
+        .eq("request_id", request.id);
+      if (likesError) throw likesError;
+
+      const { error: requestError } = await supabase
+        .from("series_requests")
+        .delete()
+        .eq("id", request.id);
+      if (requestError) throw requestError;
+
+      setRequests((previous) => previous.filter((item) => item.id !== request.id));
+      setRequestComments((previous) => {
+        const next = { ...previous };
+        delete next[request.id];
+        return next;
+      });
+      setRequestLikes((previous) => {
+        const next = { ...previous };
+        delete next[request.id];
+        return next;
+      });
+      setRequestMessage(`A solicitação "${request.title}" foi excluída.`);
+    } catch (error) {
+      console.error("Erro ao excluir solicitação:", error);
+      window.alert(
+        `Não foi possível excluir a solicitação. Verifique as permissões de exclusão no Supabase. Detalhes: ${error?.message || "erro desconhecido"}`
+      );
+    }
+  }
+
   async function updateRequestStatus(request, newStatus) {
     if (!isDramovixAdmin) {
       window.alert("Você não tem permissão para alterar esta solicitação.");
@@ -1258,6 +1382,7 @@ export default function App() {
             user.user_metadata?.full_name?.trim() ||
             user.email?.split("@")[0] ||
             "Membro DRAMOVIX",
+          author_avatar_url: user.user_metadata?.avatar_url || null,
           content
         })
         .select()
@@ -1408,20 +1533,20 @@ export default function App() {
     );
   }
   function renderRequestStatus(status) {
+    const label = getRequestStatusLabel(status);
     const statusClasses = {
       Recebida: "dv-request-status--received",
-      "Em busca": "dv-request-status--searching",
-      "Em preparação": "dv-request-status--preparing",
-      Disponível: "dv-request-status--available",
+      "Em andamento": "dv-request-status--searching",
+      "Série postada": "dv-request-status--available",
       Indisponível: "dv-request-status--unavailable"
     };
     return (
       <span
         className={`dv-request-status ${
-          statusClasses[status] || ""
+          statusClasses[label] || ""
         }`}
       >
-        {status || "Recebida"}
+        {label}
       </span>
     );
   }
@@ -1624,7 +1749,7 @@ export default function App() {
                           </label>
                           <select
                             id={`dramovix-admin-status-${request.id}`}
-                            value={request.status || "Recebida"}
+                            value={getRequestStatusLabel(request.status)}
                             onChange={(event) =>
                               updateRequestStatus(request, event.target.value)
                             }
@@ -1646,11 +1771,28 @@ export default function App() {
                         </div>
                       )}
                       <div className="dv-request-actions">
+                        {isDramovixAdmin && (
+                          <button
+                            type="button"
+                            className="dv-request-delete-comment"
+                            onClick={() => deleteRequest(request)}
+                            style={{
+                              border: "1px solid rgba(255, 90, 90, 0.45)",
+                              borderRadius: "8px",
+                              padding: "9px 12px",
+                              background: "rgba(180, 30, 30, 0.14)",
+                              color: "#ff8f8f",
+                              cursor: "pointer"
+                            }}
+                          >
+                            🗑️ Excluir solicitação
+                          </button>
+                        )}
                         <button
                           type="button"
                           className={`dv-request-like ${
                             likes.likedByMe ? "active" : ""
-                          }`}
+                          }`
                           disabled={Boolean(likesBusy[request.id])}
                           onClick={() => toggleRequestLike(request)}
                         >
@@ -1726,7 +1868,15 @@ export default function App() {
                               key={comment.id}
                             >
                               <div className="dv-request-comment-avatar">
-                                ♙
+                                {comment.author_avatar_url ? (
+                                  <img
+                                    src={comment.author_avatar_url}
+                                    alt=""
+                                    onError={hideBrokenImage}
+                                  />
+                                ) : (
+                                  "♙"
+                                )}
                               </div>
                               <div className="dv-request-comment-body">
                                 <div className="dv-request-comment-meta">
@@ -1943,7 +2093,13 @@ export default function App() {
           />
           <section className="dv-profile-menu" aria-label="Menu de perfil">
             <div className="dv-profile-top">
-              <div className="dv-profile-avatar">♙</div>
+              <div className="dv-profile-avatar">
+                {user?.user_metadata?.avatar_url ? (
+                  <img src={user.user_metadata.avatar_url} alt="Foto de perfil" onError={hideBrokenImage} />
+                ) : (
+                  "♙"
+                )}
+              </div>
               <div>
                 <strong>
                   {user?.user_metadata?.full_name ||
@@ -2560,7 +2716,13 @@ export default function App() {
               <h2>{tr("Perfil")}</h2>
             </div>
             <div className="dv-account-card">
-              <div className="dv-profile-avatar">♙</div>
+              <div className="dv-profile-avatar dv-profile-avatar-large">
+                {user?.user_metadata?.avatar_url ? (
+                  <img src={user.user_metadata.avatar_url} alt="Foto de perfil" onError={hideBrokenImage} />
+                ) : (
+                  "♙"
+                )}
+              </div>
               <h2>
                 {user?.user_metadata?.full_name ||
                   user?.email?.split("@")[0] ||
@@ -2571,6 +2733,29 @@ export default function App() {
                   <p>Conta DRAMOVIX conectada</p>
                   <small>E-mail da conta</small>
                   <strong className="dv-account-email">{user.email}</strong>
+                  <div className="dv-avatar-controls">
+                    <label className="dv-button-primary dv-avatar-upload">
+                      {avatarBusy ? "Salvando foto..." : "Escolher foto"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        disabled={avatarBusy}
+                      />
+                    </label>
+                    {user.user_metadata?.avatar_url && (
+                      <button
+                        type="button"
+                        className="dv-button-secondary"
+                        onClick={removeAvatar}
+                        disabled={avatarBusy}
+                      >
+                        Remover foto
+                      </button>
+                    )}
+                    <small>Imagem JPG, PNG ou WEBP · máximo 5 MB</small>
+                    {avatarMessage && <p className="dv-avatar-message">{avatarMessage}</p>}
+                  </div>
                   <button className="dv-button-primary" onClick={signOut}>
                     Sair da conta
                   </button>
