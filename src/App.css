@@ -874,6 +874,7 @@ button, input { -webkit-appearance: none; appearance: none; }
 }
 .dv-donation-eyebrow { margin: 0 0 8px; color: #ff8b93; font-size: 10px; font-weight: 800; letter-spacing: 2px; }
 .dv-donation-modal h2 { margin: 0 0 12px; font-size: 25px; letter-spacing: -.5px; }
+.dv-donation-modal h2 { color: #ffffff; text-shadow: 0 1px 2px rgba(0, 0, 0, .45); }
 .dv-donation-message { margin: 0 auto 20px; max-width: 350px; color: #d4c9ca; font-size: 13px; line-height: 1.7; }
 .dv-donation-pix-card {
   display: grid; gap: 13px; padding: 17px; border: 1px solid rgba(255,255,255,.1);
