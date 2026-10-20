@@ -2048,6 +2048,16 @@ export default function App() {
           <span>＋</span>
           Pedidos
         </button>
+        <button
+          className="dv-mobile-donation"
+          onClick={() => {
+            setDonationOpen(true);
+            setPixCopied(false);
+          }}
+        >
+          <span>♥</span>
+          Apoie
+        </button>
       </nav>
       <aside className="dv-sidebar">
         <div className="dv-sidebar-label">
