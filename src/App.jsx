@@ -14,6 +14,13 @@ const LIVE_SERIES = {
   video_url: ZNATION_URL,
   isLive: true
 };
+const REQUEST_STATUSES = [
+  "Recebida",
+  "Em busca",
+  "Em preparação",
+  "Disponível",
+  "Indisponível"
+];
 const normalize = (value = "") =>
   String(value)
     .normalize("NFD")
@@ -78,6 +85,18 @@ function hideBrokenImage(event) {
   image.removeAttribute("src");
   image.style.visibility = "hidden";
 }
+function formatDate(date) {
+  if (!date) return "";
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
 export default function App() {
   const [series, setSeries] = useState([]);
   const [movies, setMovies] = useState([]);
@@ -124,6 +143,27 @@ export default function App() {
   const [playerError, setPlayerError] = useState("");
   const [showDescription, setShowDescription] = useState(false);
   const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false);
+  // Solicitações de séries
+  const [requests, setRequests] = useState([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [requestsError, setRequestsError] = useState("");
+  const [requestMessage, setRequestMessage] = useState("");
+  const [requestBusy, setRequestBusy] = useState(false);
+  const [requestSearch, setRequestSearch] = useState("");
+  const [requestSort, setRequestSort] = useState("recentes");
+  const [requestStatusFilter, setRequestStatusFilter] = useState("Todas");
+  const [requestFormOpen, setRequestFormOpen] = useState(false);
+  const [requestTitle, setRequestTitle] = useState("");
+  const [requestCover, setRequestCover] = useState("");
+  const [requestLanguage, setRequestLanguage] = useState("Dublado");
+  const [requestDescription, setRequestDescription] = useState("");
+  const [expandedRequest, setExpandedRequest] = useState(null);
+  const [requestComments, setRequestComments] = useState({});
+  const [commentDrafts, setCommentDrafts] = useState({});
+  const [commentsLoading, setCommentsLoading] = useState({});
+  const [commentBusy, setCommentBusy] = useState({});
+  const [likesBusy, setLikesBusy] = useState({});
+  const [requestLikes, setRequestLikes] = useState({});
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const playerGenerationRef = useRef(0);
@@ -422,6 +462,107 @@ export default function App() {
       cancelled = true;
     };
   }, []);
+  // Carrega solicitações da comunidade.
+  async function loadRequests() {
+    setRequestsLoading(true);
+    setRequestsError("");
+    try {
+      const { data, error } = await supabase
+        .from("series_requests")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      const loadedRequests = data || [];
+      setRequests(loadedRequests);
+      if (loadedRequests.length) {
+        const ids = loadedRequests.map((request) => request.id);
+        const { data: likesData, error: likesError } = await supabase
+          .from("series_request_likes")
+          .select("id, request_id, user_id")
+          .in("request_id", ids);
+        if (likesError) {
+          console.error("Erro ao carregar curtidas:", likesError);
+        } else {
+          const groupedLikes = {};
+          (likesData || []).forEach((like) => {
+            if (!groupedLikes[like.request_id]) {
+              groupedLikes[like.request_id] = {
+                count: 0,
+                likedByMe: false
+              };
+            }
+            groupedLikes[like.request_id].count += 1;
+            if (user && like.user_id === user.id) {
+              groupedLikes[like.request_id].likedByMe = true;
+            }
+          });
+          setRequestLikes(groupedLikes);
+        }
+      } else {
+        setRequestLikes({});
+      }
+    } catch (error) {
+      console.error("Erro ao carregar solicitações:", error);
+      setRequestsError(
+        user
+          ? "Não foi possível carregar as solicitações. Verifique as permissões das tabelas no Supabase."
+          : "Entre na sua conta para visualizar as solicitações da comunidade."
+      );
+      setRequests([]);
+    } finally {
+      setRequestsLoading(false);
+    }
+  }
+  useEffect(() => {
+    if (page === "solicitacoes") {
+      loadRequests();
+    }
+    // loadRequests depende da sessão atual e da página.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, user]);
+  useEffect(() => {
+    if (page !== "solicitacoes" || !expandedRequest) return;
+    let cancelled = false;
+    async function loadComments() {
+      setCommentsLoading((prev) => ({
+        ...prev,
+        [expandedRequest]: true
+      }));
+      try {
+        const { data, error } = await supabase
+          .from("series_request_comments")
+          .select("*")
+          .eq("request_id", expandedRequest)
+          .order("created_at", { ascending: true });
+        if (error) throw error;
+        if (!cancelled) {
+          setRequestComments((prev) => ({
+            ...prev,
+            [expandedRequest]: data || []
+          }));
+        }
+      } catch (error) {
+        console.error("Erro ao carregar comentários:", error);
+        if (!cancelled) {
+          setRequestComments((prev) => ({
+            ...prev,
+            [expandedRequest]: []
+          }));
+        }
+      } finally {
+        if (!cancelled) {
+          setCommentsLoading((prev) => ({
+            ...prev,
+            [expandedRequest]: false
+          }));
+        }
+      }
+    }
+    loadComments();
+    return () => {
+      cancelled = true;
+    };
+  }, [page, expandedRequest]);
   useEffect(() => {
     if (!selectedSeries || selectedSeries.isLive || !selectedSeries.dbId) {
       setEpisodes([]);
@@ -507,7 +648,10 @@ export default function App() {
       const playPromise = video.play();
       if (playPromise && typeof playPromise.catch === "function") {
         playPromise.catch((error) => {
-          console.warn("Reprodução automática bloqueada pelo navegador:", error);
+          console.warn(
+            "Reprodução automática bloqueada pelo navegador:",
+            error
+          );
         });
       }
     };
@@ -516,14 +660,15 @@ export default function App() {
       window.clearTimeout(autoplayTimer);
       autoplayTimer = window.setTimeout(attemptAutoplay, 100);
     };
+    const handlePlaying = () => {
+      if (isCurrentPlayer()) setPlayerError("");
+    };
     video.autoplay = true;
     video.preload = "auto";
     video.addEventListener("error", handleVideoError);
     video.addEventListener("loadedmetadata", scheduleAutoplay);
     video.addEventListener("canplay", scheduleAutoplay);
-    video.addEventListener("playing", () => {
-      if (isCurrentPlayer()) setPlayerError("");
-    });
+    video.addEventListener("playing", handlePlaying);
     const isHls = /\.m3u8(?:$|[?#])/i.test(url);
     if (isHls && Hls.isSupported()) {
       hls = new Hls({
@@ -573,9 +718,12 @@ export default function App() {
       video.removeEventListener("error", handleVideoError);
       video.removeEventListener("loadedmetadata", scheduleAutoplay);
       video.removeEventListener("canplay", scheduleAutoplay);
+      video.removeEventListener("playing", handlePlaying);
       if (hls) {
         hls.destroy();
-        if (hlsRef.current === hls) hlsRef.current = null;
+        if (hlsRef.current === hls) {
+          hlsRef.current = null;
+        }
       }
       video.pause();
       video.removeAttribute("src");
@@ -606,7 +754,9 @@ export default function App() {
     .filter(
       (item) =>
         genreFilter === "Todas" ||
-        normalize(item.genre || item.category).includes(normalize(genreFilter)) ||
+        normalize(item.genre || item.category).includes(
+          normalize(genreFilter)
+        ) ||
         normalize(item.title).includes(normalize(genreFilter))
     );
   const filteredMovies = movies
@@ -614,7 +764,9 @@ export default function App() {
     .filter(
       (item) =>
         genreFilter === "Todas" ||
-        normalize(item.category || item.genre).includes(normalize(genreFilter)) ||
+        normalize(item.category || item.genre).includes(
+          normalize(genreFilter)
+        ) ||
         normalize(item.title).includes(normalize(genreFilter))
     );
   const filteredLiveChannels = liveChannels.filter(matchesSearch);
@@ -630,14 +782,42 @@ export default function App() {
   const ordinarySeries = filteredSeries.filter(
     (item) => getContentType(item) === "series"
   );
-  const favoriteSeries = series.filter((item) => favorites.includes(item.id));
-  const favoriteMovies = movies.filter((item) => favorites.includes(item.id));
+  const favoriteSeries = series.filter((item) =>
+    favorites.includes(item.id)
+  );
+  const favoriteMovies = movies.filter((item) =>
+    favorites.includes(item.id)
+  );
   const heroItem = series[0] || movies[0];
   const isLandscapePlayer = Boolean(
     selectedEpisode?.isMovie ||
       selectedEpisode?.isLive ||
       selectedSeries?.isLive
   );
+  const filteredRequests = requests
+    .filter((request) => {
+      const query = normalize(requestSearch);
+      const matchesQuery =
+        !query ||
+        normalize(request.title).includes(query) ||
+        normalize(request.description || "").includes(query);
+      const matchesStatus =
+        requestStatusFilter === "Todas" ||
+        request.status === requestStatusFilter;
+      return matchesQuery && matchesStatus;
+    })
+    .sort((a, b) => {
+      if (requestSort === "curtidas") {
+        return (
+          (requestLikes[b.id]?.count || 0) -
+          (requestLikes[a.id]?.count || 0)
+        );
+      }
+      if (requestSort === "antigas") {
+        return new Date(a.created_at) - new Date(b.created_at);
+      }
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
   function toggleFavorite(item) {
     if (!item) return;
     setFavorites((prev) =>
@@ -692,10 +872,10 @@ export default function App() {
           : "Série"
     };
     setWatchHistory((prev) =>
-      [historyItem, ...prev.filter((entry) => entry.id !== historyItem.id)].slice(
-        0,
-        100
-      )
+      [
+        historyItem,
+        ...prev.filter((entry) => entry.id !== historyItem.id)
+      ].slice(0, 100)
     );
   }
   function openEpisode(episode) {
@@ -769,9 +949,14 @@ export default function App() {
   function goToPage(nextPage) {
     setPage(nextPage);
     if (
-      ["filmes", "filmes-lista", "desenhos", "animes", "doramas", "tv"].includes(
-        nextPage
-      )
+      [
+        "filmes",
+        "filmes-lista",
+        "desenhos",
+        "animes",
+        "doramas",
+        "tv"
+      ].includes(nextPage)
     ) {
       setGenreFilter("Todas");
     }
@@ -796,7 +981,6 @@ export default function App() {
     setWatchHistory([]);
     setFavorites([]);
     setLanguage("Português");
-    localStorage.removeItem("dramovix-visitor-id");
     setVisitorId(getVisitorId());
     setProfileOpen(false);
     window.alert("Cache local limpo.");
@@ -871,6 +1055,207 @@ export default function App() {
     setAuthMessage("");
     setAuthError("");
     window.alert("Você saiu da sua conta DRAMOVIX.");
+  }
+  // Abre a área de solicitações e atualiza os dados.
+  function openRequestsPage() {
+    setPage("solicitacoes");
+    setSelectedSeries(null);
+    setSelectedMovie(null);
+    setSelectedEpisode(null);
+    setSearch("");
+    setProfileOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function openRequestForm() {
+    if (!user) {
+      openAuth("signin");
+      setAuthMessage(
+        "Entre na sua conta para solicitar uma série e participar da comunidade."
+      );
+      return;
+    }
+    setRequestTitle("");
+    setRequestCover("");
+    setRequestLanguage("Dublado");
+    setRequestDescription("");
+    setRequestMessage("");
+    setRequestFormOpen(true);
+  }
+  async function submitSeriesRequest(event) {
+    event.preventDefault();
+    if (!user) {
+      setRequestMessage("Entre na sua conta para enviar uma solicitação.");
+      return;
+    }
+    const title = requestTitle.trim();
+    if (title.length < 2) {
+      setRequestMessage("Digite o nome da série que deseja solicitar.");
+      return;
+    }
+    if (title.length > 150) {
+      setRequestMessage("O nome da série deve ter no máximo 150 caracteres.");
+      return;
+    }
+    if (
+      requestCover.trim() &&
+      !/^https?:\/\//i.test(requestCover.trim())
+    ) {
+      setRequestMessage("O link da capa precisa começar com http:// ou https://.");
+      return;
+    }
+    setRequestBusy(true);
+    setRequestMessage("");
+    try {
+      const { data, error } = await supabase
+        .from("series_requests")
+        .insert({
+          user_id: user.id,
+          title,
+          cover_url: requestCover.trim() || null,
+          language: requestLanguage,
+          description: requestDescription.trim() || null
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      setRequests((prev) => [data, ...prev]);
+      setRequestLikes((prev) => ({
+        ...prev,
+        [data.id]: { count: 0, likedByMe: false }
+      }));
+      setRequestFormOpen(false);
+      setRequestMessage("Solicitação enviada com sucesso!");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (error) {
+      console.error("Erro ao enviar solicitação:", error);
+      setRequestMessage(
+        error?.message ||
+          "Não foi possível enviar sua solicitação. Tente novamente."
+      );
+    } finally {
+      setRequestBusy(false);
+    }
+  }
+  async function toggleRequestLike(request) {
+    if (!user) {
+      openAuth("signin");
+      return;
+    }
+    if (likesBusy[request.id]) return;
+    setLikesBusy((prev) => ({ ...prev, [request.id]: true }));
+    const current = requestLikes[request.id] || {
+      count: 0,
+      likedByMe: false
+    };
+    try {
+      if (current.likedByMe) {
+        const { error } = await supabase
+          .from("series_request_likes")
+          .delete()
+          .eq("request_id", request.id)
+          .eq("user_id", user.id);
+        if (error) throw error;
+        setRequestLikes((prev) => ({
+          ...prev,
+          [request.id]: {
+            count: Math.max(0, (prev[request.id]?.count || 0) - 1),
+            likedByMe: false
+          }
+        }));
+      } else {
+        const { error } = await supabase
+          .from("series_request_likes")
+          .insert({
+            request_id: request.id,
+            user_id: user.id
+          });
+        if (error) {
+          // Trata o caso de a mesma pessoa clicar duas vezes.
+          if (error.code === "23505") {
+            await loadRequests();
+            return;
+          }
+          throw error;
+        }
+        setRequestLikes((prev) => ({
+          ...prev,
+          [request.id]: {
+            count: (prev[request.id]?.count || 0) + 1,
+            likedByMe: true
+          }
+        }));
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar curtida:", error);
+      window.alert(
+        "Não foi possível atualizar a curtida. Confira sua conexão e tente novamente."
+      );
+    } finally {
+      setLikesBusy((prev) => ({ ...prev, [request.id]: false }));
+    }
+  }
+  async function submitRequestComment(event, request) {
+    event.preventDefault();
+    if (!user) {
+      openAuth("signin");
+      return;
+    }
+    const content = (commentDrafts[request.id] || "").trim();
+    if (!content) return;
+    if (content.length > 1000) {
+      window.alert("O comentário deve ter no máximo 1.000 caracteres.");
+      return;
+    }
+    setCommentBusy((prev) => ({ ...prev, [request.id]: true }));
+    try {
+      const { data, error } = await supabase
+        .from("series_request_comments")
+        .insert({
+          request_id: request.id,
+          user_id: user.id,
+          content
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      setRequestComments((prev) => ({
+        ...prev,
+        [request.id]: [...(prev[request.id] || []), data]
+      }));
+      setCommentDrafts((prev) => ({
+        ...prev,
+        [request.id]: ""
+      }));
+    } catch (error) {
+      console.error("Erro ao enviar comentário:", error);
+      window.alert(
+        "Não foi possível publicar o comentário. Tente novamente."
+      );
+    } finally {
+      setCommentBusy((prev) => ({ ...prev, [request.id]: false }));
+    }
+  }
+  async function deleteRequestComment(comment, requestId) {
+    if (!user || comment.user_id !== user.id) return;
+    const confirmed = window.confirm("Deseja apagar este comentário?");
+    if (!confirmed) return;
+    try {
+      const { error } = await supabase
+        .from("series_request_comments")
+        .delete()
+        .eq("id", comment.id)
+        .eq("user_id", user.id);
+      if (error) throw error;
+      setRequestComments((prev) => ({
+        ...prev,
+        [requestId]: (prev[requestId] || []).filter(
+          (item) => item.id !== comment.id
+        )
+      }));
+    } catch (error) {
+      console.error("Erro ao excluir comentário:", error);
+      window.alert("Não foi possível excluir o comentário.");
+    }
   }
   function renderGenreFilters() {
     return (
@@ -971,7 +1356,366 @@ export default function App() {
         </div>
       );
     }
-    return <div className="dv-grid">{items.map((item) => renderCard(item, type))}</div>;
+    return (
+      <div className="dv-grid">
+        {items.map((item) => renderCard(item, type))}
+      </div>
+    );
+  }
+  function renderRequestStatus(status) {
+    const statusClasses = {
+      Recebida: "dv-request-status--received",
+      "Em busca": "dv-request-status--searching",
+      "Em preparação": "dv-request-status--preparing",
+      Disponível: "dv-request-status--available",
+      Indisponível: "dv-request-status--unavailable"
+    };
+    return (
+      <span
+        className={`dv-request-status ${
+          statusClasses[status] || ""
+        }`}
+      >
+        {status || "Recebida"}
+      </span>
+    );
+  }
+  function renderRequestsPage() {
+    return (
+      <section className="dv-section dv-requests-page">
+        <div className="dv-section-heading dv-requests-heading">
+          <div>
+            <span className="dv-eyebrow">COMUNIDADE DRAMOVIX</span>
+            <h2>Solicitar séries</h2>
+            <p>
+              Peça uma série que ainda não está no catálogo e acompanhe os
+              pedidos da comunidade.
+            </p>
+          </div>
+          <button
+            className="dv-button-primary"
+            onClick={openRequestForm}
+          >
+            + Solicitar série
+          </button>
+        </div>
+        <div className="dv-requests-info">
+          <span>🎬</span>
+          <div>
+            <strong>Qual série você quer ver no DRAMOVIX?</strong>
+            <p>
+              Envie sua sugestão, curta os pedidos de outras pessoas e deixe
+              comentários para ajudar a comunidade.
+            </p>
+          </div>
+        </div>
+        {!user && (
+          <div className="dv-request-login-notice">
+            <p>
+              Você pode assistir ao catálogo como visitante. Para enviar
+              solicitações, curtir pedidos e comentar, entre na sua conta.
+            </p>
+            <button
+              className="dv-button-primary"
+              onClick={() => openAuth("signin")}
+            >
+              Entrar ou criar conta grátis
+            </button>
+          </div>
+        )}
+        {requestMessage && (
+          <div className="dv-request-feedback" role="status">
+            {requestMessage}
+            <button
+              type="button"
+              onClick={() => setRequestMessage("")}
+              aria-label="Fechar mensagem"
+            >
+              ×
+            </button>
+          </div>
+        )}
+        <div className="dv-request-toolbar">
+          <input
+            type="search"
+            className="dv-search-input"
+            placeholder="Buscar uma série solicitada..."
+            value={requestSearch}
+            onChange={(event) => setRequestSearch(event.target.value)}
+          />
+          <select
+            value={requestStatusFilter}
+            onChange={(event) => setRequestStatusFilter(event.target.value)}
+            aria-label="Filtrar por status"
+          >
+            <option value="Todas">Todos os status</option>
+            {REQUEST_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+          <select
+            value={requestSort}
+            onChange={(event) => setRequestSort(event.target.value)}
+            aria-label="Ordenar solicitações"
+          >
+            <option value="recentes">Mais recentes</option>
+            <option value="antigas">Mais antigas</option>
+            <option value="curtidas">Mais curtidas</option>
+          </select>
+        </div>
+        {requestsLoading ? (
+          <p className="dv-message">Carregando solicitações...</p>
+        ) : requestsError ? (
+          <div className="dv-empty dv-request-error">
+            <span>✦</span>
+            <h3>Solicitações da comunidade</h3>
+            <p>{requestsError}</p>
+            {user && (
+              <button
+                className="dv-button-primary"
+                onClick={loadRequests}
+              >
+                Tentar novamente
+              </button>
+            )}
+          </div>
+        ) : filteredRequests.length === 0 ? (
+          <div className="dv-empty">
+            <span>🎬</span>
+            <h3>Nenhuma solicitação encontrada</h3>
+            <p>
+              Ainda não encontrou essa série por aqui? Seja a primeira pessoa
+              a solicitar!
+            </p>
+            <button
+              className="dv-button-primary"
+              onClick={openRequestForm}
+            >
+              + Solicitar série
+            </button>
+          </div>
+        ) : (
+          <div className="dv-request-list">
+            {filteredRequests.map((request) => {
+              const likes = requestLikes[request.id] || {
+                count: 0,
+                likedByMe: false
+              };
+              const comments = requestComments[request.id] || [];
+              const isExpanded = expandedRequest === request.id;
+              return (
+                <article
+                  className="dv-request-card"
+                  key={request.id}
+                >
+                  <div className="dv-request-card-main">
+                    {request.cover_url ? (
+                      <img
+                        className="dv-request-cover"
+                        src={request.cover_url}
+                        alt={`Capa de ${request.title}`}
+                        loading="lazy"
+                        onError={hideBrokenImage}
+                      />
+                    ) : (
+                      <div className="dv-request-cover dv-image-placeholder">
+                        🎬
+                      </div>
+                    )}
+                    <div className="dv-request-content">
+                      <div className="dv-request-card-top">
+                        {renderRequestStatus(request.status)}
+                        <small>{formatDate(request.created_at)}</small>
+                      </div>
+                      <h3>{request.title}</h3>
+                      <div className="dv-request-tags">
+                        <span>
+                          {request.language || "Dublado"}
+                        </span>
+                      </div>
+                      {request.description && (
+                        <p className="dv-request-description">
+                          {request.description}
+                        </p>
+                      )}
+                      <div className="dv-request-actions">
+                        <button
+                          type="button"
+                          className={`dv-request-like ${
+                            likes.likedByMe ? "active" : ""
+                          }`}
+                          disabled={Boolean(likesBusy[request.id])}
+                          onClick={() => toggleRequestLike(request)}
+                        >
+                          {likes.likedByMe ? "♥ Curtido" : "♡ Curtir"}
+                          <span>{likes.count}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="dv-request-comment-toggle"
+                          onClick={() =>
+                            setExpandedRequest((current) =>
+                              current === request.id ? null : request.id
+                            )
+                          }
+                        >
+                          💬 Comentários ({comments.length})
+                        </button>
+                        <button
+                          type="button"
+                          className="dv-request-share"
+                          onClick={async () => {
+                            const shareUrl = window.location.origin;
+                            const shareText = `Confira a solicitação da série "${request.title}" no DRAMOVIX!`;
+                            try {
+                              if (navigator.share) {
+                                await navigator.share({
+                                  title: "DRAMOVIX",
+                                  text: shareText,
+                                  url: shareUrl
+                                });
+                              } else if (navigator.clipboard) {
+                                await navigator.clipboard.writeText(
+                                  `${shareText} ${shareUrl}`
+                                );
+                                window.alert(
+                                  "Texto de compartilhamento copiado!"
+                                );
+                              } else {
+                                window.alert(shareText);
+                              }
+                            } catch (error) {
+                              if (error?.name !== "AbortError") {
+                                console.error(
+                                  "Erro ao compartilhar:",
+                                  error
+                                );
+                              }
+                            }
+                          }}
+                        >
+                          ↗ Compartilhar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {isExpanded && (
+                    <div className="dv-request-comments">
+                      <h4>Comentários da comunidade</h4>
+                      {commentsLoading[request.id] ? (
+                        <p className="dv-message">
+                          Carregando comentários...
+                        </p>
+                      ) : comments.length === 0 ? (
+                        <p className="dv-request-no-comments">
+                          Ainda não há comentários. Seja a primeira pessoa a
+                          comentar!
+                        </p>
+                      ) : (
+                        <div className="dv-request-comment-list">
+                          {comments.map((comment) => (
+                            <div
+                              className="dv-request-comment"
+                              key={comment.id}
+                            >
+                              <div className="dv-request-comment-avatar">
+                                ♙
+                              </div>
+                              <div className="dv-request-comment-body">
+                                <div className="dv-request-comment-meta">
+                                  <strong>
+                                    {comment.user_id === user?.id
+                                      ? user?.user_metadata?.full_name ||
+                                        user?.email?.split("@")[0] ||
+                                        "Você"
+                                      : "Membro DRAMOVIX"}
+                                  </strong>
+                                  <small>
+                                    {formatDate(comment.created_at)}
+                                  </small>
+                                </div>
+                                <p>{comment.content}</p>
+                                {user &&
+                                  comment.user_id === user.id && (
+                                    <button
+                                      type="button"
+                                      className="dv-request-delete-comment"
+                                      onClick={() =>
+                                        deleteRequestComment(
+                                          comment,
+                                          request.id
+                                        )
+                                      }
+                                    >
+                                      Excluir comentário
+                                    </button>
+                                  )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <form
+                        className="dv-request-comment-form"
+                        onSubmit={(event) =>
+                          submitRequestComment(event, request)
+                        }
+                      >
+                        <textarea
+                          value={commentDrafts[request.id] || ""}
+                          onChange={(event) =>
+                            setCommentDrafts((prev) => ({
+                              ...prev,
+                              [request.id]: event.target.value
+                            }))
+                          }
+                          placeholder={
+                            user
+                              ? "Escreva um comentário..."
+                              : "Entre na sua conta para comentar..."
+                          }
+                          maxLength={1000}
+                          rows={2}
+                          disabled={!user}
+                        />
+                        <button
+                          type="submit"
+                          className="dv-button-primary"
+                          disabled={
+                            !user ||
+                            Boolean(commentBusy[request.id]) ||
+                            !(commentDrafts[request.id] || "").trim()
+                          }
+                        >
+                          {commentBusy[request.id]
+                            ? "Enviando..."
+                            : "Comentar"}
+                        </button>
+                      </form>
+                      {!user && (
+                        <button
+                          type="button"
+                          className="dv-request-login-link"
+                          onClick={() => openAuth("signin")}
+                        >
+                          Entre na sua conta para participar
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        )}
+        <p className="dv-request-footer-note">
+          Os status indicam o andamento das solicitações. A publicação de uma
+          série no catálogo depende da disponibilidade do conteúdo.
+        </p>
+      </section>
+    );
   }
   const navItems = [
     ["filmes", "⌂", "Início"],
@@ -1013,12 +1757,16 @@ export default function App() {
           </button>
         </div>
       </header>
-      <nav className="dv-mobile-categories" aria-label="Categorias principais">
+      <nav
+        className="dv-mobile-categories"
+        aria-label="Categorias principais"
+      >
         {navItems.map(([key, icon, label]) => (
           <button
             key={key}
             className={
-              page === key || (key === "filmes-tab" && page === "filmes-lista")
+              page === key ||
+              (key === "filmes-tab" && page === "filmes-lista")
                 ? "active"
                 : ""
             }
@@ -1032,6 +1780,13 @@ export default function App() {
             {tr(label)}
           </button>
         ))}
+        <button
+          className={page === "solicitacoes" ? "active" : ""}
+          onClick={openRequestsPage}
+        >
+          <span>＋</span>
+          Pedidos
+        </button>
       </nav>
       <aside className="dv-sidebar">
         <div className="dv-sidebar-label">
@@ -1045,7 +1800,8 @@ export default function App() {
           <button
             key={key}
             className={`dv-side-link ${
-              page === key || (key === "filmes-tab" && page === "filmes")
+              page === key ||
+              (key === "filmes-tab" && page === "filmes")
                 ? "active"
                 : ""
             }`}
@@ -1059,6 +1815,15 @@ export default function App() {
             <span>{tr(label)}</span>
           </button>
         ))}
+        <button
+          className={`dv-side-link ${
+            page === "solicitacoes" ? "active" : ""
+          }`}
+          onClick={openRequestsPage}
+        >
+          <span className="dv-side-icon">＋</span>
+          <span>Solicitar séries</span>
+        </button>
         <div className="dv-sidebar-note">
           {tr("Sempre tem uma nova história.")}
         </div>
@@ -1093,7 +1858,11 @@ export default function App() {
               <div className="dv-profile-id">
                 <small>{tr("Seu ID de visitante")}</small>
                 <strong>{visitorId}</strong>
-                <button onClick={() => navigator.clipboard?.writeText(visitorId)}>
+                <button
+                  onClick={() =>
+                    navigator.clipboard?.writeText(visitorId)
+                  }
+                >
                   {tr("Copiar ID")}
                 </button>
               </div>
@@ -1130,6 +1899,14 @@ export default function App() {
             >
               <span>♙</span>
               <span>{tr("Perfil")}</span>
+              <b>›</b>
+            </button>
+            <button
+              className="dv-profile-item"
+              onClick={openRequestsPage}
+            >
+              <span>＋</span>
+              <span>Solicitar séries</span>
               <b>›</b>
             </button>
             <div className="dv-profile-item dv-language-item">
@@ -1181,6 +1958,7 @@ export default function App() {
         </>
       )}
       <main className="dv-main">
+        {page === "solicitacoes" && renderRequestsPage()}
         {page === "detalhes" && selectedSeries && (
           <section className="dv-detail">
             <button className="dv-back" onClick={() => goToPage("filmes")}>
@@ -1205,10 +1983,8 @@ export default function App() {
                 <p>
                   {showDescription
                     ? selectedSeries.description || "Descrição indisponível."
-                    : (selectedSeries.description || "Uma história incrível.").slice(
-                        0,
-                        160
-                      ) +
+                    : (selectedSeries.description || "Uma história incrível.")
+                        .slice(0, 160) +
                       ((selectedSeries.description || "").length > 160
                         ? "..."
                         : "")}
@@ -1216,7 +1992,9 @@ export default function App() {
                 {(selectedSeries.description || "").length > 160 && (
                   <button
                     className="dv-description-toggle"
-                    onClick={() => setShowDescription((value) => !value)}
+                    onClick={() =>
+                      setShowDescription((value) => !value)
+                    }
                   >
                     {showDescription
                       ? "Mostrar menos"
@@ -1226,7 +2004,9 @@ export default function App() {
                 <div className="dv-detail-actions">
                   <button
                     className="dv-button-primary"
-                    onClick={() => episodes.length && openEpisode(episodes[0])}
+                    onClick={() =>
+                      episodes.length && openEpisode(episodes[0])
+                    }
                     disabled={episodesLoading || !episodes.length}
                   >
                     {"▶ " + tr("Assistir 1º Episódio")}
@@ -1263,7 +2043,9 @@ export default function App() {
                         {ep.episode_number || index + 1}
                       </span>
                       <span className="dv-episode-info">
-                        <strong>{ep.title || `Episódio ${index + 1}`}</strong>
+                        <strong>
+                          {ep.title || `Episódio ${index + 1}`}
+                        </strong>
                         <small>
                           {ep.video_url
                             ? tr("Pronto para reprodução")
@@ -1278,7 +2060,9 @@ export default function App() {
                 <div className="dv-empty">
                   <h3>{tr("Novos episódios em breve")}</h3>
                   <p>
-                    {tr("Estamos preparando os capítulos desta série para você.")}
+                    {tr(
+                      "Estamos preparando os capítulos desta série para você."
+                    )}
                   </p>
                 </div>
               )}
@@ -1323,7 +2107,9 @@ export default function App() {
                 {(selectedMovie.description || "").length > 160 && (
                   <button
                     className="dv-description-toggle"
-                    onClick={() => setShowDescription((value) => !value)}
+                    onClick={() =>
+                      setShowDescription((value) => !value)
+                    }
                   >
                     {showDescription
                       ? "Mostrar menos"
@@ -1456,6 +2242,17 @@ export default function App() {
               </div>
               {renderGrid(ordinarySeries.slice(0, 4))}
             </section>
+            <section className="dv-section">
+              <div className="dv-section-heading">
+                <h2>Solicitações da comunidade</h2>
+                <button
+                  className="dv-see-all"
+                  onClick={openRequestsPage}
+                >
+                  Ver pedidos ›
+                </button>
+              </div>
+            </section>
           </>
         )}
         {page === "filmes-lista" && (
@@ -1550,7 +2347,9 @@ export default function App() {
               <div>
                 <h2>{tr("Buscar conteúdo")}</h2>
                 <p>
-                  {tr("Pesquise filmes, séries, desenhos, animes e doramas.")}
+                  {tr(
+                    "Pesquise filmes, séries, desenhos, animes e doramas."
+                  )}
                 </p>
               </div>
             </div>
@@ -1604,7 +2403,9 @@ export default function App() {
               <div className="dv-empty">
                 <span>◷</span>
                 <h3>{tr("Seu histórico está vazio")}</h3>
-                <p>{tr("Quando você assistir a algo, aparecerá aqui.")}</p>
+                <p>
+                  {tr("Quando você assistir a algo, aparecerá aqui.")}
+                </p>
               </div>
             ) : (
               <div className="dv-history-list">
@@ -1638,9 +2439,7 @@ export default function App() {
                     )}
                     <span>
                       <strong>{entry.contentTitle || entry.title}</strong>
-                      <small>
-                        {new Date(entry.watchedAt).toLocaleString()}
-                      </small>
+                      <small>{new Date(entry.watchedAt).toLocaleString()}</small>
                     </span>
                     <b>›</b>
                   </button>
@@ -1682,7 +2481,9 @@ export default function App() {
                   <strong>{visitorId}</strong>
                   <button
                     className="dv-button-primary"
-                    onClick={() => navigator.clipboard?.writeText(visitorId)}
+                    onClick={() =>
+                      navigator.clipboard?.writeText(visitorId)
+                    }
                   >
                     {tr("Copiar ID")}
                   </button>
@@ -1746,6 +2547,13 @@ export default function App() {
           <small>{tr("Minha Lista")}</small>
         </button>
         <button
+          className={page === "solicitacoes" ? "active" : ""}
+          onClick={openRequestsPage}
+        >
+          <span>＋</span>
+          <small>Pedidos</small>
+        </button>
+        <button
           className={page === "tv" ? "active" : ""}
           onClick={() => goToPage("tv")}
         >
@@ -1753,6 +2561,107 @@ export default function App() {
           <small>{tr("TV Ao Vivo")}</small>
         </button>
       </nav>
+      {requestFormOpen && (
+        <div
+          className="dv-auth-overlay"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setRequestFormOpen(false);
+            }
+          }}
+        >
+          <section
+            className="dv-auth-modal dv-request-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dv-request-title"
+          >
+            <button
+              className="dv-auth-close"
+              type="button"
+              onClick={() => setRequestFormOpen(false)}
+              aria-label="Fechar"
+            >
+              ×
+            </button>
+            <div className="dv-auth-brand">DRAMOVIX</div>
+            <h2 id="dv-request-title">Solicitar uma série</h2>
+            <p className="dv-auth-subtitle">
+              Conte para a comunidade qual série você gostaria de assistir.
+            </p>
+            <form
+              className="dv-auth-form"
+              onSubmit={submitSeriesRequest}
+            >
+              <label>
+                Nome da série *
+                <input
+                  className="dv-auth-input"
+                  type="text"
+                  value={requestTitle}
+                  onChange={(event) =>
+                    setRequestTitle(event.target.value)
+                  }
+                  placeholder="Digite o nome da série"
+                  maxLength={150}
+                  required
+                />
+              </label>
+              <label>
+                Link da capa (opcional)
+                <input
+                  className="dv-auth-input"
+                  type="url"
+                  value={requestCover}
+                  onChange={(event) =>
+                    setRequestCover(event.target.value)
+                  }
+                  placeholder="https://..."
+                />
+              </label>
+              <label>
+                Idioma desejado
+                <select
+                  className="dv-auth-input"
+                  value={requestLanguage}
+                  onChange={(event) =>
+                    setRequestLanguage(event.target.value)
+                  }
+                >
+                  <option value="Dublado">Dublado</option>
+                  <option value="Legendado">Legendado</option>
+                  <option value="Ambos">Dublado e legendado</option>
+                </select>
+              </label>
+              <label>
+                Informações adicionais (opcional)
+                <textarea
+                  className="dv-auth-input"
+                  value={requestDescription}
+                  onChange={(event) =>
+                    setRequestDescription(event.target.value)
+                  }
+                  placeholder="Conte mais sobre a série que procura..."
+                  maxLength={1000}
+                  rows={4}
+                />
+              </label>
+              {requestMessage && (
+                <p className="dv-auth-error" role="alert">
+                  {requestMessage}
+                </p>
+              )}
+              <button
+                className="dv-auth-submit"
+                type="submit"
+                disabled={requestBusy}
+              >
+                {requestBusy ? "Enviando solicitação..." : "Enviar solicitação"}
+              </button>
+            </form>
+          </section>
+        </div>
+      )}
       {playerOpen && (
         <div
           className="dv-player-overlay"
@@ -1843,7 +2752,9 @@ export default function App() {
               episodes.length > 0 ? (
                 <button
                   className="dv-episode-picker"
-                  onClick={() => setEpisodeDrawerOpen((value) => !value)}
+                  onClick={() =>
+                    setEpisodeDrawerOpen((value) => !value)
+                  }
                 >
                   EP.{selectedEpisode?.episode_number || 1} / EP.
                   {episodes.length} {episodeDrawerOpen ? "⌄" : "⌃"}
@@ -1855,21 +2766,23 @@ export default function App() {
                     : tr("Filme · DRAMOVIX")}
                 </span>
               )}
-              {!selectedEpisode?.isLive && !selectedEpisode?.isMovie && (
-                <button
-                  className="dv-player-next"
-                  onClick={playNextEpisode}
-                  disabled={
-                    !episodes.length ||
-                    episodes.findIndex(
-                      (ep) => String(ep.id) === String(selectedEpisode?.id)
-                    ) >=
-                      episodes.length - 1
-                  }
-                >
-                  {tr("Próximo episódio")} →
-                </button>
-              )}
+              {!selectedEpisode?.isLive &&
+                !selectedEpisode?.isMovie && (
+                  <button
+                    className="dv-player-next"
+                    onClick={playNextEpisode}
+                    disabled={
+                      !episodes.length ||
+                      episodes.findIndex(
+                        (ep) =>
+                          String(ep.id) === String(selectedEpisode?.id)
+                      ) >=
+                        episodes.length - 1
+                    }
+                  >
+                    {tr("Próximo episódio")} →
+                  </button>
+                )}
             </div>
           </div>
         </div>
@@ -1917,7 +2830,9 @@ export default function App() {
                     type="text"
                     autoComplete="name"
                     value={authName}
-                    onChange={(event) => setAuthName(event.target.value)}
+                    onChange={(event) =>
+                      setAuthName(event.target.value)
+                    }
                     placeholder="Como podemos te chamar?"
                   />
                 </label>
@@ -1930,7 +2845,9 @@ export default function App() {
                   autoComplete="email"
                   required
                   value={authEmail}
-                  onChange={(event) => setAuthEmail(event.target.value)}
+                  onChange={(event) =>
+                    setAuthEmail(event.target.value)
+                  }
                   placeholder="voce@exemplo.com"
                 />
               </label>
@@ -1940,12 +2857,16 @@ export default function App() {
                   className="dv-auth-input"
                   type="password"
                   autoComplete={
-                    authMode === "signup" ? "new-password" : "current-password"
+                    authMode === "signup"
+                      ? "new-password"
+                      : "current-password"
                   }
                   required
                   minLength={6}
                   value={authPassword}
-                  onChange={(event) => setAuthPassword(event.target.value)}
+                  onChange={(event) =>
+                    setAuthPassword(event.target.value)
+                  }
                   placeholder={
                     authMode === "signup"
                       ? "Pelo menos 6 caracteres"
@@ -1982,7 +2903,9 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => {
-                  setAuthMode(authMode === "signup" ? "signin" : "signup");
+                  setAuthMode(
+                    authMode === "signup" ? "signin" : "signup"
+                  );
                   setAuthMessage("");
                   setAuthError("");
                   setAuthPassword("");
