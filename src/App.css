@@ -892,3 +892,6 @@ button, input { -webkit-appearance: none; appearance: none; }
   .dv-donation-modal { padding: 28px 18px 21px; border-radius: 17px; }
   .dv-donation-modal h2 { font-size: 22px; }
 }
+
+.dv-mobile-donation { color: #ff7b85 !important; }
+.dv-mobile-donation span { color: #ff3545; }
