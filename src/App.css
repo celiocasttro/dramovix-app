@@ -999,9 +999,3 @@ button, input { -webkit-appearance: none; appearance: none; }
 
 
 
-/* Opções alternativas de reprodução */
-.dv-player-options { display: grid; gap: 8px; padding: 12px 14px; background: #100707; border-top: 1px solid rgba(255,255,255,.08); }
-.dv-player-options > span { color: #c4baba; font-size: 11px; line-height: 1.4; }
-.dv-player-options > div { display: flex; flex-wrap: wrap; gap: 8px; }
-.dv-player-options button { padding: 8px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: #211010; color: #eee; font-size: 12px; font-weight: 600; }
-.dv-player-options button.selected { border-color: var(--red-primary); background: rgba(229,9,20,.2); color: #fff; }
