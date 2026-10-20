@@ -977,34 +977,3 @@ button, input { -webkit-appearance: none; appearance: none; }
   .dv-detail-actions { gap: 7px; }
   .dv-detail-actions > button { font-size: 12px; }
 }
-
-
-/* Navegação inferior com abas arredondadas, no estilo das categorias */
-@media (max-width: 767px) {
-  .dv-bottom-nav {
-    gap: 5px;
-    padding: 7px 8px calc(7px + env(safe-area-inset-bottom));
-    height: auto;
-    min-height: 60px;
-    box-sizing: border-box;
-  }
-  .dv-bottom-nav button {
-    min-width: 0;
-    height: 44px;
-    padding: 4px 2px;
-    border: 1px solid #292929;
-    border-radius: 999px;
-    background: #101010;
-    transition: background .18s ease, border-color .18s ease;
-  }
-  .dv-bottom-nav button.active {
-    border-color: var(--red-primary);
-    background: rgba(229, 9, 20, .2);
-    color: #fff;
-  }
-  .dv-bottom-nav button small {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
