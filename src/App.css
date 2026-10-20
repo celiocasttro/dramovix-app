@@ -847,3 +847,48 @@ button, input { -webkit-appearance: none; appearance: none; }
 .dv-account-detail-row small { color: #999; font-size: 11px; }
 .dv-account-detail-row strong { color: #fff; font-size: 13px; overflow-wrap: anywhere; }
 .dv-account-details .dv-muted { margin: 12px 0; }
+
+
+/* Apoio voluntário via Pix */
+.dv-donation-link { color: #ffc4c8 !important; }
+.dv-donation-link .dv-side-icon { color: #ff4d5b; }
+.dv-donation-overlay {
+  position: fixed; inset: 0; z-index: 2500; display: grid; place-items: center;
+  padding: 18px; background: rgba(0,0,0,.78); backdrop-filter: blur(7px);
+}
+.dv-donation-modal {
+  position: relative; width: min(100%, 430px); max-height: min(88vh, 760px);
+  overflow-y: auto; box-sizing: border-box; padding: 30px 24px 24px;
+  border: 1px solid rgba(229,9,20,.42); border-radius: 20px;
+  background: radial-gradient(circle at top, #351014 0, #180c0e 48%, #100b0c 100%);
+  color: #fff; text-align: center; box-shadow: 0 24px 80px rgba(0,0,0,.65);
+}
+.dv-donation-close {
+  position: absolute; top: 10px; right: 12px; width: 34px; height: 34px;
+  border: 0; border-radius: 50%; background: rgba(255,255,255,.08);
+  color: #fff; font-size: 25px; cursor: pointer;
+}
+.dv-donation-heart {
+  display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto 13px;
+  border-radius: 18px; background: rgba(229,9,20,.16); color: #ff4654; font-size: 32px;
+}
+.dv-donation-eyebrow { margin: 0 0 8px; color: #ff8b93; font-size: 10px; font-weight: 800; letter-spacing: 2px; }
+.dv-donation-modal h2 { margin: 0 0 12px; font-size: 25px; letter-spacing: -.5px; }
+.dv-donation-message { margin: 0 auto 20px; max-width: 350px; color: #d4c9ca; font-size: 13px; line-height: 1.7; }
+.dv-donation-pix-card {
+  display: grid; gap: 13px; padding: 17px; border: 1px solid rgba(255,255,255,.1);
+  border-radius: 14px; background: rgba(255,255,255,.045);
+}
+.dv-donation-pix-label { color: #bcb0b2; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; }
+.dv-donation-pix-key { overflow-wrap: anywhere; color: #fff; font-family: monospace; font-size: 13px; line-height: 1.6; user-select: all; }
+.dv-donation-copy {
+  width: 100%; padding: 12px 14px; border: 0; border-radius: 10px;
+  background: #e50914; color: #fff; font-size: 13px; font-weight: 800; cursor: pointer;
+}
+.dv-donation-copy:hover { background: #ff2935; }
+.dv-donation-instructions { margin: 15px 0 0; color: #bdb3b4; font-size: 11px; line-height: 1.65; }
+.dv-donation-thanks { margin: 17px 0 0; color: #ffb5bb; font-size: 12px; font-weight: 700; }
+@media (max-width: 480px) {
+  .dv-donation-modal { padding: 28px 18px 21px; border-radius: 17px; }
+  .dv-donation-modal h2 { font-size: 22px; }
+}
