@@ -119,6 +119,8 @@ export default function App() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarMessage, setAvatarMessage] = useState("");
+  const [avatarOptionsOpen, setAvatarOptionsOpen] = useState(false);
+  const avatarInputRef = useRef(null);
   const [user, setUser] = useState(null);
   const isDramovixAdmin =
     normalize(user?.email || "") === "celiocastroreal@gmail.com";
@@ -2093,11 +2095,24 @@ export default function App() {
           />
           <section className="dv-profile-menu" aria-label="Menu de perfil">
             <div className="dv-profile-top">
-              <div className="dv-profile-avatar">
-                {user?.user_metadata?.avatar_url ? (
-                  <img src={user.user_metadata.avatar_url} alt="Foto de perfil" onError={hideBrokenImage} />
-                ) : (
-                  "♙"
+              <div className="dv-avatar-wrap dv-avatar-wrap-menu">
+                <div className="dv-profile-avatar">
+                  {user?.user_metadata?.avatar_url ? (
+                    <img src={user.user_metadata.avatar_url} alt="Foto de perfil" onError={hideBrokenImage} />
+                  ) : (
+                    "♙"
+                  )}
+                </div>
+                {user && (
+                  <button type="button" className="dv-avatar-edit" aria-label="Editar foto de perfil" title="Editar foto" onClick={() => setAvatarOptionsOpen((open) => !open)}>✎</button>
+                )}
+                {user && avatarOptionsOpen && (
+                  <div className="dv-avatar-popover">
+                    <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={avatarBusy}>📷 {avatarBusy ? "Salvando..." : "Mudar foto"}</button>
+                    {user.user_metadata?.avatar_url && <button type="button" onClick={removeAvatar} disabled={avatarBusy}>🗑️ Remover foto</button>}
+                    <small>JPG, PNG ou WEBP · até 5 MB</small>
+                    {avatarMessage && <small className="dv-avatar-message">{avatarMessage}</small>}
+                  </div>
                 )}
               </div>
               <div>
@@ -2716,13 +2731,27 @@ export default function App() {
               <h2>{tr("Perfil")}</h2>
             </div>
             <div className="dv-account-card">
-              <div className="dv-profile-avatar dv-profile-avatar-large">
-                {user?.user_metadata?.avatar_url ? (
-                  <img src={user.user_metadata.avatar_url} alt="Foto de perfil" onError={hideBrokenImage} />
-                ) : (
-                  "♙"
+              <div className="dv-avatar-wrap dv-avatar-wrap-large">
+                <div className="dv-profile-avatar dv-profile-avatar-large">
+                  {user?.user_metadata?.avatar_url ? (
+                    <img src={user.user_metadata.avatar_url} alt="Foto de perfil" onError={hideBrokenImage} />
+                  ) : (
+                    "♙"
+                  )}
+                </div>
+                {user && (
+                  <button type="button" className="dv-avatar-edit" aria-label="Editar foto de perfil" title="Editar foto" onClick={() => setAvatarOptionsOpen((open) => !open)}>✎</button>
+                )}
+                {user && avatarOptionsOpen && (
+                  <div className="dv-avatar-popover dv-avatar-popover-large">
+                    <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={avatarBusy}>📷 {avatarBusy ? "Salvando..." : "Mudar foto"}</button>
+                    {user.user_metadata?.avatar_url && <button type="button" onClick={removeAvatar} disabled={avatarBusy}>🗑️ Remover foto</button>}
+                    <small>JPG, PNG ou WEBP · até 5 MB</small>
+                    {avatarMessage && <small className="dv-avatar-message">{avatarMessage}</small>}
+                  </div>
                 )}
               </div>
+              <input ref={avatarInputRef} className="dv-avatar-hidden-input" type="file" accept="image/*" onChange={handleAvatarUpload} disabled={avatarBusy} />
               <h2>
                 {user?.user_metadata?.full_name ||
                   user?.email?.split("@")[0] ||
@@ -2733,29 +2762,7 @@ export default function App() {
                   <p>Conta DRAMOVIX conectada</p>
                   <small>E-mail da conta</small>
                   <strong className="dv-account-email">{user.email}</strong>
-                  <div className="dv-avatar-controls">
-                    <label className="dv-button-primary dv-avatar-upload">
-                      {avatarBusy ? "Salvando foto..." : "Escolher foto"}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarUpload}
-                        disabled={avatarBusy}
-                      />
-                    </label>
-                    {user.user_metadata?.avatar_url && (
-                      <button
-                        type="button"
-                        className="dv-button-secondary"
-                        onClick={removeAvatar}
-                        disabled={avatarBusy}
-                      >
-                        Remover foto
-                      </button>
-                    )}
-                    <small>Imagem JPG, PNG ou WEBP · máximo 5 MB</small>
-                    {avatarMessage && <p className="dv-avatar-message">{avatarMessage}</p>}
-                  </div>
+                  
                   <button className="dv-button-primary" onClick={signOut}>
                     Sair da conta
                   </button>
