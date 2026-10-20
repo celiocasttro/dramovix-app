@@ -3079,8 +3079,8 @@ export default function App() {
             <p className="dv-donation-message">Gosta do DRAMOVIX? Se quiser ajudar a manter este projeto ativo, qualquer contribuição é bem-vinda. A doação é totalmente voluntária e não oferece assinatura nem vantagens pagas.</p>
             <div className="dv-donation-pix-card">
               <span className="dv-donation-pix-label">PIX · NUBANK</span>
-              <strong className="dv-donation-pix-key">CHAVE_PIX_CONFIGURAR</strong>
-              <button className="dv-donation-copy" type="button" onClick={async () => { try { await navigator.clipboard.writeText("CHAVE_PIX_CONFIGURAR"); setPixCopied(true); } catch { setPixCopied(false); } }}>
+              <strong className="dv-donation-pix-key">14492410-f3de-46e0-9e2e-ed52f5774788</strong>
+              <button className="dv-donation-copy" type="button" onClick={async () => { try { await navigator.clipboard.writeText("14492410-f3de-46e0-9e2e-ed52f5774788"); setPixCopied(true); } catch { setPixCopied(false); } }}>
                 {pixCopied ? "✓ Chave Pix copiada!" : "▣ Copiar chave Pix"}
               </button>
             </div>
