@@ -440,7 +440,9 @@ export default function App() {
         const loadedSeries = (seriesResult.data || [])
           .filter(
             (item) =>
-              normalize(item.title) !== normalize("Todo Mundo Odeia o Chris")
+              normalize(item.title) !== normalize("Todo Mundo Odeia o Chris") &&
+              !normalize(item.title).includes("tv ao vivo") &&
+              !normalize(item.genre || "").includes("tv ao vivo")
           )
           .map((item) => ({
             id: `db-${item.id}`,
