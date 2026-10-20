@@ -118,6 +118,8 @@ export default function App() {
   );
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileSection, setProfileSection] = useState("perfil");
+  const [donationOpen, setDonationOpen] = useState(false);
+  const [pixCopied, setPixCopied] = useState(false);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarMessage, setAvatarMessage] = useState("");
   const [avatarOptionsOpen, setAvatarOptionsOpen] = useState(false);
@@ -2083,6 +2085,9 @@ export default function App() {
           <span className="dv-side-icon">＋</span>
           <span>Solicitar séries</span>
         </button>
+        <button className="dv-side-link dv-donation-link" onClick={() => { setDonationOpen(true); setPixCopied(false); }}>
+          <span className="dv-side-icon">♥</span><span>Apoie o DRAMOVIX</span>
+        </button>
         <div className="dv-sidebar-note">
           {tr("Sempre tem uma nova história.")}
         </div>
@@ -3062,6 +3067,26 @@ export default function App() {
                 )}
             </div>
           </div>
+        </div>
+      )}
+      {donationOpen && (
+        <div className="dv-donation-overlay" onClick={(event) => { if (event.target === event.currentTarget) setDonationOpen(false); }}>
+          <section className="dv-donation-modal" role="dialog" aria-modal="true" aria-labelledby="dv-donation-title">
+            <button className="dv-donation-close" type="button" onClick={() => setDonationOpen(false)} aria-label="Fechar">×</button>
+            <div className="dv-donation-heart">♥</div>
+            <p className="dv-donation-eyebrow">UM GESTO DE CARINHO</p>
+            <h2 id="dv-donation-title">Apoie o DRAMOVIX</h2>
+            <p className="dv-donation-message">Gosta do DRAMOVIX? Se quiser ajudar a manter este projeto ativo, qualquer contribuição é bem-vinda. A doação é totalmente voluntária e não oferece assinatura nem vantagens pagas.</p>
+            <div className="dv-donation-pix-card">
+              <span className="dv-donation-pix-label">PIX · NUBANK</span>
+              <strong className="dv-donation-pix-key">CHAVE_PIX_CONFIGURAR</strong>
+              <button className="dv-donation-copy" type="button" onClick={async () => { try { await navigator.clipboard.writeText("CHAVE_PIX_CONFIGURAR"); setPixCopied(true); } catch { setPixCopied(false); } }}>
+                {pixCopied ? "✓ Chave Pix copiada!" : "▣ Copiar chave Pix"}
+              </button>
+            </div>
+            <p className="dv-donation-instructions">Depois de copiar, abra o aplicativo do seu banco, escolha Pix, cole a chave e informe o valor que desejar. Antes de confirmar, confira o nome do destinatário exibido pelo banco.</p>
+            <p className="dv-donation-thanks">Obrigado por fazer parte dessa história! 🍿</p>
+          </section>
         </div>
       )}
       {authOpen && (
