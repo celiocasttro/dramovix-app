@@ -111,6 +111,8 @@ export default function App() {
   const [page, setPage] = useState("filmes");
   const [profileOpen, setProfileOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const isDramovixAdmin =
+    normalize(user?.email || "") === "celiocastroreal@gmail.com";
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState("signin");
   const [authName, setAuthName] = useState("");
@@ -1194,6 +1196,42 @@ export default function App() {
       setLikesBusy((prev) => ({ ...prev, [request.id]: false }));
     }
   }
+  async function updateRequestStatus(request, newStatus) {
+    if (!isDramovixAdmin) {
+      window.alert("Você não tem permissão para alterar esta solicitação.");
+      return;
+    }
+    if (!REQUEST_STATUSES.includes(newStatus)) {
+      window.alert("Status inválido.");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("series_requests")
+        .update({ status: newStatus })
+        .eq("id", request.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setRequests((previous) =>
+        previous.map((item) =>
+          item.id === request.id ? { ...item, ...data } : item
+        )
+      );
+      setRequestMessage(
+        `Status de "${request.title}" atualizado para "${newStatus}".`
+      );
+    } catch (error) {
+      console.error("Erro ao alterar status da solicitação:", error);
+      window.alert(
+        `Não foi possível alterar o status: ${error?.message || "erro desconhecido"}`
+      );
+    }
+  }
+
   async function submitRequestComment(event, request) {
     event.preventDefault();
     if (!user) {
@@ -1539,6 +1577,49 @@ export default function App() {
                         <p className="dv-request-description">
                           {request.description}
                         </p>
+                      )}
+                      {isDramovixAdmin && (
+                        <div
+                          className="dv-admin-request-status"
+                          style={{
+                            margin: "12px 0",
+                            padding: "12px",
+                            borderRadius: "10px",
+                            background: "rgba(255, 255, 255, 0.06)"
+                          }}
+                        >
+                          <label
+                            htmlFor={`dramovix-admin-status-${request.id}`}
+                            style={{
+                              display: "block",
+                              marginBottom: "8px",
+                              fontWeight: 600
+                            }}
+                          >
+                            🛠️ Administrador — alterar status
+                          </label>
+                          <select
+                            id={`dramovix-admin-status-${request.id}`}
+                            value={request.status || "Recebida"}
+                            onChange={(event) =>
+                              updateRequestStatus(request, event.target.value)
+                            }
+                            style={{
+                              width: "100%",
+                              padding: "10px",
+                              borderRadius: "8px",
+                              border: "1px solid rgba(255,255,255,0.2)",
+                              background: "#171717",
+                              color: "#ffffff"
+                            }}
+                          >
+                            {REQUEST_STATUSES.map((status) => (
+                              <option key={status} value={status}>
+                                {status}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       )}
                       <div className="dv-request-actions">
                         <button
