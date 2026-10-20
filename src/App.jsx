@@ -2108,7 +2108,7 @@ export default function App() {
                 )}
                 {user && avatarOptionsOpen && (
                   <div className="dv-avatar-popover">
-                    <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={avatarBusy}>📷 {avatarBusy ? "Salvando..." : "Mudar foto"}</button>
+                    <label className="dv-avatar-popover-upload">📷 {avatarBusy ? "Salvando..." : "Mudar foto"}<input type="file" accept="image/*" onChange={handleAvatarUpload} disabled={avatarBusy} /></label>
                     {user.user_metadata?.avatar_url && <button type="button" onClick={removeAvatar} disabled={avatarBusy}>🗑️ Remover foto</button>}
                     <small>JPG, PNG ou WEBP · até 5 MB</small>
                     {avatarMessage && <small className="dv-avatar-message">{avatarMessage}</small>}
