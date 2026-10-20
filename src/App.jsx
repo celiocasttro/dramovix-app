@@ -186,6 +186,15 @@ export default function App() {
   const selectedEpisodeRef = useRef(null);
   const advancingEpisodeRef = useRef(false);
   useEffect(() => {
+    // Mostra o convite de apoio apenas na primeira visita deste navegador.
+    if (localStorage.getItem("dramovix-support-welcome-seen") === "1") return;
+    const timer = window.setTimeout(() => {
+      setDonationOpen(true);
+      localStorage.setItem("dramovix-support-welcome-seen", "1");
+    }, 3500);
+    return () => window.clearTimeout(timer);
+  }, []);
+  useEffect(() => {
     localStorage.setItem("dramovix-favorites", JSON.stringify(favorites));
   }, [favorites]);
   useEffect(() => {
@@ -3084,18 +3093,20 @@ export default function App() {
           <section className="dv-donation-modal" role="dialog" aria-modal="true" aria-labelledby="dv-donation-title">
             <button className="dv-donation-close" type="button" onClick={() => setDonationOpen(false)} aria-label="Fechar">×</button>
             <div className="dv-donation-heart">♥</div>
-            <p className="dv-donation-eyebrow">UM GESTO DE CARINHO</p>
-            <h2 id="dv-donation-title">Apoie o DRAMOVIX</h2>
-            <p className="dv-donation-message">Gosta do DRAMOVIX? Se quiser ajudar a manter este projeto ativo, qualquer contribuição é bem-vinda. A doação é totalmente voluntária e não oferece assinatura nem vantagens pagas.</p>
+            <p className="dv-donation-eyebrow">UMA MENSAGEM DE CORAÇÃO</p>
+            <h2 id="dv-donation-title">Vamos manter essa história viva? ❤️</h2>
+            <p className="dv-donation-message">O DRAMOVIX nasceu para reunir histórias e criar momentos de diversão. Se você gosta do projeto e quiser ajudar a mantê-lo vivo, sua contribuição será recebida com muito carinho. Apoiar é totalmente opcional: você continua livre para aproveitar o catálogo, sem assinatura ou obrigação de pagar.</p>
+            <a className="dv-donation-payment-link" href="https://nubank.com.br/cobrar/7m0g1/6ad6e05e-699f-43b8-8df8-2bafba9d9afd" target="_blank" rel="noopener noreferrer">💜 Quero apoiar pelo Pix</a>
+            <p className="dv-donation-link-note">O link abre a página de cobrança do Nubank ou direciona conforme as opções disponíveis no seu aparelho.</p>
             <div className="dv-donation-pix-card">
-              <span className="dv-donation-pix-label">PIX · NUBANK</span>
+              <span className="dv-donation-pix-label">PIX · NUBANK · OUTROS BANCOS</span>
               <strong className="dv-donation-pix-key">14492410-f3de-46e0-9e2e-ed52f5774788</strong>
               <button className="dv-donation-copy" type="button" onClick={async () => { try { await navigator.clipboard.writeText("14492410-f3de-46e0-9e2e-ed52f5774788"); setPixCopied(true); } catch { setPixCopied(false); } }}>
-                {pixCopied ? "✓ Chave Pix copiada!" : "▣ Copiar chave Pix"}
+                {pixCopied ? "✓ Chave Pix copiada!" : "▣ Copiar chave Pix para outro valor"}
               </button>
             </div>
-            <p className="dv-donation-instructions">Depois de copiar, abra o aplicativo do seu banco, escolha Pix, cole a chave e informe o valor que desejar. Antes de confirmar, confira o nome do destinatário exibido pelo banco.</p>
-            <p className="dv-donation-thanks">Obrigado por fazer parte dessa história! 🍿</p>
+            <p className="dv-donation-instructions">A contribuição é livre. Se preferir transferir por chave Pix, copie a chave, abra o app do seu banco e informe o valor que desejar. Antes de confirmar, confira o nome do destinatário exibido pelo banco.</p>
+            <p className="dv-donation-thanks">Cada gesto de apoio ajuda essa história a continuar. Muito obrigado por estar aqui! 🍿❤️</p>
           </section>
         </div>
       )}
