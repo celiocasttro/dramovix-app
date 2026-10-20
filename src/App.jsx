@@ -2895,32 +2895,36 @@ export default function App() {
       )}
       <nav className="dv-bottom-nav" aria-label="Navegação inferior">
         <button
-          className={["filmes", "filmes-lista"].includes(page) ? "active" : ""}
+          className={page === "filmes" ? "active" : ""}
           onClick={() => goToPage("filmes")}
         >
-          <span aria-hidden="true">⌂</span>
+          <span>⌂</span>
           <small>{tr("Início")}</small>
         </button>
         <button
-          className={page === "explorar" ? "active" : ""}
-          onClick={() => { setMoreMenuOpen(false); setPage("explorar"); setProfileOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          className={page === "filmes-lista" ? "active" : ""}
+          onClick={() => goToPage("filmes-lista")}
         >
-          <span aria-hidden="true">⌕</span>
-          <small>Para você</small>
+          <span>▣</span>
+          <small>{tr("Filmes")}</small>
+        </button>
+        <button
+          className={page === "explorar" ? "active" : ""}
+          onClick={() => {
+            setPage("explorar");
+            setProfileOpen(false);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        >
+          <span>⌕</span>
+          <small>{tr("Buscar")}</small>
         </button>
         <button
           className={page === "favoritos" ? "active" : ""}
           onClick={() => goToPage("favoritos")}
         >
-          <span aria-hidden="true">♧</span>
+          <span>♡</span>
           <small>{tr("Minha Lista")}</small>
-        </button>
-        <button
-          className={profileOpen ? "active" : ""}
-          onClick={() => { setMoreMenuOpen(false); setProfileOpen(true); }}
-        >
-          <span aria-hidden="true">♙</span>
-          <small>Perfil</small>
         </button>
         <button
           className={moreMenuOpen || ["series", "desenhos", "animes", "doramas", "tv", "solicitacoes"].includes(page) ? "active" : ""}
@@ -2928,7 +2932,7 @@ export default function App() {
           aria-expanded={moreMenuOpen}
           aria-label="Mais opções"
         >
-          <span aria-hidden="true">☰</span>
+          <span>☰</span>
           <small>Mais</small>
         </button>
       </nav>
