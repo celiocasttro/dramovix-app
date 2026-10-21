@@ -970,45 +970,41 @@ export default function App() {
       ].slice(0, 100)
     );
   }
-  function openEpisode(episode) {
+  async function playEpisode(episode) {
     if (!episode) return;
+    if (!episode.id) {
+      window.alert("Não foi possível identificar este episódio no catálogo.");
+      return;
+    }
 
-    // Abre imediatamente com o link salvo no catálogo para não deixar o toque
-    // esperando a resolução de servidores externos.
-    openPlayer(episode);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "resolve-episode-playback",
+        { body: { episode_id: episode.id } }
+      );
 
-    // A resolução acontece em segundo plano; se funcionar, troca o link do
-    // episódio que ainda estiver selecionado. Se falhar, o original continua.
-    (async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke(
-          "resolve-episode-playback",
-          { body: { episode_id: episode.id } }
+      if (error || !data?.url) {
+        console.error("Falha ao resolver link do episódio:", error || data);
+        advancingEpisodeRef.current = false;
+        window.alert(
+          data?.error ||
+            "Não foi possível preparar este episódio agora. Tente novamente."
         );
-
-        if (error || !data?.url) {
-          console.warn(
-            "Não foi possível resolver o link do episódio; mantendo o original:",
-            error || data
-          );
-          return;
-        }
-
-        if (
-          String(selectedEpisodeRef.current?.id) === String(episode.id) &&
-          data.url !== episode.video_url
-        ) {
-          const resolvedEpisode = { ...episode, video_url: data.url };
-          selectedEpisodeRef.current = resolvedEpisode;
-          setSelectedEpisode(resolvedEpisode);
-        }
-      } catch (error) {
-        console.warn(
-          "Falha ao resolver o link do episódio; mantendo o original:",
-          error
-        );
+        return;
       }
-    })();
+
+      openPlayer({ ...episode, video_url: data.url });
+    } catch (error) {
+      console.error("Erro ao solicitar link do episódio:", error);
+      advancingEpisodeRef.current = false;
+      window.alert(
+        "Não foi possível preparar este episódio agora. Verifique sua conexão e tente novamente."
+      );
+    }
+  }
+
+  function openEpisode(episode) {
+    return playEpisode(episode);
   }
   async function playMovie(movie) {
     if (!movie) return;
@@ -1075,7 +1071,7 @@ export default function App() {
     );
     if (index >= 0 && index < episodes.length - 1) {
       advancingEpisodeRef.current = true;
-      openPlayer(episodes[index + 1]);
+      playEpisode(episodes[index + 1]);
     }
   }
   function handleVideoEnded() {
@@ -1089,7 +1085,7 @@ export default function App() {
     );
     if (index >= 0 && index < episodes.length - 1) {
       advancingEpisodeRef.current = true;
-      openPlayer(episodes[index + 1]);
+      playEpisode(episodes[index + 1]);
     }
   }
   function goToPage(nextPage) {
