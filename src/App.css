@@ -1001,10 +1001,11 @@ button, input { -webkit-appearance: none; appearance: none; }
 
 
 
-/* Ajusta somente o vídeo vertical dentro do quadro existente; paisagem permanece igual */
-.dv-video-wrap--portrait .dv-video {
+/* O vídeo inteiro fica visível, sem cortes, dentro do quadro que acompanha sua orientação. */
+.dv-video-wrap--portrait .dv-video,
+.dv-video-wrap--landscape .dv-video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
 }
