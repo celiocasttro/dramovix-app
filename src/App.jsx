@@ -970,7 +970,33 @@ export default function App() {
       ].slice(0, 100)
     );
   }
-  function openEpisode(episode) {
+  async function openEpisode(episode) {
+    if (!episode) return;
+
+    // Resolve redirects for episode URLs, without changing the existing player.
+    // If the resolver cannot handle an older link, keep the original playback path.
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "resolve-episode-playback",
+        { body: { episode_id: episode.id } }
+      );
+
+      if (!error && data?.url) {
+        openPlayer({ ...episode, video_url: data.url });
+        return;
+      }
+
+      console.warn(
+        "Não foi possível resolver o link do episódio; tentando o link original:",
+        error || data
+      );
+    } catch (error) {
+      console.warn(
+        "Falha ao resolver o link do episódio; tentando o link original:",
+        error
+      );
+    }
+
     openPlayer(episode);
   }
   async function playMovie(movie) {
