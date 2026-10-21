@@ -970,34 +970,45 @@ export default function App() {
       ].slice(0, 100)
     );
   }
-  async function openEpisode(episode) {
+  function openEpisode(episode) {
     if (!episode) return;
 
-    // Resolve redirects for episode URLs, without changing the existing player.
-    // If the resolver cannot handle an older link, keep the original playback path.
-    try {
-      const { data, error } = await supabase.functions.invoke(
-        "resolve-episode-playback",
-        { body: { episode_id: episode.id } }
-      );
-
-      if (!error && data?.url) {
-        openPlayer({ ...episode, video_url: data.url });
-        return;
-      }
-
-      console.warn(
-        "Não foi possível resolver o link do episódio; tentando o link original:",
-        error || data
-      );
-    } catch (error) {
-      console.warn(
-        "Falha ao resolver o link do episódio; tentando o link original:",
-        error
-      );
-    }
-
+    // Abre imediatamente com o link salvo no catálogo para não deixar o toque
+    // esperando a resolução de servidores externos.
     openPlayer(episode);
+
+    // A resolução acontece em segundo plano; se funcionar, troca o link do
+    // episódio que ainda estiver selecionado. Se falhar, o original continua.
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke(
+          "resolve-episode-playback",
+          { body: { episode_id: episode.id } }
+        );
+
+        if (error || !data?.url) {
+          console.warn(
+            "Não foi possível resolver o link do episódio; mantendo o original:",
+            error || data
+          );
+          return;
+        }
+
+        if (
+          String(selectedEpisodeRef.current?.id) === String(episode.id) &&
+          data.url !== episode.video_url
+        ) {
+          const resolvedEpisode = { ...episode, video_url: data.url };
+          selectedEpisodeRef.current = resolvedEpisode;
+          setSelectedEpisode(resolvedEpisode);
+        }
+      } catch (error) {
+        console.warn(
+          "Falha ao resolver o link do episódio; mantendo o original:",
+          error
+        );
+      }
+    })();
   }
   async function playMovie(movie) {
     if (!movie) return;
