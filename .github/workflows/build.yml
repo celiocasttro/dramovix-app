@@ -1,13 +1,7 @@
-name: DRAMOVIX - Android e IPA iOS
+name: DRAMOVIX - APK Android
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - 'public/Catalogo/**'
-      - 'public/catalogo/**'
 
 permissions:
   contents: read
