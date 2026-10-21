@@ -159,6 +159,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [episodesLoading, setEpisodesLoading] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
+  const [playerOrientation, setPlayerOrientation] = useState("portrait");
   const [playerError, setPlayerError] = useState("");
   const [showDescription, setShowDescription] = useState(false);
   const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false);
@@ -650,6 +651,11 @@ export default function App() {
     if (!playerOpen || !selectedEpisode || !videoRef.current) return;
     const video = videoRef.current;
     const url = selectedEpisode.video_url || "";
+    setPlayerOrientation(
+      selectedEpisode.isMovie || selectedEpisode.isLive || selectedSeries?.isLive
+        ? "landscape"
+        : "portrait"
+    );
     const generation = ++playerGenerationRef.current;
     let cancelled = false;
     let hls = null;
@@ -699,12 +705,20 @@ export default function App() {
       window.clearTimeout(autoplayTimer);
       autoplayTimer = window.setTimeout(attemptAutoplay, 100);
     };
+    const handleVideoMetadata = () => {
+      if (!isCurrentPlayer()) return;
+      const { videoWidth, videoHeight } = video;
+      if (videoWidth > 0 && videoHeight > 0) {
+        setPlayerOrientation(videoWidth >= videoHeight ? "landscape" : "portrait");
+      }
+    };
     const handlePlaying = () => {
       if (isCurrentPlayer()) setPlayerError("");
     };
     video.autoplay = true;
     video.preload = "auto";
     video.addEventListener("error", handleVideoError);
+    video.addEventListener("loadedmetadata", handleVideoMetadata);
     video.addEventListener("loadedmetadata", scheduleAutoplay);
     video.addEventListener("canplay", scheduleAutoplay);
     video.addEventListener("playing", handlePlaying);
@@ -782,6 +796,7 @@ export default function App() {
       cancelled = true;
       window.clearTimeout(autoplayTimer);
       video.removeEventListener("error", handleVideoError);
+      video.removeEventListener("loadedmetadata", handleVideoMetadata);
       video.removeEventListener("loadedmetadata", scheduleAutoplay);
       video.removeEventListener("canplay", scheduleAutoplay);
       video.removeEventListener("playing", handlePlaying);
@@ -857,11 +872,7 @@ export default function App() {
   const heroItem = series[0] || movies[0];
   // Destaque exclusivo para TV ao Vivo, separado do destaque principal.
   const liveHeroItem = liveChannels.find((item) => item.video_url || item.isLive) || LIVE_SERIES;
-  const isLandscapePlayer = Boolean(
-    selectedEpisode?.isMovie ||
-      selectedEpisode?.isLive ||
-      selectedSeries?.isLive
-  );
+  const isLandscapePlayer = playerOrientation === "landscape";
   const filteredRequests = requests
     .filter((request) => {
       const query = normalize(requestSearch);
