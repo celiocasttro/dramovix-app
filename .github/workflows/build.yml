@@ -5,6 +5,9 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'public/Catalogo/**'
+      - 'public/catalogo/**'
 
 permissions:
   contents: read
