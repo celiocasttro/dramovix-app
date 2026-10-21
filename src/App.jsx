@@ -972,14 +972,31 @@ export default function App() {
   function openEpisode(episode) {
     openPlayer(episode);
   }
-  function playMovie(movie) {
+  async function playMovie(movie) {
     if (!movie) return;
-    openPlayer({
-      id: movie.id,
-      title: movie.title,
-      video_url: movie.video_url,
-      isMovie: true
-    });
+    if (!movie.dbId) {
+      window.alert("Não foi possível identificar este filme no catálogo.");
+      return;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke("resolve-movie-playback", {
+        body: { movie_id: movie.dbId }
+      });
+      if (error || !data?.url) {
+        console.error("Falha ao resolver link de reprodução:", error || data);
+        window.alert(data?.error || "Não foi possível preparar o vídeo agora. Tente novamente.");
+        return;
+      }
+      openPlayer({
+        id: movie.id,
+        title: movie.title,
+        video_url: data.url,
+        isMovie: true
+      });
+    } catch (error) {
+      console.error("Erro ao solicitar link de reprodução:", error);
+      window.alert("Não foi possível preparar o vídeo agora. Verifique sua conexão e tente novamente.");
+    }
   }
   function openLive(item) {
     setSelectedSeries(item);
