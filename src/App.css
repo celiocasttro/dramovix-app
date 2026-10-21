@@ -92,7 +92,7 @@ button, input { -webkit-appearance: none; appearance: none; }
 .dv-player-heading small { color: #fca5a5; }
 .dv-player-close { display: grid; width: 36px; height: 36px; flex-shrink: 0; place-items: center; color: #fff; border: 1px solid rgba(255,255,255,.15); border-radius: 50%; background: #180c0c; font-size: 20px; }
 .dv-video-wrap { position: relative; display: flex; align-items: center; justify-content: center; background: #000; width: 100%; overflow: hidden; }
-.dv-video-wrap--portrait { align-self: center; width: auto; height: min(76dvh, calc(100dvh - 145px)); aspect-ratio: 9/16; max-width: 100%; max-height: none; flex: 0 1 auto; margin: 0 auto; }
+.dv-video-wrap--portrait { align-self: center; width: auto; height: min(84dvh, calc(100dvh - 105px)); aspect-ratio: 9/16; max-width: 100%; max-height: none; flex: 0 1 auto; margin: 0 auto; }
 .dv-video-wrap--landscape { width: 100%; aspect-ratio: 16/9; max-height: 75vh; margin: 0 auto; }
 .dv-video { display: block; width: 100%; height: 100%; background: #000; object-fit: contain; }
 .dv-player-error { padding: 12px 16px; color: #fecaca; background: #270606; font-size: 12px; line-height: 1.5; }
