@@ -614,6 +614,7 @@ export default function App() {
           .from("episodes")
           .select("*")
           .eq("series_id", selectedSeries.dbId)
+          .order("season_number", { ascending: true })
           .order("episode_number", { ascending: true });
         if (error) throw error;
         if (!cancelled) {
