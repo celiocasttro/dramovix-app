@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "block": 1,
+  "total_records": 1,
+  "items": [
+    {
+      "id": "filme-10dance",
+      "title": "10DANCE",
+      "type": "filme",
+      "category": "FILMES | Lançamentos",
+      "group_original": "FILMES | Lançamentos",
+      "cover_url": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/iQOIOz8BZ2QLMyFJ7Leo9izSyti.jpg",
+      "video_url": "https://ancient-canyon-9482.p2klskwfngp4.workers.dev/t/1792563725.49e61e5507daeb35380576b35dec85a3762228c5a573334affcfe6d093d87cca/u/LinhaZed099183u/e1.RKTnHVql4LOpNLWOCqLwzTF7mBRp3xxWHSUncSB4rYeoDEp_TDoL76etER5FZFJA",
+      "source_format": "M3U",
+      "notes": "Player link provided as plain URL."
+    }
+  ]
+}
