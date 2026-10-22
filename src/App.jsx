@@ -167,6 +167,7 @@ export default function App() {
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerOrientation, setPlayerOrientation] = useState("portrait");
   const [playerError, setPlayerError] = useState("");
+  const [playerResolving, setPlayerResolving] = useState(false);
   const [showDescription, setShowDescription] = useState(false);
   const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false);
   // Solicitações de séries
@@ -679,6 +680,7 @@ export default function App() {
    */
   useEffect(() => {
     if (!playerOpen || !selectedEpisode || !videoRef.current) return;
+    if (playerResolving) return;
     const video = videoRef.current;
     const url = selectedEpisode.video_url || "";
     setPlayerOrientation(
@@ -702,6 +704,7 @@ export default function App() {
     video.removeAttribute("src");
     video.load();
     if (!url) {
+      if (selectedEpisode.isResolving) return;
       setPlayerError("Este conteúdo ainda não possui um link de vídeo.");
       return () => {
         cancelled = true;
@@ -840,7 +843,7 @@ export default function App() {
       video.removeAttribute("src");
       video.load();
     };
-  }, [playerOpen, selectedEpisode]);
+  }, [playerOpen, selectedEpisode, playerResolving]);
   const matchesSearch = (item) =>
     !search.trim() ||
     normalize(item.title).includes(normalize(search)) ||
@@ -980,8 +983,9 @@ export default function App() {
     setProfileOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  function openPlayer(episode) {
+  function openPlayer(episode, options = {}) {
     if (!episode) return;
+    setPlayerResolving(Boolean(options.resolving));
     advancingEpisodeRef.current = false;
     selectedEpisodeRef.current = episode;
     setSelectedEpisode(episode);
@@ -1018,6 +1022,10 @@ export default function App() {
       return;
     }
 
+    advancingEpisodeRef.current = false;
+    setPlayerError("");
+    openPlayer({ ...episode, video_url: "", isResolving: true }, { resolving: true });
+
     try {
       const { data, error } = await supabase.functions.invoke(
         "resolve-episode-playback",
@@ -1025,22 +1033,24 @@ export default function App() {
       );
 
       if (error || !data?.url) {
-        console.error("Falha ao resolver link do episódio:", error || data);
-        advancingEpisodeRef.current = false;
-        window.alert(
+        console.error("Falha ao resolver link de reprodução do episódio:", error || data);
+        setPlayerResolving(false);
+        setPlayerError(
           data?.error ||
-            "Não foi possível preparar este episódio agora. Tente novamente."
+            "Não foi possível preparar este episódio. Tente novamente."
         );
+        advancingEpisodeRef.current = false;
         return;
       }
 
       openPlayer({ ...episode, video_url: data.url });
     } catch (error) {
       console.error("Erro ao solicitar link do episódio:", error);
-      advancingEpisodeRef.current = false;
-      window.alert(
-        "Não foi possível preparar este episódio agora. Verifique sua conexão e tente novamente."
+      setPlayerResolving(false);
+      setPlayerError(
+        "Não foi possível preparar o episódio. Verifique sua conexão e tente novamente."
       );
+      advancingEpisodeRef.current = false;
     }
   }
 
@@ -1053,13 +1063,28 @@ export default function App() {
       window.alert("Não foi possível identificar este filme no catálogo.");
       return;
     }
+
+    setPlayerError("");
+    openPlayer({
+      id: movie.id,
+      title: movie.title,
+      video_url: "",
+      isMovie: true,
+      isResolving: true
+    }, { resolving: true });
+
     try {
-      const { data, error } = await supabase.functions.invoke("resolve-movie-playback", {
-        body: { movie_id: movie.dbId }
-      });
+      const { data, error } = await supabase.functions.invoke(
+        "resolve-movie-playback",
+        { body: { movie_id: movie.dbId } }
+      );
       if (error || !data?.url) {
         console.error("Falha ao resolver link de reprodução:", error || data);
-        window.alert(data?.error || "Não foi possível preparar o vídeo agora. Tente novamente.");
+        setPlayerResolving(false);
+        setPlayerError(
+          data?.error ||
+            "Não foi possível preparar o vídeo agora. Tente novamente."
+        );
         return;
       }
       openPlayer({
@@ -1070,7 +1095,10 @@ export default function App() {
       });
     } catch (error) {
       console.error("Erro ao solicitar link de reprodução:", error);
-      window.alert("Não foi possível preparar o vídeo agora. Verifique sua conexão e tente novamente.");
+      setPlayerResolving(false);
+      setPlayerError(
+        "Não foi possível preparar o vídeo. Verifique sua conexão e tente novamente."
+      );
     }
   }
   function openLive(item) {
@@ -3457,8 +3485,15 @@ export default function App() {
                   : "dv-video-wrap--portrait"
               }`}
             >
+              {playerResolving && (
+                <div className="dv-player-loading" role="status" aria-live="polite">
+                  <span className="dv-player-spinner" aria-hidden="true" />
+                  <strong>Preparando vídeo…</strong>
+                  <small>Aguardando o link final da transmissão.</small>
+                </div>
+              )}
               <video
-                key={selectedEpisode?.id || "video-player"}
+                key={selectedEpisode?.id || "video-player"
                 ref={videoRef}
                 className="dv-video"
                 controls
