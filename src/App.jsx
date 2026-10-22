@@ -1668,13 +1668,21 @@ export default function App() {
       return;
     }
 
-    // Não entrega o link inicial diretamente ao player: primeiro pede ao
-    // servidor para seguir os redirecionamentos e devolver o endereço final.
+    const requestGeneration = ++playerGenerationRef.current;
     setPlayerError("");
     setSelectedSeries(null);
     setSelectedMovie(null);
     setSelectedEpisode(null);
-    setPlayerOpen(false);
+
+    // Mostra o player imediatamente enquanto o servidor resolve o endereço final.
+    openPlayer({
+      id: item.id,
+      title: item.title,
+      video_url: "",
+      isResolving: true,
+      isMovie: true,
+      image: item.cover || ""
+    }, { resolving: true });
 
     try {
       const response = await fetch("/api/resolve-video", {
@@ -1684,6 +1692,7 @@ export default function App() {
       });
       const result = await response.json().catch(() => ({}));
 
+      if (requestGeneration !== playerGenerationRef.current) return;
       if (!response.ok || !result?.url) {
         throw new Error(
           result?.error || "Não foi possível encontrar o link real deste vídeo."
@@ -1698,7 +1707,9 @@ export default function App() {
         image: item.cover || ""
       });
     } catch (error) {
+      if (requestGeneration !== playerGenerationRef.current) return;
       console.error("Falha ao resolver link do catálogo:", error);
+      closePlayer();
       window.alert(
         error?.message ||
           "Não foi possível preparar o vídeo. Tente novamente em instantes."
