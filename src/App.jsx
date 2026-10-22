@@ -3514,7 +3514,7 @@ export default function App() {
                 </div>
               )}
               <video
-                key={selectedEpisode?.id || "video-player"
+                key={selectedEpisode?.id || "video-player"}
                 ref={videoRef}
                 className="dv-video"
                 controls
