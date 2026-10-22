@@ -1674,7 +1674,7 @@ export default function App() {
     setSelectedMovie(null);
     setSelectedEpisode(null);
 
-    // Mostra o player imediatamente enquanto o servidor resolve o endereço final.
+    // Usa o mesmo resolvedor de reprodução do catálogo principal de filmes.
     openPlayer({
       id: item.id,
       title: item.title,
@@ -1685,34 +1685,37 @@ export default function App() {
     }, { resolving: true });
 
     try {
-      const response = await fetch("/api/resolve-video", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: String(item.videoUrl).trim() })
-      });
-      const result = await response.json().catch(() => ({}));
+      const { data, error } = await supabase.functions.invoke(
+        "resolve-movie-playback",
+        { body: { video_url: String(item.videoUrl).trim() } }
+      );
 
       if (requestGeneration !== playerGenerationRef.current) return;
-      if (!response.ok || !result?.url) {
-        throw new Error(
-          result?.error || "Não foi possível encontrar o link real deste vídeo."
+      if (error || !data?.url) {
+        console.error("Falha ao resolver link da categoria:", error || data);
+        setPlayerResolving(false);
+        setPlayerError(
+          data?.error ||
+            error?.message ||
+            "Não foi possível preparar este vídeo. Tente novamente."
         );
+        return;
       }
 
       openPlayer({
         id: item.id,
         title: item.title,
-        video_url: result.url,
+        video_url: data.url,
         isMovie: true,
         image: item.cover || ""
       });
     } catch (error) {
       if (requestGeneration !== playerGenerationRef.current) return;
-      console.error("Falha ao resolver link do catálogo:", error);
-      closePlayer();
-      window.alert(
+      console.error("Erro ao solicitar link da categoria:", error);
+      setPlayerResolving(false);
+      setPlayerError(
         error?.message ||
-          "Não foi possível preparar o vídeo. Tente novamente em instantes."
+          "Não foi possível preparar o vídeo. Verifique sua conexão e tente novamente."
       );
     }
   }
