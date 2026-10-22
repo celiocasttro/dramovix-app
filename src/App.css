@@ -1117,10 +1117,29 @@ button, input { -webkit-appearance: none; appearance: none; }
   color: #9ca3af;
   font-size: 11px;
 }
-.dv-iptv-search {
+.dv-iptv-search-wrap {
+  position: relative;
   width: min(100%, 300px);
+  flex: 0 1 300px;
+}
+.dv-iptv-search-icon {
+  position: absolute;
+  top: 50%;
+  left: 13px;
+  width: 17px;
+  height: 17px;
+  transform: translateY(-50%);
+  fill: none;
+  stroke: #9ca3af;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+.dv-iptv-search {
+  display: block;
+  width: 100%;
   min-height: 40px;
-  padding: 10px 12px;
+  padding: 10px 12px 10px 38px;
   border: 1px solid rgba(255, 255, 255, .12);
   border-radius: 8px;
   outline: none;
@@ -1129,6 +1148,7 @@ button, input { -webkit-appearance: none; appearance: none; }
   font-size: 12px;
 }
 .dv-iptv-search:focus { border-color: rgba(229, 9, 20, .7); }
+.dv-iptv-search-wrap:focus-within .dv-iptv-search-icon { stroke: #e50914; }
 @media (max-width: 900px) {
   .dv-iptv-category-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -1137,5 +1157,5 @@ button, input { -webkit-appearance: none; appearance: none; }
   .dv-iptv-category-grid { grid-template-columns: minmax(0, 1fr); gap: 7px; }
   .dv-iptv-category { min-height: 58px; padding: 9px 10px; }
   .dv-iptv-selected-heading { align-items: stretch; flex-direction: column; }
-  .dv-iptv-search { width: 100%; }
+  .dv-iptv-search-wrap { width: 100%; flex-basis: auto; }
 }
