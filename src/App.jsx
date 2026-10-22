@@ -1017,6 +1017,7 @@ export default function App() {
   }
   async function playEpisode(episode) {
     if (!episode) return;
+    const requestGeneration = ++playerGenerationRef.current;
     if (!episode.id) {
       window.alert("Não foi possível identificar este episódio no catálogo.");
       return;
@@ -1032,6 +1033,7 @@ export default function App() {
         { body: { episode_id: episode.id } }
       );
 
+      if (requestGeneration !== playerGenerationRef.current) return;
       if (error || !data?.url) {
         console.error("Falha ao resolver link de reprodução do episódio:", error || data);
         setPlayerResolving(false);
@@ -1045,6 +1047,7 @@ export default function App() {
 
       openPlayer({ ...episode, video_url: data.url });
     } catch (error) {
+      if (requestGeneration !== playerGenerationRef.current) return;
       console.error("Erro ao solicitar link do episódio:", error);
       setPlayerResolving(false);
       setPlayerError(
@@ -1059,6 +1062,7 @@ export default function App() {
   }
   async function playMovie(movie) {
     if (!movie) return;
+    const requestGeneration = ++playerGenerationRef.current;
     if (!movie.dbId) {
       window.alert("Não foi possível identificar este filme no catálogo.");
       return;
@@ -1078,6 +1082,7 @@ export default function App() {
         "resolve-movie-playback",
         { body: { movie_id: movie.dbId } }
       );
+      if (requestGeneration !== playerGenerationRef.current) return;
       if (error || !data?.url) {
         console.error("Falha ao resolver link de reprodução:", error || data);
         setPlayerResolving(false);
@@ -1094,6 +1099,7 @@ export default function App() {
         isMovie: true
       });
     } catch (error) {
+      if (requestGeneration !== playerGenerationRef.current) return;
       console.error("Erro ao solicitar link de reprodução:", error);
       setPlayerResolving(false);
       setPlayerError(
@@ -1113,6 +1119,7 @@ export default function App() {
   }
   function closePlayer() {
     playerGenerationRef.current += 1;
+    setPlayerResolving(false);
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
