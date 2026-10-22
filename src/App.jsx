@@ -1810,14 +1810,25 @@ export default function App() {
                   {Number(playlistSelectedCategory.count || 0).toLocaleString("pt-BR")} títulos nesta categoria
                 </p>
               </div>
-              <input
-                className="dv-iptv-search"
-                type="search"
-                value={playlistSearch}
-                onChange={(event) => setPlaylistSearch(event.target.value)}
-                placeholder="Buscar título nesta categoria"
-                aria-label="Buscar título nesta categoria"
-              />
+              <div className="dv-iptv-search-wrap">
+                <svg
+                  className="dv-iptv-search-icon"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <circle cx="10.8" cy="10.8" r="6.8" />
+                  <path d="m16 16 4.2 4.2" />
+                </svg>
+                <input
+                  className="dv-iptv-search"
+                  type="search"
+                  value={playlistSearch}
+                  onChange={(event) => setPlaylistSearch(event.target.value)}
+                  placeholder="Buscar nesta categoria"
+                  aria-label="Buscar título nesta categoria"
+                />
+              </div>
             </div>
             {playlistLoading ? (
               <p className="dv-message">Carregando títulos desta categoria…</p>
