@@ -1632,12 +1632,22 @@ export default function App() {
       window.alert("Este título não possui um link de vídeo disponível.");
       return;
     }
+
+    // O DRAMOVIX é servido por HTTPS. Links HTTP podem ser bloqueados
+    // pelo navegador como conteúdo misto; tenta a versão HTTPS do mesmo vídeo.
+    const rawVideoUrl = String(item.videoUrl).trim();
+    const videoUrl =
+      window.location.protocol === "https:" && rawVideoUrl.startsWith("http://")
+        ? rawVideoUrl.replace(/^http:\/\//i, "https://")
+        : rawVideoUrl;
+
     setSelectedSeries(null);
     setSelectedMovie(null);
+    setSelectedEpisode(null);
     openPlayer({
       id: item.id,
       title: item.title,
-      video_url: item.videoUrl,
+      video_url: videoUrl,
       isMovie: true,
       image: item.cover || ""
     });
