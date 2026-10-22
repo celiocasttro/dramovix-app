@@ -32,21 +32,23 @@ function isPrivateOrLocalHost(hostname) {
   return false;
 }
 
-async function followRedirects(startUrl, method) {
+async function followRedirects(startUrl, method, useRange) {
   let current = new URL(startUrl);
 
   for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
-    if (!["http:", "https:"].includes(current.protocol)) {
-      throw new Error("O endereço do vídeo usa um protocolo não permitido.");
-    }
-    if (isPrivateOrLocalHost(current.hostname)) {
+    if (!["http:", "https:"].includes(current.protocol) || isPrivateOrLocalHost(current.hostname)) {
       throw new Error("O endereço do vídeo não é permitido.");
     }
+
+    const headers = {};
+    if (method === "GET" && useRange) headers.Range = "bytes=0-0";
+    headers["User-Agent"] = "Mozilla/5.0 (compatible; DRAMOVIX/1.0)";
+    headers.Accept = "*/*";
 
     const response = await fetch(current, {
       method,
       redirect: "manual",
-      headers: method === "GET" ? { Range: "bytes=0-0" } : {},
+      headers,
       signal: AbortSignal.timeout(15000)
     });
 
@@ -69,6 +71,7 @@ async function followRedirects(startUrl, method) {
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
+
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Use POST para resolver o link." });
@@ -89,6 +92,8 @@ export default async function handler(req, res) {
 
     if (
       !["http:", "https:"].includes(parsed.protocol) ||
+      parsed.username ||
+      parsed.password ||
       !(
         parsed.hostname === ALLOWED_SOURCE_HOST ||
         parsed.hostname.endsWith("." + ALLOWED_SOURCE_HOST)
@@ -97,15 +102,32 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Este domínio não está autorizado para resolução." });
     }
 
-    let resolved = await followRedirects(parsed.toString(), "HEAD");
-    if ([403, 405, 501].includes(resolved.status)) {
-      resolved = await followRedirects(parsed.toString(), "GET");
+    // Alguns hosts respondem mal a HEAD ou a pedidos Range. Tentamos GET com
+    // Range primeiro, GET normal depois e HEAD por último, sempre cancelando o corpo.
+    const attempts = [
+      () => followRedirects(parsed.toString(), "GET", true),
+      () => followRedirects(parsed.toString(), "GET", false),
+      () => followRedirects(parsed.toString(), "HEAD", false)
+    ];
+
+    let resolved = null;
+    for (const attempt of attempts) {
+      try {
+        const result = await attempt();
+        if (result.status >= 200 && result.status < 400) {
+          resolved = result;
+          break;
+        }
+        resolved = result;
+      } catch (error) {
+        console.warn("Tentativa de resolução falhou:", error?.message || error);
+      }
     }
 
-    if (resolved.status >= 400) {
+    if (!resolved || resolved.status < 200 || resolved.status >= 400) {
       return res.status(502).json({
         error: "O servidor do vídeo não entregou um link reproduzível.",
-        upstreamStatus: resolved.status
+        upstreamStatus: resolved?.status || null
       });
     }
 
