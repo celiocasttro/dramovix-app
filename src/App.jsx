@@ -86,7 +86,7 @@ function parseM3UChannels(playlistText = "") {
   const channels = [];
   const seen = new Set();
   let metadata = "";
-  playlistText.split(/\\r?\\n/).forEach((rawLine) => {
+  playlistText.split(/\r?\n/).forEach((rawLine) => {
     const line = rawLine.trim();
     if (!line) return;
     if (line.startsWith("#EXTINF")) {
@@ -94,7 +94,7 @@ function parseM3UChannels(playlistText = "") {
       return;
     }
     if (line.startsWith("#")) return;
-    if (!/^https?:\\/\\//i.test(line) || !metadata) return;
+    if (!/^https?:\/\//i.test(line) || !metadata) return;
     const comma = metadata.lastIndexOf(",");
     const title = (comma >= 0 ? metadata.slice(comma + 1) : "").trim();
     const key = normalize(title);
