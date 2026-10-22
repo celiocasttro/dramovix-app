@@ -96,7 +96,21 @@ jobs:
                   raise SystemExit("Não foi possível localizar a activity LAUNCHER para habilitar Android TV.")
 
           path.write_text(manifest, encoding="utf-8")
-          print("Manifesto Android TV configurado.")
+
+          gradle_path = Path("android/app/build.gradle")
+          gradle = gradle_path.read_text(encoding="utf-8")
+          if 'applicationId "com.dramovix.app"' not in gradle:
+              raise SystemExit("Não foi possível localizar o applicationId original.")
+          gradle = gradle.replace('applicationId "com.dramovix.app"', 'applicationId "com.dramovix.app.tv"', 1)
+          gradle_path.write_text(gradle, encoding="utf-8")
+
+          strings_path = Path("android/app/src/main/res/values/strings.xml")
+          if strings_path.exists():
+              strings = strings_path.read_text(encoding="utf-8")
+              strings = re.sub(r'(<string name="app_name">).*?(</string>)', r'\1DRAMOVIX TV\2', strings, count=1)
+              strings_path.write_text(strings, encoding="utf-8")
+
+          print("Manifesto Android TV configurado; pacote separado com nome DRAMOVIX TV.")
           PY
 
       - name: Gerar APK para TV Box
