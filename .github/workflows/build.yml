@@ -96,10 +96,10 @@ jobs:
                   raise SystemExit("Não foi possível localizar a activity LAUNCHER para habilitar Android TV.")
 
           # A versão para TV Box deve iniciar em modo paisagem.
-          activity_pattern = r'(<activity\\b[^>]*android:name="[^"]*MainActivity"[^>]*)(>)'
+          activity_pattern = r'(<activity\b[^>]*android:name="[^"]*MainActivity"[^>]*)(>)'
           manifest, count = re.subn(
               activity_pattern,
-              lambda match: re.sub(r'\\s+android:screenOrientation="[^"]*"', '', match.group(1))
+              lambda match: re.sub(r'\s+android:screenOrientation="[^"]*"', '', match.group(1))
                   + ' android:screenOrientation="landscape"' + match.group(2),
               manifest,
               count=1
