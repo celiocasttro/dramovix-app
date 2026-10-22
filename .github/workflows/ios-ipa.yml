@@ -19,7 +19,7 @@ permissions:
 jobs:
   ios:
     name: Compilar IPA para iPhone
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
       - name: Baixar projeto
         uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
           cache: npm
 
       - name: Instalar dependências
-        run: npm ci
+        run: npm install
 
       - name: Verificar configurações do Supabase
         env:
