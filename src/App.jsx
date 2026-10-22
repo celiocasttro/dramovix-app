@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase";
 import Hls from "hls.js";
 import "./App.css";
+const DRAMOVIX_WEB_URL = "https://dramovix-app.vercel.app";
 const ZNATION_URL =
   "https://epg.provider.plex.tv/library/parts/646546f35db8ada4c8edd7e5-67d1be3696c7b08c26c19d64.m3u8?includeAllStreams=1&x-plex-product=Plex+Mediaverse&x-plex-token=MZFkHw1Atc9c9bZLRyWw&auto=0";
 const LIVE_SERIES = {
@@ -956,7 +957,7 @@ export default function App() {
   }
   async function shareSeries(item) {
     if (!item) return;
-    const shareUrl = new URL(window.location.origin + window.location.pathname);
+    const shareUrl = new URL(DRAMOVIX_WEB_URL + "/");
     shareUrl.searchParams.set("serie", String(item.id));
     const shareText = `Confira "${item.title}" no DRAMOVIX!`;
     try {
@@ -1236,7 +1237,7 @@ export default function App() {
           password: authPassword,
           options: {
             data: { full_name: authName.trim() },
-            emailRedirectTo: window.location.origin
+            emailRedirectTo: DRAMOVIX_WEB_URL + "/"
           }
         });
         if (error) throw error;
@@ -2254,7 +2255,7 @@ export default function App() {
                           type="button"
                           className="dv-request-share"
                           onClick={async () => {
-                            const shareUrl = `${window.location.origin}/?pagina=solicitacoes&solicitacao=${encodeURIComponent(request.id)}`;
+                            const shareUrl = `${DRAMOVIX_WEB_URL}/?pagina=solicitacoes&solicitacao=${encodeURIComponent(request.id)}`;
                             const shareText = `Confira a solicitação da série "${request.title}" no DRAMOVIX! Acesse o link para encontrar este pedido no DRAMOVIX:`;
                             try {
                               if (navigator.share) {
