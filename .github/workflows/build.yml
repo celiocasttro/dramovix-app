@@ -1,4 +1,4 @@
-name: DRAMOVIX - APK Android
+name: DRAMOVIX - APK Android e TV Box
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   android:
-    name: Gerar APK Android
+    name: Gerar APK para celular e TV Box
     runs-on: ubuntu-latest
 
     steps:
@@ -41,15 +41,13 @@ jobs:
             echo "::error::Falta configurar VITE_SUPABASE_URL nos Secrets."
             exit 1
           fi
-
           if [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
             echo "::error::Falta configurar VITE_SUPABASE_ANON_KEY nos Secrets."
             exit 1
           fi
+          echo "Configurações do Supabase presentes."
 
-          echo "As duas configurações do Supabase estão presentes."
-
-      - name: Compilar DRAMOVIX
+      - name: Compilar versão para celular
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
@@ -60,15 +58,66 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Gerar APK
+      - name: Gerar APK para celular
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
+          cd ..
+          cp android/app/build/outputs/apk/debug/app-debug.apk DRAMOVIX-Android-APK.apk
 
-      - name: Disponibilizar APK
+      - name: Compilar versão otimizada para TV Box
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_TV_MODE: "true"
+        run: |
+          npm run build
+          npx cap sync android
+
+      - name: Habilitar instalação e navegação em Android TV
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("android/app/src/main/AndroidManifest.xml")
+          manifest = path.read_text(encoding="utf-8")
+
+          feature = '<uses-feature android:name="android.hardware.touchscreen" android:required="false" />'
+          if "android.hardware.touchscreen" not in manifest:
+              manifest = re.sub(r'(<manifest\\b[^>]*>)', r'\\1\\n    ' + feature, manifest, count=1)
+
+          launcher = '<category android:name="android.intent.category.LEANBACK_LAUNCHER" />'
+          if "android.intent.category.LEANBACK_LAUNCHER" not in manifest:
+              pattern = r'(<activity\\b[^>]*>[\\s\\S]*?<category android:name="android.intent.category.LAUNCHER"\\s*/>)'
+              manifest, count = re.subn(pattern, r'\\1\\n                ' + launcher, manifest, count=1)
+              if count != 1:
+                  raise SystemExit("Não foi possível localizar a activity LAUNCHER para habilitar Android TV.")
+
+          path.write_text(manifest, encoding="utf-8")
+          print("Manifesto Android TV configurado.")
+          PY
+
+      - name: Gerar APK para TV Box
+        run: |
+          cd android
+          ./gradlew clean assembleDebug
+          cd ..
+          cp android/app/build/outputs/apk/debug/app-debug.apk DRAMOVIX-TV-Box-APK.apk
+
+      - name: Disponibilizar APK para celular
         uses: actions/upload-artifact@v4
         with:
           name: DRAMOVIX-Android-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: DRAMOVIX-Android-APK.apk
           if-no-files-found: error
+          retention-days: 14
+
+      - name: Disponibilizar APK para TV Box
+        uses: actions/upload-artifact@v4
+        with:
+          name: DRAMOVIX-TV-Box-APK
+          path: DRAMOVIX-TV-Box-APK.apk
+          if-no-files-found: error
+          retention-days: 14
