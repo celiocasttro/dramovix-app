@@ -1,0 +1,67 @@
+{
+  "source": "catalogo_estruturado.csv",
+  "rows": 316354,
+  "categories": 50,
+  "columns": [
+    "Nome",
+    "Categoria",
+    "Capa",
+    "LinkOriginal",
+    "LinkFinal",
+    "HTTP",
+    "Status"
+  ],
+  "parts": [
+    {
+      "file": "catalogo_estruturado_parte_001.csv",
+      "rows": 34340,
+      "bytes": 7339858
+    },
+    {
+      "file": "catalogo_estruturado_parte_002.csv",
+      "rows": 33239,
+      "bytes": 7340025
+    },
+    {
+      "file": "catalogo_estruturado_parte_003.csv",
+      "rows": 33537,
+      "bytes": 7339911
+    },
+    {
+      "file": "catalogo_estruturado_parte_004.csv",
+      "rows": 34016,
+      "bytes": 7339980
+    },
+    {
+      "file": "catalogo_estruturado_parte_005.csv",
+      "rows": 34501,
+      "bytes": 7339931
+    },
+    {
+      "file": "catalogo_estruturado_parte_006.csv",
+      "rows": 34596,
+      "bytes": 7339842
+    },
+    {
+      "file": "catalogo_estruturado_parte_007.csv",
+      "rows": 33408,
+      "bytes": 7340015
+    },
+    {
+      "file": "catalogo_estruturado_parte_008.csv",
+      "rows": 33636,
+      "bytes": 7339987
+    },
+    {
+      "file": "catalogo_estruturado_parte_009.csv",
+      "rows": 32436,
+      "bytes": 7339916
+    },
+    {
+      "file": "catalogo_estruturado_parte_010.csv",
+      "rows": 12645,
+      "bytes": 2835253
+    }
+  ],
+  "sha256": "57a5c62829089f4d91216bfb113065e4bfe98d39b1c2db9bda0387f5a567c466"
+}
