@@ -86,12 +86,12 @@ jobs:
 
           feature = '<uses-feature android:name="android.hardware.touchscreen" android:required="false" />'
           if "android.hardware.touchscreen" not in manifest:
-              manifest = re.sub(r'(<manifest\\b[^>]*>)', r'\\1\\n    ' + feature, manifest, count=1)
+              manifest = re.sub(r'(<manifest\b[^>]*>)', r'\1\n    ' + feature, manifest, count=1)
 
           launcher = '<category android:name="android.intent.category.LEANBACK_LAUNCHER" />'
           if "android.intent.category.LEANBACK_LAUNCHER" not in manifest:
-              pattern = r'(<activity\\b[^>]*>[\\s\\S]*?<category android:name="android.intent.category.LAUNCHER"\\s*/>)'
-              manifest, count = re.subn(pattern, r'\\1\\n                ' + launcher, manifest, count=1)
+              pattern = r'(<activity\b[^>]*>[\s\S]*?<category android:name="android.intent.category.LAUNCHER"\s*/>)'
+              manifest, count = re.subn(pattern, r'\1\n                ' + launcher, manifest, count=1)
               if count != 1:
                   raise SystemExit("Não foi possível localizar a activity LAUNCHER para habilitar Android TV.")
 
