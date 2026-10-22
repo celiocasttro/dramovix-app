@@ -2019,9 +2019,24 @@ export default function App() {
             />
           ) : (
             <span
-              className="dv-card-image dv-image-placeholder"
-              aria-label="Capa indisponível"
-            />
+              className={`dv-card-image dv-image-placeholder ${type === "live" ? "dv-live-channel-placeholder" : ""}`}
+              aria-label={type === "live" ? `Ícone do canal ${item.title}` : "Capa indisponível"}
+            >
+              {type === "live" && (
+                <>
+                  <strong>
+                    {String(item.title || "TV")
+                      .split(/\\s+/)
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((word) => word[0])
+                      .join("")
+                      .toUpperCase()}
+                  </strong>
+                  <small>{item.category || "Canais"}</small>
+                </>
+              )}
+            </span>
           )}
           {type === "live" && <span className="dv-live-badge">AO VIVO</span>}
           {isFavorite(item) && <span className="dv-favorite-badge">♥</span>}
