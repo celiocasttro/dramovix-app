@@ -2026,7 +2026,7 @@ export default function App() {
                 <>
                   <strong>
                     {String(item.title || "TV")
-                      .split(/\\s+/)
+                      .split(/\s+/)
                       .filter(Boolean)
                       .slice(0, 2)
                       .map((word) => word[0])
