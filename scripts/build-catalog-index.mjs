@@ -94,11 +94,11 @@ async function main() {
       if (!title || !category) continue;
 
       const cover = (row[coverIndex] || "").trim();
-      // LinkFinal já é o endereço resolvido quando foi identificado no catálogo.
-      // Só usa LinkOriginal como fallback quando LinkFinal está vazio.
-      const videoUrl =
-        (row[finalIndex] || "").trim() ||
-        (row[originalIndex] || "").trim();
+      // Mantém o link original para o endpoint resolver os redirecionamentos
+      // no momento do clique e também guarda LinkFinal como alternativa conhecida.
+      const originalUrl = (row[originalIndex] || "").trim();
+      const finalUrl = (row[finalIndex] || "").trim();
+      const videoUrl = originalUrl || finalUrl;
       if (!categories.has(category)) {
         let slug = slugify(category);
         const previous = usedSlugs.get(slug);
@@ -115,6 +115,7 @@ async function main() {
         category,
         cover,
         videoUrl,
+        finalUrl,
       });
       totalRows += 1;
     }
