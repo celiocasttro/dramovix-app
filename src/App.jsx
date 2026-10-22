@@ -157,6 +157,12 @@ export default function App() {
     }
   });
   const [loading, setLoading] = useState(true);
+  const [playlistIndex, setPlaylistIndex] = useState(null);
+  const [playlistSelectedCategory, setPlaylistSelectedCategory] = useState(null);
+  const [playlistItems, setPlaylistItems] = useState([]);
+  const [playlistLoading, setPlaylistLoading] = useState(false);
+  const [playlistError, setPlaylistError] = useState("");
+  const [playlistSearch, setPlaylistSearch] = useState("");
   const [episodesLoading, setEpisodesLoading] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerOrientation, setPlayerOrientation] = useState("portrait");
@@ -409,6 +415,30 @@ export default function App() {
       setProfileOpen(false);
     }
   }, [sharedSeriesId, loading, series]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadPlaylistIndex() {
+      try {
+        const response = await fetch("/catalogo/filmesseries/data/index.json");
+        if (!response.ok) {
+          throw new Error("O índice do catálogo ainda não foi gerado pela implantação.");
+        }
+        const data = await response.json();
+        if (!cancelled) setPlaylistIndex(data);
+      } catch (error) {
+        if (!cancelled) {
+          setPlaylistError(
+            error?.message || "Não foi possível carregar as categorias do catálogo."
+          );
+        }
+      }
+    }
+    loadPlaylistIndex();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -1569,6 +1599,186 @@ export default function App() {
       window.alert("Não foi possível excluir o comentário.");
     }
   }
+  async function openPlaylistCategory(category) {
+    setPlaylistSelectedCategory(category);
+    setPlaylistItems([]);
+    setPlaylistSearch("");
+    setPlaylistError("");
+    setPlaylistLoading(true);
+    try {
+      const response = await fetch(
+        `/catalogo/filmesseries/data/${encodeURIComponent(category.file)}`
+      );
+      if (!response.ok) {
+        throw new Error("Não foi possível abrir esta categoria. Tente novamente.");
+      }
+      const items = await response.json();
+      setPlaylistItems(Array.isArray(items) ? items : []);
+    } catch (error) {
+      setPlaylistError(error?.message || "Falha ao carregar os títulos desta categoria.");
+    } finally {
+      setPlaylistLoading(false);
+    }
+  }
+
+  function openPlaylistItem(item) {
+    if (!item?.videoUrl) {
+      window.alert("Este título não possui um link de vídeo disponível.");
+      return;
+    }
+    setSelectedSeries(null);
+    setSelectedMovie(null);
+    openPlayer({
+      id: item.id,
+      title: item.title,
+      video_url: item.videoUrl,
+      isMovie: true,
+      image: item.cover || ""
+    });
+  }
+
+  function renderPlaylistCatalog() {
+    const categories = playlistIndex?.categories || [];
+    const groups = [
+      { key: "movies", title: "FILMES" },
+      { key: "series", title: "SÉRIES" },
+      { key: "other", title: "OUTRAS CATEGORIAS" }
+    ];
+    const visibleItems = playlistItems.filter((item) =>
+      normalize(item.title).includes(normalize(playlistSearch))
+    );
+
+    return (
+      <section className="dv-section dv-iptv-catalog">
+        <div className="dv-section-heading">
+          <div>
+            <span className="dv-eyebrow">CATÁLOGO COMPLETO</span>
+            <h2>Filmes e séries por categoria</h2>
+            <p>
+              {playlistIndex
+                ? `${Number(playlistIndex.total || 0).toLocaleString("pt-BR")} títulos · ${categories.length} categorias`
+                : "Carregando as categorias do arquivo IPTV..."}
+            </p>
+          </div>
+          {playlistSelectedCategory && (
+            <button
+              className="dv-see-all"
+              onClick={() => {
+                setPlaylistSelectedCategory(null);
+                setPlaylistItems([]);
+                setPlaylistSearch("");
+                setPlaylistError("");
+              }}
+            >
+              ← Todas as categorias
+            </button>
+          )}
+        </div>
+
+        {playlistError && !playlistSelectedCategory && !playlistIndex && (
+          <div className="dv-message">{playlistError}</div>
+        )}
+
+        {!playlistSelectedCategory && (
+          <div className="dv-iptv-groups">
+            {groups.map((group) => {
+              const groupCategories = categories.filter(
+                (category) => category.type === group.key
+              );
+              if (!groupCategories.length) return null;
+              return (
+                <div className="dv-iptv-group" key={group.key}>
+                  <div className="dv-iptv-group-heading">
+                    <h3>{group.title}</h3>
+                    <span>{groupCategories.length} categorias</span>
+                  </div>
+                  <div className="dv-iptv-category-grid">
+                    {groupCategories.map((category) => (
+                      <button
+                        className="dv-iptv-category"
+                        key={category.slug}
+                        onClick={() => openPlaylistCategory(category)}
+                      >
+                        <span className="dv-iptv-category-icon">▤</span>
+                        <span className="dv-iptv-category-name">{category.name}</span>
+                        <strong>{Number(category.count || 0).toLocaleString("pt-BR")}</strong>
+                        <small>títulos</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {playlistSelectedCategory && (
+          <>
+            <div className="dv-iptv-selected-heading">
+              <div>
+                <h3>{playlistSelectedCategory.name}</h3>
+                <p>
+                  {Number(playlistSelectedCategory.count || 0).toLocaleString("pt-BR")} títulos nesta categoria
+                </p>
+              </div>
+              <input
+                className="dv-iptv-search"
+                type="search"
+                value={playlistSearch}
+                onChange={(event) => setPlaylistSearch(event.target.value)}
+                placeholder="Buscar título nesta categoria"
+                aria-label="Buscar título nesta categoria"
+              />
+            </div>
+            {playlistLoading ? (
+              <p className="dv-message">Carregando títulos desta categoria…</p>
+            ) : playlistError ? (
+              <p className="dv-message">{playlistError}</p>
+            ) : visibleItems.length ? (
+              <div className="dv-grid">
+                {visibleItems.map((item) => (
+                  <article className="dv-card" key={item.id}>
+                    <button
+                      className="dv-card-image-button"
+                      onClick={() => openPlaylistItem(item)}
+                      aria-label={`Reproduzir ${item.title}`}
+                    >
+                      {item.cover ? (
+                        <img
+                          className="dv-card-image"
+                          src={item.cover}
+                          alt={item.title}
+                          loading="lazy"
+                          onError={hideBrokenImage}
+                        />
+                      ) : (
+                        <span className="dv-card-image dv-image-placeholder" />
+                      )}
+                    </button>
+                    <div className="dv-card-content">
+                      <h3
+                        onClick={() => openPlaylistItem(item)}
+                        title={item.title}
+                      >
+                        {item.title}
+                      </h3>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="dv-empty">
+                <span>✦</span>
+                <h3>Nenhum título encontrado</h3>
+                <p>Tente mudar o termo de busca.</p>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+    );
+  }
+
   function renderGenreFilters() {
     return (
       <div className="dv-genre-filters">
@@ -2698,6 +2908,8 @@ export default function App() {
           </>
         )}
         {page === "filmes-lista" && (
+          <>
+          {renderPlaylistCatalog()}
           <section className="dv-section">
             <div className="dv-section-heading">
               <div>
@@ -2708,6 +2920,7 @@ export default function App() {
             {renderGenreFilters()}
             {renderGrid(filteredMovies, "movie")}
           </section>
+          </>
         )}
         {page === "series" && (
           <section className="dv-section">
