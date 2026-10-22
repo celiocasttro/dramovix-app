@@ -1131,6 +1131,12 @@ export default function App() {
   }
   function goToPage(nextPage) {
     setPage(nextPage);
+    if (nextPage === "filmes-lista" || nextPage === "filmes") {
+      setPlaylistSelectedCategory(null);
+      setPlaylistItems([]);
+      setPlaylistSearch("");
+      setPlaylistError("");
+    }
     if (
       [
         "filmes",
