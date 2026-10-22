@@ -94,9 +94,11 @@ async function main() {
       if (!title || !category) continue;
 
       const cover = (row[coverIndex] || "").trim();
+      // LinkFinal já é o endereço resolvido quando foi identificado no catálogo.
+      // Só usa LinkOriginal como fallback quando LinkFinal está vazio.
       const videoUrl =
-        (row[originalIndex] || "").trim() ||
-        (row[finalIndex] || "").trim();
+        (row[finalIndex] || "").trim() ||
+        (row[originalIndex] || "").trim();
       if (!categories.has(category)) {
         let slug = slugify(category);
         const previous = usedSlugs.get(slug);
