@@ -1159,3 +1159,125 @@ button, input { -webkit-appearance: none; appearance: none; }
   .dv-iptv-selected-heading { align-items: stretch; flex-direction: column; }
   .dv-iptv-search-wrap { width: 100%; flex-basis: auto; }
 }
+
+
+/* Ajustes exclusivos da compilação para Android TV / TV Box */
+html.dv-tv-mode {
+  font-size: 18px;
+  scroll-behavior: smooth;
+}
+html.dv-tv-mode body {
+  min-width: 800px;
+  font-size: 1rem;
+}
+html.dv-tv-mode .dv-app {
+  padding-bottom: 36px;
+}
+html.dv-tv-mode .dv-header {
+  min-height: 82px;
+  padding: 16px 36px;
+  gap: 24px;
+}
+html.dv-tv-mode .dv-logo {
+  font-size: 34px;
+}
+html.dv-tv-mode .dv-icon-btn {
+  width: 52px;
+  height: 52px;
+  font-size: 28px;
+}
+html.dv-tv-mode .dv-sidebar {
+  top: 82px;
+  width: 240px;
+  padding: 26px 16px 28px;
+}
+html.dv-tv-mode .dv-sidebar-label {
+  font-size: 13px;
+}
+html.dv-tv-mode .dv-side-link {
+  min-height: 58px;
+  font-size: 16px;
+  padding: 13px 16px;
+  margin-bottom: 8px;
+}
+html.dv-tv-mode .dv-main {
+  margin-left: 260px;
+  padding: 24px 36px 40px;
+}
+html.dv-tv-mode .dv-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 20px;
+}
+html.dv-tv-mode .dv-card {
+  border-radius: 12px;
+}
+html.dv-tv-mode .dv-card h3 {
+  font-size: 15px;
+  line-height: 1.45;
+}
+html.dv-tv-mode .dv-card-content {
+  padding: 11px 10px 13px;
+}
+html.dv-tv-mode .dv-section-heading h2 {
+  font-size: 25px;
+}
+html.dv-tv-mode .dv-button-primary,
+html.dv-tv-mode .dv-description-toggle,
+html.dv-tv-mode .dv-back,
+html.dv-tv-mode .dv-episode {
+  font-size: 16px;
+  min-height: 52px;
+}
+html.dv-tv-mode .dv-episode-info strong {
+  font-size: 17px;
+}
+html.dv-tv-mode .dv-iptv-category-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+html.dv-tv-mode .dv-iptv-category {
+  min-height: 82px;
+  padding: 16px;
+}
+html.dv-tv-mode button:focus-visible,
+html.dv-tv-mode a:focus-visible,
+html.dv-tv-mode input:focus-visible,
+html.dv-tv-mode select:focus-visible,
+html.dv-tv-mode textarea:focus-visible,
+html.dv-tv-mode [tabindex]:focus-visible {
+  outline: 4px solid #fff !important;
+  outline-offset: 4px;
+  border-color: #e50914 !important;
+  box-shadow: 0 0 0 7px rgba(229, 9, 20, .6), 0 8px 26px rgba(0,0,0,.7);
+  position: relative;
+  z-index: 5;
+}
+html.dv-tv-mode .dv-card:focus-within {
+  border-color: #e50914;
+  transform: scale(1.035);
+  z-index: 3;
+}
+html.dv-tv-mode .dv-player-modal {
+  width: min(96vw, 1500px);
+  max-height: 94dvh;
+}
+html.dv-tv-mode .dv-player-top,
+html.dv-tv-mode .dv-player-bottom {
+  padding: 16px 22px;
+  font-size: 15px;
+}
+html.dv-tv-mode .dv-player-close,
+html.dv-tv-mode .dv-player-next,
+html.dv-tv-mode .dv-episode-picker {
+  min-height: 48px;
+  min-width: 48px;
+  font-size: 15px;
+}
+@media (max-width: 1100px) {
+  html.dv-tv-mode .dv-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  html.dv-tv-mode .dv-iptv-category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
