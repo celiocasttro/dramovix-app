@@ -1,0 +1,80 @@
+name: DRAMOVIX - Gerar IPA iOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "public/**"
+      - "package.json"
+      - "package-lock.json"
+      - "capacitor.config.json"
+      - ".github/workflows/ios-ipa.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    name: Compilar IPA para iPhone
+    runs-on: macos-15
+    steps:
+      - name: Baixar projeto
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Verificar configurações do Supabase
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          test -n "$VITE_SUPABASE_URL" || (echo "::error::Falta VITE_SUPABASE_URL nos Secrets" && exit 1)
+          test -n "$VITE_SUPABASE_ANON_KEY" || (echo "::error::Falta VITE_SUPABASE_ANON_KEY nos Secrets" && exit 1)
+
+      - name: Compilar versão web
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      - name: Preparar projeto iOS
+        run: |
+          npx cap add ios
+          npx cap sync ios
+
+      - name: Compilar aplicativo iOS sem assinatura
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build/ios-derived \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Empacotar IPA sem assinatura
+        run: |
+          APP_PATH="build/ios-derived/Build/Products/Release-iphoneos/App.app"
+          test -d "$APP_PATH" || (echo "::error::App.app não foi gerado" && exit 1)
+          mkdir -p build/ipa/Payload
+          cp -R "$APP_PATH" build/ipa/Payload/App.app
+          cd build/ipa
+          zip -qry "$GITHUB_WORKSPACE/DRAMOVIX-unsigned.ipa" Payload
+
+      - name: Disponibilizar IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: DRAMOVIX-iOS-IPA
+          path: DRAMOVIX-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
