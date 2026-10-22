@@ -95,6 +95,11 @@ button, input { -webkit-appearance: none; appearance: none; }
 .dv-video-wrap--portrait { align-self: center; width: auto; height: min(82dvh, calc(100dvh - 115px)); aspect-ratio: 9/16; max-width: 100%; max-height: none; flex: 0 1 auto; margin: 0 auto; }
 .dv-video-wrap--landscape { width: 100%; aspect-ratio: 16/9; max-height: 75vh; margin: 0 auto; }
 .dv-video { display: block; width: 100%; height: 100%; background: #000; object-fit: contain; }
+.dv-player-loading { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; background: rgba(0,0,0,.94); color: #fff; text-align: center; }
+.dv-player-loading strong { font-size: 15px; }
+.dv-player-loading small { max-width: 260px; color: #d1d5db; font-size: 12px; line-height: 1.5; }
+.dv-player-spinner { width: 42px; height: 42px; border: 3px solid rgba(255,255,255,.18); border-top-color: #e50914; border-radius: 50%; animation: dv-player-spin .8s linear infinite; }
+@keyframes dv-player-spin { to { transform: rotate(360deg); } }
 .dv-player-error { padding: 12px 16px; color: #fecaca; background: #270606; font-size: 12px; line-height: 1.5; }
 .dv-player-bottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--border); background: #120505; color: #9ca3af; font-size: 12px; }
 .dv-player-next { padding: 8px 14px; color: #fff; border: 0; border-radius: 8px; background: var(--red-primary); font-size: 11px; font-weight: 700; }
