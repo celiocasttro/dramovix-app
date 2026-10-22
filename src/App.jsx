@@ -1643,12 +1643,17 @@ export default function App() {
     });
   }
 
-  function renderPlaylistCatalog() {
-    const categories = playlistIndex?.categories || [];
+  function renderPlaylistCatalog(typeFilter = "all") {
+    const allCategories = playlistIndex?.categories || [];
+    const categories = allCategories.filter((category) => {
+      if (typeFilter === "movies") return category.type === "movies" || category.type === "other";
+      if (typeFilter === "series") return category.type === "series";
+      return true;
+    });
     const groups = [
-      { key: "movies", title: "FILMES" },
-      { key: "series", title: "SÉRIES" },
-      { key: "other", title: "OUTRAS CATEGORIAS" }
+      ...(typeFilter !== "series" ? [{ key: "movies", title: "FILMES" }] : []),
+      ...(typeFilter !== "movies" ? [{ key: "series", title: "SÉRIES" }] : []),
+      ...(typeFilter !== "series" ? [{ key: "other", title: "OUTRAS CATEGORIAS" }] : [])
     ];
     const visibleItems = playlistItems.filter((item) =>
       normalize(item.title).includes(normalize(playlistSearch))
@@ -1659,10 +1664,10 @@ export default function App() {
         <div className="dv-section-heading">
           <div>
             <span className="dv-eyebrow">CATÁLOGO COMPLETO</span>
-            <h2>Filmes e séries por categoria</h2>
+            <h2>{typeFilter === "series" ? "Séries por categoria" : typeFilter === "movies" ? "Filmes por categoria" : "Filmes e séries por categoria"}</h2>
             <p>
               {playlistIndex
-                ? `${Number(playlistIndex.total || 0).toLocaleString("pt-BR")} títulos · ${categories.length} categorias`
+                ? `${categories.reduce((sum, category) => sum + Number(category.count || 0), 0).toLocaleString("pt-BR")} títulos · ${categories.length} categorias`
                 : "Carregando as categorias do arquivo IPTV..."}
             </p>
           </div>
@@ -2915,7 +2920,7 @@ export default function App() {
         )}
         {page === "filmes-lista" && (
           <>
-          {renderPlaylistCatalog()}
+          {renderPlaylistCatalog("movies")}
           <section className="dv-section">
             <div className="dv-section-heading">
               <div>
@@ -2929,6 +2934,8 @@ export default function App() {
           </>
         )}
         {page === "series" && (
+          <>
+          {renderPlaylistCatalog("series")}
           <section className="dv-section">
             <div className="dv-section-heading">
               <div>
@@ -2939,6 +2946,7 @@ export default function App() {
             {renderGenreFilters()}
             {renderGrid(ordinarySeries)}
           </section>
+          </>
         )}
         {page === "desenhos" && (
           <section className="dv-section">
