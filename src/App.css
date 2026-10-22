@@ -1009,3 +1009,128 @@ button, input { -webkit-appearance: none; appearance: none; }
   object-fit: contain;
   object-position: center;
 }
+
+
+
+/* Catálogo IPTV organizado por categoria, com contagem de títulos */
+.dv-iptv-catalog {
+  padding: 18px;
+  border: 1px solid rgba(229, 9, 20, .18);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(20, 7, 8, .8), rgba(7, 7, 7, .95));
+}
+.dv-iptv-groups { display: grid; gap: 26px; }
+.dv-iptv-group { min-width: 0; }
+.dv-iptv-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+.dv-iptv-group-heading h3 {
+  margin: 0;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+}
+.dv-iptv-group-heading span { color: #9ca3af; font-size: 11px; }
+.dv-iptv-category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.dv-iptv-category {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 9px;
+  min-width: 0;
+  min-height: 66px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .025);
+  color: #fff;
+  text-align: left;
+}
+.dv-iptv-category:hover, .dv-iptv-category:focus-visible {
+  border-color: rgba(229, 9, 20, .65);
+  background: rgba(229, 9, 20, .1);
+  outline: none;
+}
+.dv-iptv-category-icon {
+  grid-row: 1 / span 2;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 34px;
+  border-radius: 7px;
+  background: rgba(229, 9, 20, .14);
+  color: #ff5a64;
+  font-size: 18px;
+}
+.dv-iptv-category-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.dv-iptv-category strong {
+  align-self: end;
+  color: #ff7b83;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.dv-iptv-category small {
+  grid-column: 3;
+  align-self: start;
+  color: #85858d;
+  font-size: 9px;
+  text-align: right;
+}
+.dv-iptv-selected-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 0 18px;
+}
+.dv-iptv-selected-heading h3 {
+  margin: 0;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 18px;
+}
+.dv-iptv-selected-heading p {
+  margin: 5px 0 0;
+  color: #9ca3af;
+  font-size: 11px;
+}
+.dv-iptv-search {
+  width: min(100%, 300px);
+  min-height: 40px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 8px;
+  outline: none;
+  background: #0d0d0d;
+  color: #fff;
+  font-size: 12px;
+}
+.dv-iptv-search:focus { border-color: rgba(229, 9, 20, .7); }
+@media (max-width: 900px) {
+  .dv-iptv-category-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 540px) {
+  .dv-iptv-catalog { padding: 13px 10px; }
+  .dv-iptv-category-grid { grid-template-columns: minmax(0, 1fr); gap: 7px; }
+  .dv-iptv-category { min-height: 58px; padding: 9px 10px; }
+  .dv-iptv-selected-heading { align-items: stretch; flex-direction: column; }
+  .dv-iptv-search { width: 100%; }
+}
