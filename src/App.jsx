@@ -1131,7 +1131,7 @@ export default function App() {
   }
   function goToPage(nextPage) {
     setPage(nextPage);
-    if (nextPage === "filmes-lista" || nextPage === "filmes") {
+    if (["filmes-lista", "filmes", "series"].includes(nextPage)) {
       setPlaylistSelectedCategory(null);
       setPlaylistItems([]);
       setPlaylistSearch("");
