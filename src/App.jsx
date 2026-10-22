@@ -72,6 +72,52 @@ function getContentType(item) {
   }
   return "series";
 }
+function getLiveChannelCategory(title = "") {
+  const name = normalize(title);
+  if (/espn|sportv|sport tv|sports|premiere|combate|eurosport|sporting|acc network|big ten|sec network/.test(name)) return "Esportes";
+  if (/news|cnn|globonews|jp news|bm&c|record news|sbt news|band news|cnbc|accuweather/.test(name)) return "Notícias";
+  if (/cartoon|gloob|discovery kids|cartoonito|tim bum|adult swim/.test(name)) return "Infantil e animação";
+  if (/hbo|telecine|cinemax|megapix|amc|axn|space|universal|warner|tnt|sony|paramount|usa hd|canal brasil|globoplay novelas|novelas/.test(name)) return "Filmes e séries";
+  if (/discovery|animal planet|history|home & health|science|theater|turbo|world|tlc|food network|travel|viagem|hg tv|hgtv|lifetime|id hd|off hd/.test(name)) return "Documentários e estilo de vida";
+  if (/multishow|bis hd|trace|woohoo|dum dum/.test(name)) return "Música e variedades";
+  return "Variedades";
+}
+function parseM3UChannels(playlistText = "") {
+  const channels = [];
+  const seen = new Set();
+  let metadata = "";
+  playlistText.split(/\\r?\\n/).forEach((rawLine) => {
+    const line = rawLine.trim();
+    if (!line) return;
+    if (line.startsWith("#EXTINF")) {
+      metadata = line;
+      return;
+    }
+    if (line.startsWith("#")) return;
+    if (!/^https?:\\/\\//i.test(line) || !metadata) return;
+    const comma = metadata.lastIndexOf(",");
+    const title = (comma >= 0 ? metadata.slice(comma + 1) : "").trim();
+    const key = normalize(title);
+    const url = line;
+    const logoMatch = metadata.match(/tvg-logo=["']([^"']+)["']/i);
+    const groupMatch = metadata.match(/group-title=["']([^"']+)["']/i);
+    metadata = "";
+    if (!title || !key || seen.has(key)) return;
+    seen.add(key);
+    const category = (groupMatch?.[1] || "").trim() || getLiveChannelCategory(title);
+    channels.push({
+      id: `m3u-channel-${key.replace(/[^a-z0-9]+/g, "-")}`,
+      title,
+      category,
+      description: `Canal ao vivo · ${category}`,
+      image: logoMatch?.[1] || "",
+      video_url: url,
+      isLive: true,
+      source: "m3u"
+    });
+  });
+  return channels.sort((a, b) => a.category.localeCompare(b.category, "pt-BR") || a.title.localeCompare(b.title, "pt-BR"));
+}
 function getVisitorId() {
   const key = "dramovix-visitor-id";
   let id = localStorage.getItem(key);
@@ -164,6 +210,7 @@ export default function App() {
   const [playlistLoading, setPlaylistLoading] = useState(false);
   const [playlistError, setPlaylistError] = useState("");
   const [playlistSearch, setPlaylistSearch] = useState("");
+  const [channelSearch, setChannelSearch] = useState("");
   const [episodesLoading, setEpisodesLoading] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerOrientation, setPlayerOrientation] = useState("portrait");
@@ -214,7 +261,7 @@ export default function App() {
       Desenhos: "Cartoons",
       Anime: "Anime",
       Doramas: "Dramas",
-      "TV Ao Vivo": "Live TV",
+      Canais: "Channels",
       Buscar: "Search",
       "Minha Lista": "My List",
       Perfil: "Profile",
@@ -304,7 +351,7 @@ export default function App() {
       Desenhos: "Dibujos",
       Anime: "Anime",
       Doramas: "Doramas",
-      "TV Ao Vivo": "TV en vivo",
+      Canais: "Canales",
       Buscar: "Buscar",
       "Minha Lista": "Mi lista",
       Perfil: "Perfil",
@@ -448,7 +495,7 @@ export default function App() {
       setLoading(true);
       setLiveChannelsLoading(true);
       try {
-        const [seriesResult, moviesResult, liveResult] = await Promise.all([
+        const [seriesResult, moviesResult, liveResult, playlistResponse] = await Promise.all([
           supabase
             .from("series")
             .select("*")
@@ -462,7 +509,12 @@ export default function App() {
             .from("movie_live_channels")
             .select("*")
             .eq("is_active", true)
-            .order("id", { ascending: true })
+            .order("id", { ascending: true }),
+          fetch("https://raw.githubusercontent.com/celiocasttro/Iptv-Brasil-2026/master/CanaisBR03.m3u8")
+            .catch((error) => {
+              console.warn("Não foi possível carregar a lista M3U de canais:", error);
+              return null;
+            })
         ]);
         if (seriesResult.error) {
           console.error("Erro ao carregar séries:", seriesResult.error);
@@ -498,20 +550,40 @@ export default function App() {
           video_url: item.video_url || "",
           isMovie: true
         }));
-        const loadedLive = (liveResult.data || []).map((item) => ({
+        const loadedLiveFromDatabase = (liveResult.data || []).map((item) => ({
           id: `live-channel-${item.id}`,
           dbId: item.id,
           title: item.name || "Canal ao vivo",
-          category: item.category || "Ao vivo",
+          category: item.category || "Variedades",
           description: `Assista ao canal ${item.name || "ao vivo"}.`,
           image: item.cover_url || "",
           video_url: item.stream_url || "",
-          isLive: true
+          isLive: true,
+          source: "database"
         }));
+        let playlistChannels = [];
+        if (playlistResponse?.ok) {
+          try {
+            playlistChannels = parseM3UChannels(await playlistResponse.text());
+          } catch (error) {
+            console.warn("Não foi possível interpretar a lista M3U:", error);
+          }
+        } else {
+          console.warn("A lista CanaisBR03.m3u8 não respondeu; mantendo os canais cadastrados no DRAMOVIX.");
+        }
+        const liveByTitle = new Map();
+        [...loadedLiveFromDatabase, ...playlistChannels].forEach((item) => {
+          const key = normalize(item.title);
+          if (key && !liveByTitle.has(key)) liveByTitle.set(key, item);
+        });
+        const loadedLive = [...liveByTitle.values()].sort((a, b) =>
+          String(a.category || "Variedades").localeCompare(String(b.category || "Variedades"), "pt-BR") ||
+          a.title.localeCompare(b.title, "pt-BR")
+        );
         if (!cancelled) {
           setSeries(loadedSeries);
           setMovies(loadedMovies);
-          setLiveChannels(liveResult.error ? [] : loadedLive);
+          setLiveChannels(loadedLive);
         }
       } catch (error) {
         console.error("Erro ao carregar catálogo:", error);
@@ -1903,7 +1975,7 @@ export default function App() {
       type === "movie"
         ? tr("Filmes")
         : type === "live"
-          ? tr("TV Ao Vivo")
+          ? tr("Canais")
           : ({
               desenhos: tr("Desenhos"),
               animes: tr("Animes"),
@@ -2432,7 +2504,7 @@ export default function App() {
     ["desenhos", "🎨", "Desenhos"],
     ["animes", "🎌", "Anime"],
     ["doramas", "♡", "Doramas"],
-    ["tv", "◉", "TV Ao Vivo"]
+    ["tv", "◉", "Canais"]
   ];
   return (
     <div className="dv-app">
@@ -3074,57 +3146,69 @@ export default function App() {
           </section>
         )}
         {page === "tv" && (
-          <>
-          <section
-            className="dv-hero"
-            style={{
-              backgroundImage: liveHeroItem?.image
-                ? `url("${liveHeroItem.image}")`
-                : "none"
-            }}
-          >
-            <div className="dv-hero-overlay" />
-            <div className="dv-hero-content">
-              <span className="dv-eyebrow">TV AO VIVO</span>
-              <h1>{liveHeroItem?.title || "TV ao Vivo"}</h1>
-              <p>
-                {liveHeroItem?.description
-                  ? liveHeroItem.description.slice(0, 140)
-                  : "Assista às transmissões disponíveis."}
-              </p>
-              <button
-                className="dv-button-primary"
-                onClick={() => openLive(liveHeroItem)}
-              >
-                ▶ Assistir ao vivo
-              </button>
-            </div>
-          </section>
-          <section className="dv-section">
-            <div className="dv-section-heading">
+          <section className="dv-section dv-channels-page">
+            <div className="dv-section-heading dv-channels-heading">
               <div>
-                <h2>{tr("TV AO VIVO")}</h2>
-                <p>{tr("Assista às transmissões disponíveis.")}</p>
+                <span className="dv-eyebrow">DRAMOVIX · AO VIVO</span>
+                <h2>CANAIS</h2>
+                <p>{liveChannels.length.toLocaleString("pt-BR")} canais organizados por categoria</p>
               </div>
             </div>
+            <div className="dv-channels-search-wrap">
+              <svg className="dv-channels-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="10.8" cy="10.8" r="6.8" />
+                <path d="m16 16 4.2 4.2" />
+              </svg>
+              <input
+                className="dv-search-input dv-channels-search"
+                type="search"
+                placeholder="Buscar canal pelo nome ou categoria"
+                aria-label="Buscar canal pelo nome ou categoria"
+                value={channelSearch}
+                onChange={(event) => setChannelSearch(event.target.value)}
+              />
+            </div>
             {liveChannelsLoading ? (
-              <p className="dv-message">Carregando canais ao vivo...</p>
-            ) : (
-              renderGrid(
-                [
-                  ...filteredLiveChannels,
-                  ...(!search &&
-                  !liveChannels.some(
-                    (item) => normalize(item.title) === "z nation"
-                  )
-                    ? [LIVE_SERIES]
-                    : [])
-                ],
-                "live"
-              )
+              <p className="dv-message">Carregando canais...</p>
+            ) : (() => {
+              const query = normalize(channelSearch);
+              const visibleChannels = liveChannels.filter((item) =>
+                !query ||
+                normalize(item.title).includes(query) ||
+                normalize(item.category || "").includes(query)
+              );
+              const groups = [...new Set(visibleChannels.map((item) => item.category || "Variedades"))]
+                .sort((a, b) => a.localeCompare(b, "pt-BR"));
+              if (!visibleChannels.length) {
+                return (
+                  <div className="dv-empty">
+                    <span>⌕</span>
+                    <h3>Nenhum canal encontrado</h3>
+                    <p>Tente outro nome ou categoria.</p>
+                  </div>
+                );
+              }
+              return groups.map((group) => (
+                <section className="dv-channel-group" key={group}>
+                  <div className="dv-section-heading dv-channel-group-heading">
+                    <div>
+                      <h3>{group}</h3>
+                      <p>{visibleChannels.filter((item) => (item.category || "Variedades") === group).length} canais</p>
+                    </div>
+                  </div>
+                  {renderGrid(visibleChannels.filter((item) => (item.category || "Variedades") === group), "live")}
+                </section>
+              ));
+            })()}
+            {!liveChannelsLoading && !channelSearch && !liveChannels.some((item) => normalize(item.title) === "z nation") && (
+              <section className="dv-channel-group">
+                <div className="dv-section-heading dv-channel-group-heading">
+                  <div><h3>Séries ao vivo</h3><p>1 canal</p></div>
+                </div>
+                {renderGrid([LIVE_SERIES], "live")}
+              </section>
             )}
           </section>
-          </>
         )}
         {page === "explorar" && (
           <section className="dv-section">
@@ -3322,7 +3406,7 @@ export default function App() {
               <button type="button" onClick={() => { setMoreMenuOpen(false); goToPage("desenhos"); }}><span>🎨</span>Desenhos</button>
               <button type="button" onClick={() => { setMoreMenuOpen(false); goToPage("animes"); }}><span>🎌</span>Anime</button>
               <button type="button" onClick={() => { setMoreMenuOpen(false); goToPage("doramas"); }}><span>♡</span>Doramas</button>
-              <button type="button" onClick={() => { setMoreMenuOpen(false); goToPage("tv"); }}><span>◉</span>TV ao Vivo</button>
+              <button type="button" onClick={() => { setMoreMenuOpen(false); goToPage("tv"); }}><span>◉</span>Canais</button>
               <button type="button" onClick={() => { setMoreMenuOpen(false); openRequestsPage(); }}><span>＋</span>Pedidos</button>
               <button type="button" onClick={() => { setMoreMenuOpen(false); setDonationOpen(true); setPixCopied(false); }}><span>♥</span>Apoie</button>
               <button type="button" onClick={() => { setMoreMenuOpen(false); setProfileOpen(true); }}><span>♙</span>Perfil e conta</button>
