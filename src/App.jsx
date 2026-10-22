@@ -1627,30 +1627,48 @@ export default function App() {
     }
   }
 
-  function openPlaylistItem(item) {
+  async function openPlaylistItem(item) {
     if (!item?.videoUrl) {
       window.alert("Este título não possui um link de vídeo disponível.");
       return;
     }
 
-    // O DRAMOVIX é servido por HTTPS. Links HTTP podem ser bloqueados
-    // pelo navegador como conteúdo misto; tenta a versão HTTPS do mesmo vídeo.
-    const rawVideoUrl = String(item.videoUrl).trim();
-    const videoUrl =
-      window.location.protocol === "https:" && rawVideoUrl.startsWith("http://")
-        ? rawVideoUrl.replace(/^http:\/\//i, "https://")
-        : rawVideoUrl;
-
+    // Não entrega o link inicial diretamente ao player: primeiro pede ao
+    // servidor para seguir os redirecionamentos e devolver o endereço final.
+    setPlayerError("");
     setSelectedSeries(null);
     setSelectedMovie(null);
     setSelectedEpisode(null);
-    openPlayer({
-      id: item.id,
-      title: item.title,
-      video_url: videoUrl,
-      isMovie: true,
-      image: item.cover || ""
-    });
+    setPlayerOpen(false);
+
+    try {
+      const response = await fetch("/api/resolve-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: String(item.videoUrl).trim() })
+      });
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || !result?.url) {
+        throw new Error(
+          result?.error || "Não foi possível encontrar o link real deste vídeo."
+        );
+      }
+
+      openPlayer({
+        id: item.id,
+        title: item.title,
+        video_url: result.url,
+        isMovie: true,
+        image: item.cover || ""
+      });
+    } catch (error) {
+      console.error("Falha ao resolver link do catálogo:", error);
+      window.alert(
+        error?.message ||
+          "Não foi possível preparar o vídeo. Tente novamente em instantes."
+      );
+    }
   }
 
   function renderPlaylistCatalog(typeFilter = "all") {
