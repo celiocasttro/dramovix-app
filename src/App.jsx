@@ -3393,20 +3393,6 @@ export default function App() {
                 <h2>ABRIR PLAYLIST IPTV</h2>
                 <p>Selecione um arquivo M3U ou M3U8 do seu dispositivo para ver os canais e reproduzir por aqui. O arquivo é lido localmente, sem ser enviado ao servidor.</p>
               </div>
-              <button
-                className="dv-button-primary dv-m3u-select"
-                type="button"
-                onClick={() => localM3uInputRef.current?.click()}
-              >
-                ＋ Selecionar arquivo
-              </button>
-              <input
-                ref={localM3uInputRef}
-                className="dv-hidden-file-input"
-                type="file"
-                accept=".m3u,.m3u8,audio/x-mpegurl,application/vnd.apple.mpegurl,text/plain"
-                onChange={handleLocalM3uFile}
-              />
             </div>
             <div className="dv-m3u-url-form">
               <p>Quer abrir a lista completa sem precisar selecionar um arquivo?</p>
@@ -3446,6 +3432,20 @@ export default function App() {
                 {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 4"}
               </button>
               <small>Carrega automaticamente a lista CanaisIPTV.</small>
+              <button
+                className="dv-button-primary dv-m3u-select"
+                type="button"
+                onClick={() => localM3uInputRef.current?.click()}
+              >
+                ＋ Selecionar arquivo M3U/M3U8
+              </button>
+              <input
+                ref={localM3uInputRef}
+                className="dv-hidden-file-input"
+                type="file"
+                accept=".m3u,.m3u8,audio/x-mpegurl,application/vnd.apple.mpegurl,text/plain"
+                onChange={handleLocalM3uFile}
+              />
             </div>
             {localM3uError && <div className="dv-message" role="alert">{localM3uError}</div>}
             {localM3uEntries.length > 0 && (
