@@ -2466,7 +2466,8 @@ export default function App() {
           onClick={() => goToPage("filmes")}
           aria-label="DRAMOVIX início"
         >
-          DRAMOVIX
+          <span className="dv-logo-word">DRAMOVIX</span>
+          <span className="dv-logo-credit">Desenvolvido por Célio Castro</span>
         </button>
         <button
           className="dv-header-support"
@@ -2622,21 +2623,6 @@ export default function App() {
                 aria-label="Fechar"
               >
                 ×
-              </button>
-            </div>
-            <div className="dv-profile-credit-box">
-              <span className="dv-profile-credit-kicker">SOBRE O APLICATIVO</span>
-              <strong>DRAMOVIX</strong>
-              <span>Desenvolvido por <b>Célio Castro</b></span>
-              <button
-                type="button"
-                onClick={() => {
-                  setProfileOpen(false);
-                  setDonationOpen(true);
-                  setPixCopied(false);
-                }}
-              >
-                ♥ Apoiar o projeto
               </button>
             </div>
             {!user && (
