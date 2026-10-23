@@ -3333,6 +3333,13 @@ export default function App() {
       <footer className="dv-footer">
         <span className="dv-footer-tagline">DRAMOVIX · Sempre tem uma nova história.</span>
         <span className="dv-footer-credit">Desenvolvido por <strong>Célio Castro</strong></span>
+        <button
+          className="dv-footer-donate"
+          type="button"
+          onClick={() => { setDonationOpen(true); setPixCopied(false); }}
+        >
+          ♥ Apoie o DRAMOVIX
+        </button>
       </footer>
       {moreMenuOpen && (
         <div className="dv-more-menu-layer">
