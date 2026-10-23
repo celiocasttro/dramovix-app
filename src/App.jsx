@@ -1820,11 +1820,12 @@ export default function App() {
     }
   }
 
-  const DEFAULT_M3U_PLAYLIST_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/master/Filmes-Series.m3u8";
-  const DEFAULT_M3U_PLAYLIST_2_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/7392d1208f91ebe359b5370f15492cb1dc862285/CanaisBR04.m3u8";
-  const DEFAULT_M3U_PLAYLIST_3_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/7392d1208f91ebe359b5370f15492cb1dc862285/CanaisBR01.m3u8";
-  const DEFAULT_M3U_PLAYLIST_4_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/7392d1208f91ebe359b5370f15492cb1dc862285/CanaisIPTV.m3u8";
-  const DEFAULT_M3U_PLAYLIST_5_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/master/CanaisBR03.m3u8";
+  const DEFAULT_M3U_PLAYLIST_1_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/7392d1208f91ebe359b5370f15492cb1dc862285/CanaisBR01.m3u8";
+  const DEFAULT_M3U_PLAYLIST_2_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/master/CanaisBR02.m3u8";
+  const DEFAULT_M3U_PLAYLIST_3_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/master/CanaisBR03.m3u8";
+  const DEFAULT_M3U_PLAYLIST_4_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/7392d1208f91ebe359b5370f15492cb1dc862285/CanaisBR04.m3u8";
+  const DEFAULT_M3U_PLAYLIST_5_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/master/Canais.m3u8";
+  const DEFAULT_M3U_PLAYLIST_6_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/master/Filmes-Series.m3u8";
 
   async function loadLocalM3uFromUrl(url) {
     let parsedUrl;
@@ -1883,8 +1884,8 @@ export default function App() {
     await loadLocalM3uFromUrl(url);
   }
 
-  async function loadDefaultM3uPlaylist() {
-    await loadLocalM3uFromUrl(DEFAULT_M3U_PLAYLIST_URL);
+  async function loadDefaultM3uPlaylist1() {
+    await loadLocalM3uFromUrl(DEFAULT_M3U_PLAYLIST_1_URL);
   }
 
   async function loadDefaultM3uPlaylist2() {
@@ -1901,6 +1902,10 @@ export default function App() {
 
   async function loadDefaultM3uPlaylist5() {
     await loadLocalM3uFromUrl(DEFAULT_M3U_PLAYLIST_5_URL);
+  }
+
+  async function loadDefaultM3uPlaylist6() {
+    await loadLocalM3uFromUrl(DEFAULT_M3U_PLAYLIST_6_URL);
   }
 
   async function openLocalM3uEntry(item) {
@@ -3404,12 +3409,12 @@ export default function App() {
               <button
                 className="dv-button-primary dv-m3u-load-content"
                 type="button"
-                onClick={loadDefaultM3uPlaylist}
+                onClick={loadDefaultM3uPlaylist1}
                 disabled={localM3uUrlLoading}
               >
-                {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo"}
+                {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 1"}
               </button>
-              <small>Carrega automaticamente a playlist completa de filmes e séries.</small>
+              <small>Carrega automaticamente CanaisBR01.m3u8.</small>
               <button
                 className="dv-button-primary dv-m3u-load-content"
                 type="button"
@@ -3418,7 +3423,7 @@ export default function App() {
               >
                 {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 2"}
               </button>
-              <small>Carrega automaticamente a lista de canais BR (CanaisBR04).</small>
+              <small>Carrega automaticamente CanaisBR02.m3u8.</small>
               <button
                 className="dv-button-primary dv-m3u-load-content"
                 type="button"
@@ -3427,7 +3432,7 @@ export default function App() {
               >
                 {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 3"}
               </button>
-              <small>Carrega automaticamente a lista de canais BR01.</small>
+              <small>Carrega automaticamente CanaisBR03.m3u8.</small>
               <button
                 className="dv-button-primary dv-m3u-load-content"
                 type="button"
@@ -3436,7 +3441,7 @@ export default function App() {
               >
                 {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 4"}
               </button>
-              <small>Carrega automaticamente a lista CanaisIPTV.</small>
+              <small>Carrega automaticamente CanaisBR04.m3u8.</small>
               <button
                 className="dv-button-primary dv-m3u-load-content"
                 type="button"
@@ -3445,7 +3450,16 @@ export default function App() {
               >
                 {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 5"}
               </button>
-              <small>Carrega automaticamente a lista CanaisBR03.</small>
+              <small>Carrega automaticamente Canais.m3u8.</small>
+              <button
+                className="dv-button-primary dv-m3u-load-content"
+                type="button"
+                onClick={loadDefaultM3uPlaylist6}
+                disabled={localM3uUrlLoading}
+              >
+                {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 6"}
+              </button>
+              <small>Carrega automaticamente Filmes-Series.m3u8.</small>
               <button
                 className="dv-button-primary dv-m3u-select"
                 type="button"
