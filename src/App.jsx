@@ -1135,7 +1135,7 @@ export default function App() {
   }
   function openPlayer(episode, options = {}) {
     if (!episode) return;
-    setPlayerResolving(true);
+    setPlayerResolving(Boolean(options.resolving));
     setPlayerWaitSeconds(0);
     advancingEpisodeRef.current = false;
     selectedEpisodeRef.current = episode;
