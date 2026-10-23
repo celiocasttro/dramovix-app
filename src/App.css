@@ -109,7 +109,9 @@ button, input { -webkit-appearance: none; appearance: none; }
 .dv-episode-drawer > div button { border: 0; background: transparent; color: #fff; }
 .dv-episode-drawer > button { width: 100%; padding: 9px 10px; border: 0; border-radius: 6px; background: transparent; color: #fff; text-align: left; font-size: 12px; }
 .dv-episode-drawer > button.selected, .dv-episode-drawer > button:hover { background: rgba(229,9,20,.25); }
-.dv-footer { margin-left: 205px; padding: 28px 16px 95px; border-top: 1px solid rgba(255,255,255,.05); color: var(--text-muted); text-align: center; font-size: 11px; }
+.dv-footer { display: flex; flex-direction: column; align-items: center; gap: 9px; margin-left: 205px; padding: 28px 16px 95px; border-top: 1px solid rgba(255,255,255,.05); color: var(--text-muted); text-align: center; font-size: 11px; }
+.dv-footer-donate { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; margin-top: 5px; padding: 9px 16px; border: 1px solid rgba(229,9,20,.5); border-radius: 999px; background: rgba(229,9,20,.12); color: #ff7b83; font-size: 12px; font-weight: 700; }
+.dv-footer-donate:hover { background: #e50914; color: #fff; }
 .dv-bottom-nav { position: fixed; bottom: 0; left: 205px; right: 0; z-index: 50; display: flex; justify-content: space-around; align-items: center; height: 60px; padding: 0 8px env(safe-area-inset-bottom); background: rgba(5,5,5,.98); border-top: 1px solid rgba(255,255,255,.1); backdrop-filter: blur(20px); }
 .dv-bottom-nav button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; height: 100%; border: 0; background: transparent; color: #9ca3af; font-size: 10px; }
 .dv-bottom-nav button span { font-size: 18px; }
