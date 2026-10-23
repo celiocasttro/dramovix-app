@@ -1840,26 +1840,27 @@ export default function App() {
     setLocalM3uUrlLoading(true);
     setLocalM3uError("");
     try {
-      const response = await fetch("/api/playlist?url=" + encodeURIComponent(parsedUrl.href));
+      // Tenta baixar diretamente no navegador: assim playlists grandes não passam
+      // pelo limite de resposta das funções serverless do Vercel.
+      const response = await fetch(parsedUrl.href, {
+        method: "GET",
+        headers: { Accept: "application/vnd.apple.mpegurl, audio/x-mpegurl, text/plain, */*" }
+      });
       if (!response.ok) {
-        let message = "Não foi possível carregar a playlist (HTTP " + response.status + ").";
-        try {
-          const errorData = await response.json();
-          if (errorData?.error) message = errorData.error;
-        } catch {}
-        throw new Error(message);
+        throw new Error("O servidor da playlist respondeu com HTTP " + response.status + ".");
       }
       const textContent = await response.text();
-      if (!textContent.trim().startsWith("#EXTM3U")) {
+      if (!textContent.replace(/^\\uFEFF/, "").trimStart().startsWith("#EXTM3U")) {
         throw new Error("O endereço não retornou uma playlist M3U/M3U8 válida.");
       }
       const fileName = decodeURIComponent(parsedUrl.pathname.split("/").pop() || "playlist.m3u");
       const file = new File([textContent], fileName, { type: "audio/x-mpegurl" });
-      handleLocalM3uFile({ target: { files: [file], value: "" } });
+      await handleLocalM3uFile({ target: { files: [file], value: "" } });
     } catch (error) {
+      const isCors = error?.message?.includes("Failed to fetch") || error?.name === "TypeError";
       setLocalM3uError(
-        error?.message?.includes("Failed to fetch") || error?.name === "TypeError"
-          ? "Não consegui acessar essa URL pelo navegador. O servidor pode bloquear acesso externo (CORS) ou exigir autenticação. Tente importar o arquivo M3U/M3U8."
+        isCors
+          ? "Este servidor bloqueia a leitura direta pelo navegador (CORS). Para uma lista de 86 MB, baixe o arquivo e use “Selecionar arquivo M3U/M3U8”; o proxy do site tem limite de tamanho."
           : error?.message || "Não foi possível carregar a playlist pelo endereço."
       );
     } finally {
