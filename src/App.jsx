@@ -188,6 +188,8 @@ export default function App() {
   const [localM3uEntries, setLocalM3uEntries] = useState([]);
   const [localM3uName, setLocalM3uName] = useState("");
   const [localM3uError, setLocalM3uError] = useState("");
+  const [localM3uUrl, setLocalM3uUrl] = useState("");
+  const [localM3uUrlLoading, setLocalM3uUrlLoading] = useState(false);
   const [localM3uSearch, setLocalM3uSearch] = useState("");
   const [localM3uCategory, setLocalM3uCategory] = useState("Todas");
   const localM3uInputRef = useRef(null);
@@ -1817,6 +1819,47 @@ export default function App() {
     }
   }
 
+  async function handleLocalM3uUrl(event) {
+    event.preventDefault();
+    const url = localM3uUrl.trim();
+    if (!url) {
+      setLocalM3uError("Cole o endereço da playlist M3U/M3U8.");
+      return;
+    }
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      setLocalM3uError("Digite um endereço válido começando com http:// ou https://.");
+      return;
+    }
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      setLocalM3uError("Use um endereço HTTP ou HTTPS.");
+      return;
+    }
+    setLocalM3uUrlLoading(true);
+    setLocalM3uError("");
+    try {
+      const response = await fetch(parsedUrl.href);
+      if (!response.ok) throw new Error("O servidor da playlist respondeu com erro (" + response.status + ").");
+      const textContent = await response.text();
+      if (!textContent.trim().startsWith("#EXTM3U")) {
+        throw new Error("O endereço não retornou uma playlist M3U/M3U8 válida.");
+      }
+      const fileName = decodeURIComponent(parsedUrl.pathname.split("/").pop() || "playlist.m3u");
+      const file = new File([textContent], fileName, { type: "audio/x-mpegurl" });
+      handleLocalM3uFile({ target: { files: [file], value: "" } });
+    } catch (error) {
+      setLocalM3uError(
+        error?.message?.includes("Failed to fetch") || error?.name === "TypeError"
+          ? "Não consegui acessar essa URL pelo navegador. O servidor pode bloquear acesso externo (CORS) ou exigir autenticação. Tente importar o arquivo M3U/M3U8."
+          : error?.message || "Não foi possível carregar a playlist pelo endereço."
+      );
+    } finally {
+      setLocalM3uUrlLoading(false);
+    }
+  }
+
   function openLocalM3uEntry(item) {
     if (!item?.video_url) return;
     setSelectedSeries(null);
@@ -3287,6 +3330,24 @@ export default function App() {
                 onChange={handleLocalM3uFile}
               />
             </div>
+            <form className="dv-m3u-url-form" onSubmit={handleLocalM3uUrl}>
+              <label htmlFor="dv-m3u-url">Ou cole a URL da playlist</label>
+              <div className="dv-m3u-url-row">
+                <input
+                  id="dv-m3u-url"
+                  type="url"
+                  value={localM3uUrl}
+                  onChange={(event) => setLocalM3uUrl(event.target.value)}
+                  placeholder="https://servidor.com/lista.m3u8"
+                  autoComplete="url"
+                  aria-label="URL da playlist M3U ou M3U8"
+                />
+                <button className="dv-button-primary" type="submit" disabled={localM3uUrlLoading}>
+                  {localM3uUrlLoading ? "Carregando..." : "Abrir URL"}
+                </button>
+              </div>
+              <small>Alguns servidores bloqueiam o acesso pelo navegador ou exigem login.</small>
+            </form>
             {localM3uError && <div className="dv-message" role="alert">{localM3uError}</div>}
             {localM3uEntries.length > 0 && (
               <>
