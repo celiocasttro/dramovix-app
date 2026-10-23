@@ -1005,15 +1005,24 @@ export default function App() {
         normalize(item.title).includes(normalize(genreFilter))
     );
   const filteredLiveChannels = liveChannels.filter(matchesSearch);
-  const cartoons = filteredSeries.filter(
-    (item) => getContentType(item) === "desenhos"
-  );
-  const anime = filteredSeries.filter(
-    (item) => getContentType(item) === "animes"
-  );
-  const doramas = filteredSeries.filter(
-    (item) => getContentType(item) === "doramas"
-  );
+  // As abas temáticas são vitrines adicionais: os itens continuam nos catálogos originais.
+  const getSecondaryCategory = (item) => {
+    const title = normalize(item.title || "");
+    const genre = normalize(item.category || item.genre || "");
+    const explicitType = normalize(item.content_type || item.contentType || "");
+    const text = `${title} ${genre} ${explicitType}`;
+    if (/dorama|k-drama|kdrama|cdrama|c-drama|drama coreano|drama chines/.test(text)) return "doramas";
+    if (/anime|shounen|shonen|isekai|manga|anime japones/.test(text)) return "animes";
+    if (/desenho|cartoon|infantil|kids|animacao|animação|bob esponja|meninas super poderosas|jovens tita|pantera cor de rosa|coragem o cao|familia urso|jackie chan|avatar a lenda|dragon ball|tom e jerry|pica-pau|scooby-doo|scooby doo|ben 10|hora de aventura|apenas um show|gumball|steven universo|finn e jake/.test(text)) return "desenhos";
+    return "";
+  };
+  const taggedCatalog = [
+    ...filteredMovies.map((item) => ({ item, type: "movie" })),
+    ...filteredSeries.map((item) => ({ item, type: "series" }))
+  ];
+  const cartoons = taggedCatalog.filter(({ item }) => getSecondaryCategory(item) === "desenhos");
+  const anime = taggedCatalog.filter(({ item }) => getSecondaryCategory(item) === "animes");
+  const doramas = taggedCatalog.filter(({ item }) => getSecondaryCategory(item) === "doramas");
   const ordinarySeries = filteredSeries.filter(
     (item) => getContentType(item) === "series"
   );
@@ -2303,6 +2312,23 @@ export default function App() {
       </div>
     );
   }
+  function renderTaggedGrid(entries) {
+    if (loading) return <p className="dv-message">{tr("Carregando catálogo…")}</p>;
+    if (!entries.length) {
+      return (
+        <div className="dv-empty">
+          <span>✦</span>
+          <h3>{tr("Nenhum conteúdo encontrado")}</h3>
+          <p>Tente novamente mais tarde ou escolha outra categoria.</p>
+        </div>
+      );
+    }
+    return (
+      <div className="dv-grid">
+        {entries.map(({ item, type }) => renderCard(item, type))}
+      </div>
+    );
+  }
   function renderRequestStatus(status) {
     const label = getRequestStatusLabel(status);
     const statusClasses = {
@@ -3368,7 +3394,7 @@ export default function App() {
               </div>
             </div>
             {renderGenreFilters()}
-            {renderGrid(cartoons)}
+            {renderTaggedGrid(cartoons)}
           </section>
         )}
         {page === "animes" && (
@@ -3380,7 +3406,7 @@ export default function App() {
               </div>
             </div>
             {renderGenreFilters()}
-            {renderGrid(anime)}
+            {renderTaggedGrid(anime)}
           </section>
         )}
         {page === "doramas" && (
@@ -3392,7 +3418,7 @@ export default function App() {
               </div>
             </div>
             {renderGenreFilters()}
-            {renderGrid(doramas)}
+            {renderTaggedGrid(doramas)}
           </section>
         )}
         {page === "tv" && (
