@@ -90,6 +90,27 @@ function hideBrokenImage(event) {
   image.removeAttribute("src");
   image.style.visibility = "hidden";
 }
+function loadPlayerLibrary(src, globalName) {
+  if (window[globalName]) return Promise.resolve(window[globalName]);
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-dv-player-lib="${globalName}"]`);
+    if (existing) {
+      existing.addEventListener("load", () => window[globalName] ? resolve(window[globalName]) : reject(new Error("Biblioteca de reprodução indisponível.")), { once: true });
+      existing.addEventListener("error", () => reject(new Error("Não foi possível carregar o suporte extra de reprodução.")), { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.dataset.dvPlayerLib = globalName;
+    script.onload = () => window[globalName] ? resolve(window[globalName]) : reject(new Error("Biblioteca de reprodução indisponível."));
+    script.onerror = () => {
+      script.remove();
+      reject(new Error("Não foi possível carregar o suporte extra de reprodução."));
+    };
+    document.head.appendChild(script);
+  });
+}
 function formatDate(date) {
   if (!date) return "";
   const parsed = new Date(date);
@@ -701,6 +722,8 @@ export default function App() {
     let autoplayTimer = null;
     let nativeFallbackAttempted = false;
     let liveRawFallbackAttempted = false;
+    let alternatePlayerAttempted = false;
+    let alternatePlayer = null;
     selectedEpisodeRef.current = selectedEpisode;
     advancingEpisodeRef.current = false;
     setPlayerError("");
@@ -756,9 +779,65 @@ export default function App() {
       scheduleAutoplay();
       return true;
     };
+    const tryAlternatePlayer = async () => {
+      if (!isCurrentPlayer() || alternatePlayerAttempted) return false;
+      const isDash = /\.mpd(?:$|[?#])/i.test(originalUrl);
+      const isTransportStream = /\.ts(?:$|[?#])/i.test(originalUrl) || isLiveXtreamUrl;
+      if (!isDash && !isTransportStream) return false;
+      alternatePlayerAttempted = true;
+      try {
+        if (isDash) {
+          const dashjs = await loadPlayerLibrary(
+            "https://cdn.jsdelivr.net/npm/dashjs@5.0.3/dist/dash.all.min.js",
+            "dashjs"
+          );
+          if (!isCurrentPlayer()) return true;
+          if (!dashjs?.MediaPlayer) throw new Error("Suporte MPEG-DASH indisponível.");
+          alternatePlayer = dashjs.MediaPlayer().create();
+          alternatePlayer.initialize(video, originalUrl, true);
+          setPlayerError("");
+          return true;
+        }
+        const mpegts = await loadPlayerLibrary(
+          "https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js",
+          "mpegts"
+        );
+        if (!isCurrentPlayer()) return true;
+        if (!mpegts?.isSupported?.() || !mpegts?.createPlayer) {
+          throw new Error("Este navegador não oferece suporte a este formato de transmissão.");
+        }
+        alternatePlayer = mpegts.createPlayer({
+          type: "mpegts",
+          isLive: Boolean(selectedEpisode.isLive || selectedSeries?.isLive),
+          url: originalUrl
+        }, {
+          enableWorker: true,
+          enableStashBuffer: true,
+          stashInitialSize: 384
+        });
+        alternatePlayer.attachMediaElement(video);
+        alternatePlayer.load();
+        const playResult = alternatePlayer.play();
+        if (playResult?.catch) playResult.catch(() => {});
+        setPlayerError("");
+        return true;
+      } catch (error) {
+        console.warn("Suporte alternativo IPTV não conseguiu iniciar:", error);
+        if (isCurrentPlayer()) {
+          setPlayerError(
+            "Este link usa um formato que o navegador não conseguiu abrir. Verifique se o servidor permite reprodução externa (CORS) e se o link está ativo."
+          );
+        }
+        return true;
+      }
+    };
     const handleVideoError = () => {
       if (!isCurrentPlayer()) return;
       if (fallbackToOriginalLiveUrl()) return;
+      if (/\.mpd(?:$|[?#])|\.ts(?:$|[?#])/i.test(originalUrl) || isLiveXtreamUrl) {
+        void tryAlternatePlayer();
+        return;
+      }
       setPlayerError(
         "Não foi possível reproduzir este vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução."
       );
@@ -863,6 +942,15 @@ export default function App() {
         if (hlsRef.current === hls) {
           hlsRef.current = null;
         }
+      }
+      if (alternatePlayer) {
+        try {
+          if (typeof alternatePlayer.destroy === "function") alternatePlayer.destroy();
+          else if (typeof alternatePlayer.reset === "function") alternatePlayer.reset();
+        } catch (error) {
+          console.warn("Não foi possível encerrar o player alternativo:", error);
+        }
+        alternatePlayer = null;
       }
       video.pause();
       video.removeAttribute("src");
