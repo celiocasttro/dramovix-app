@@ -1804,7 +1804,8 @@ export default function App() {
             category: pending.category || "Sem categoria",
             image: pending.logo || "",
             video_url: line,
-            isLive: true
+            isMovie: true,
+            isLive: false
           });
           pending = null;
         }
@@ -1872,10 +1873,13 @@ export default function App() {
     if (!item?.video_url) return;
     setSelectedSeries(null);
     setSelectedMovie(null);
+    // Os itens da playlist usam o mesmo caminho de reprodução direta dos filmes:
+    // não aplicar a conversão automática de URL Xtream para .m3u8.
     openPlayer({
       ...item,
-      isLive: true,
-      title: item.title || "Canal IPTV",
+      isMovie: true,
+      isLive: false,
+      title: item.title || "Vídeo da playlist",
       video_url: item.video_url
     });
   }
