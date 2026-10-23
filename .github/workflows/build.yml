@@ -1,10 +1,8 @@
 name: DRAMOVIX - APK Android e TV Box
 
+# APKs só são gerados quando o usuário iniciar manualmente esta automação.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 permissions:
   contents: read
