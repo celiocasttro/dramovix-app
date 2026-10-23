@@ -3397,11 +3397,12 @@ export default function App() {
                     ))}
                   </select>
                 </div>
+                <p className="dv-muted">Lista com {localM3uEntries.length.toLocaleString("pt-BR")} itens. Para manter a página leve, são exibidos até 250 resultados por vez; use a busca ou o filtro de categoria para encontrar outros.</p>
                 <div className="dv-m3u-list">
                   {localM3uEntries.filter((item) =>
                     (!localM3uSearch.trim() || normalize(item.title).includes(normalize(localM3uSearch)) || normalize(item.category).includes(normalize(localM3uSearch))) &&
                     (localM3uCategory === "Todas" || item.category === localM3uCategory)
-                  ).map((item) => (
+                  ).slice(0, 250).map((item) => (
                     <button
                       className="dv-m3u-item"
                       type="button"
