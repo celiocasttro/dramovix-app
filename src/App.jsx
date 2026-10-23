@@ -1820,18 +1820,14 @@ export default function App() {
     }
   }
 
-  async function handleLocalM3uUrl(event) {
-    event.preventDefault();
-    const url = localM3uUrl.trim();
-    if (!url) {
-      setLocalM3uError("Cole o endereço da playlist M3U/M3U8.");
-      return;
-    }
+  const DEFAULT_M3U_PLAYLIST_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/master/Filmes-Series.m3u8";
+
+  async function loadLocalM3uFromUrl(url) {
     let parsedUrl;
     try {
       parsedUrl = new URL(url);
     } catch {
-      setLocalM3uError("Digite um endereço válido começando com http:// ou https://.");
+      setLocalM3uError("O endereço configurado da playlist é inválido.");
       return;
     }
     if (!["http:", "https:"].includes(parsedUrl.protocol)) {
@@ -1840,9 +1836,12 @@ export default function App() {
     }
     setLocalM3uUrlLoading(true);
     setLocalM3uError("");
+    setLocalM3uEntries([]);
+    setLocalM3uSearch("");
+    setLocalM3uCategory("Todas");
     try {
-      // Tenta baixar diretamente no navegador: assim playlists grandes não passam
-      // pelo limite de resposta das funções serverless do Vercel.
+      // A playlist é lida diretamente no navegador para não passar pelo limite
+      // de tamanho das funções serverless do Vercel.
       const response = await fetch(parsedUrl.href, {
         method: "GET",
         headers: { Accept: "application/vnd.apple.mpegurl, audio/x-mpegurl, text/plain, */*" }
@@ -1857,16 +1856,31 @@ export default function App() {
       const fileName = decodeURIComponent(parsedUrl.pathname.split("/").pop() || "playlist.m3u");
       const file = new File([textContent], fileName, { type: "audio/x-mpegurl" });
       await handleLocalM3uFile({ target: { files: [file], value: "" } });
+      setLocalM3uUrl(url);
     } catch (error) {
       const isCors = error?.message?.includes("Failed to fetch") || error?.name === "TypeError";
       setLocalM3uError(
         isCors
-          ? "Este servidor bloqueia a leitura direta pelo navegador (CORS). Para uma lista de 86 MB, baixe o arquivo e use “Selecionar arquivo M3U/M3U8”; o proxy do site tem limite de tamanho."
+          ? "O servidor bloqueou a leitura direta pelo navegador (CORS). Tente novamente mais tarde ou carregue o arquivo M3U/M3U8 do dispositivo."
           : error?.message || "Não foi possível carregar a playlist pelo endereço."
       );
     } finally {
       setLocalM3uUrlLoading(false);
     }
+  }
+
+  async function handleLocalM3uUrl(event) {
+    event.preventDefault();
+    const url = localM3uUrl.trim();
+    if (!url) {
+      setLocalM3uError("Cole o endereço da playlist M3U/M3U8.");
+      return;
+    }
+    await loadLocalM3uFromUrl(url);
+  }
+
+  async function loadDefaultM3uPlaylist() {
+    await loadLocalM3uFromUrl(DEFAULT_M3U_PLAYLIST_URL);
   }
 
   async function openLocalM3uEntry(item) {
@@ -3379,24 +3393,18 @@ export default function App() {
                 onChange={handleLocalM3uFile}
               />
             </div>
-            <form className="dv-m3u-url-form" onSubmit={handleLocalM3uUrl}>
-              <label htmlFor="dv-m3u-url">Ou cole a URL da playlist</label>
-              <div className="dv-m3u-url-row">
-                <input
-                  id="dv-m3u-url"
-                  type="url"
-                  value={localM3uUrl}
-                  onChange={(event) => setLocalM3uUrl(event.target.value)}
-                  placeholder="https://servidor.com/lista.m3u8"
-                  autoComplete="url"
-                  aria-label="URL da playlist M3U ou M3U8"
-                />
-                <button className="dv-button-primary" type="submit" disabled={localM3uUrlLoading}>
-                  {localM3uUrlLoading ? "Carregando..." : "Abrir URL"}
-                </button>
-              </div>
-              <small>Alguns servidores bloqueiam o acesso pelo navegador ou exigem login.</small>
-            </form>
+            <div className="dv-m3u-url-form">
+              <p>Quer abrir a lista completa sem precisar selecionar um arquivo?</p>
+              <button
+                className="dv-button-primary dv-m3u-load-content"
+                type="button"
+                onClick={loadDefaultM3uPlaylist}
+                disabled={localM3uUrlLoading}
+              >
+                {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo"}
+              </button>
+              <small>Carrega automaticamente a playlist completa de filmes e séries.</small>
+            </div>
             {localM3uError && <div className="dv-message" role="alert">{localM3uError}</div>}
             {localM3uEntries.length > 0 && (
               <>
