@@ -2248,7 +2248,12 @@ export default function App() {
             }[getContentType(item)] || tr("Séries"));
     const openItem = () => {
       if (type === "live") return openLive(item);
-      if (type === "movie") return openMovieDetails(item);
+      if (type === "movie") {
+        return openMovieDetails({
+          ...item,
+          displayContentType: thematicType || getSecondaryCategory(item) || "filmes"
+        });
+      }
       if (type === "history") {
         const original =
           series.find(
@@ -3240,7 +3245,15 @@ export default function App() {
                     className="dv-button-primary"
                     onClick={() => playMovie(selectedMovie)}
                   >
-                    {"▶ " + tr("Assistir filme")}
+                    {"▶ " + tr(
+                      selectedMovie.displayContentType === "desenhos"
+                        ? "Assistir desenho"
+                        : selectedMovie.displayContentType === "doramas"
+                          ? "Assistir dorama"
+                          : selectedMovie.displayContentType === "animes"
+                            ? "Assistir anime"
+                            : "Assistir filme"
+                    )}
                   </button>
                   <button
                     className="dv-description-toggle"
