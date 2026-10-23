@@ -683,7 +683,13 @@ export default function App() {
     if (!playerOpen || !selectedEpisode || !videoRef.current) return;
     if (playerResolving) return;
     const video = videoRef.current;
-    const url = selectedEpisode.video_url || "";
+    const originalUrl = selectedEpisode.video_url || "";
+    // Muitos canais IPTV usam URL Xtream sem extensão (stream MPEG-TS).
+    // Tenta HLS primeiro e mantém o endereço original como fallback.
+    const isLiveXtreamUrl = Boolean(
+      selectedEpisode.isLive && /\/\d+$/.test(originalUrl)
+    );
+    const url = isLiveXtreamUrl ? `${originalUrl}.m3u8` : originalUrl;
     setPlayerOrientation(
       selectedEpisode.isMovie || selectedEpisode.isLive || selectedSeries?.isLive
         ? "landscape"
@@ -694,6 +700,7 @@ export default function App() {
     let hls = null;
     let autoplayTimer = null;
     let nativeFallbackAttempted = false;
+    let liveRawFallbackAttempted = false;
     selectedEpisodeRef.current = selectedEpisode;
     advancingEpisodeRef.current = false;
     setPlayerError("");
@@ -713,12 +720,6 @@ export default function App() {
     }
     const isCurrentPlayer = () =>
       !cancelled && generation === playerGenerationRef.current;
-    const handleVideoError = () => {
-      if (!isCurrentPlayer()) return;
-      setPlayerError(
-        "Não foi possível reproduzir este vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução."
-      );
-    };
     const attemptAutoplay = () => {
       if (!isCurrentPlayer()) return;
       if (video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
@@ -738,6 +739,29 @@ export default function App() {
       if (!isCurrentPlayer()) return;
       window.clearTimeout(autoplayTimer);
       autoplayTimer = window.setTimeout(attemptAutoplay, 100);
+    };
+    const fallbackToOriginalLiveUrl = () => {
+      if (!isLiveXtreamUrl || liveRawFallbackAttempted || !isCurrentPlayer()) {
+        return false;
+      }
+      liveRawFallbackAttempted = true;
+      if (hls) {
+        hls.destroy();
+        if (hlsRef.current === hls) hlsRef.current = null;
+        hls = null;
+      }
+      setPlayerError("");
+      video.src = originalUrl;
+      video.load();
+      scheduleAutoplay();
+      return true;
+    };
+    const handleVideoError = () => {
+      if (!isCurrentPlayer()) return;
+      if (fallbackToOriginalLiveUrl()) return;
+      setPlayerError(
+        "Não foi possível reproduzir este vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução."
+      );
     };
     const handleVideoMetadata = () => {
       if (!isCurrentPlayer()) return;
@@ -802,7 +826,7 @@ export default function App() {
               video.src = url;
               video.load();
               scheduleAutoplay();
-            } else {
+            } else if (!fallbackToOriginalLiveUrl()) {
               setPlayerError(
                 "Não foi possível carregar o vídeo. O link pode ter expirado ou o servidor pode estar indisponível."
               );
