@@ -3266,55 +3266,6 @@ export default function App() {
         )}
         {page === "tv" && (
           <>
-          <section
-            className="dv-hero"
-            style={{
-              backgroundImage: liveHeroItem?.image
-                ? `url("${liveHeroItem.image}")`
-                : "none"
-            }}
-          >
-            <div className="dv-hero-overlay" />
-            <div className="dv-hero-content">
-              <span className="dv-eyebrow">TV AO VIVO</span>
-              <h1>{liveHeroItem?.title || "TV ao Vivo"}</h1>
-              <p>
-                {liveHeroItem?.description
-                  ? liveHeroItem.description.slice(0, 140)
-                  : "Assista às transmissões disponíveis."}
-              </p>
-              <button
-                className="dv-button-primary"
-                onClick={() => openLive(liveHeroItem)}
-              >
-                ▶ Assistir ao vivo
-              </button>
-            </div>
-          </section>
-          <section className="dv-section">
-            <div className="dv-section-heading">
-              <div>
-                <h2>{tr("TV AO VIVO")}</h2>
-                <p>{tr("Assista às transmissões disponíveis.")}</p>
-              </div>
-            </div>
-            {liveChannelsLoading ? (
-              <p className="dv-message">Carregando canais ao vivo...</p>
-            ) : (
-              renderGrid(
-                [
-                  ...filteredLiveChannels,
-                  ...(!search &&
-                  !liveChannels.some(
-                    (item) => normalize(item.title) === "z nation"
-                  )
-                    ? [LIVE_SERIES]
-                    : [])
-                ],
-                "live"
-              )
-            )}
-          </section>
           <section className="dv-section dv-local-m3u">
             <div className="dv-section-heading">
               <div>
@@ -3404,6 +3355,56 @@ export default function App() {
               </>
             )}
           </section>
+          <section
+            className="dv-hero"
+            style={{
+              backgroundImage: liveHeroItem?.image
+                ? `url("${liveHeroItem.image}")`
+                : "none"
+            }}
+          >
+            <div className="dv-hero-overlay" />
+            <div className="dv-hero-content">
+              <span className="dv-eyebrow">TV AO VIVO</span>
+              <h1>{liveHeroItem?.title || "TV ao Vivo"}</h1>
+              <p>
+                {liveHeroItem?.description
+                  ? liveHeroItem.description.slice(0, 140)
+                  : "Assista às transmissões disponíveis."}
+              </p>
+              <button
+                className="dv-button-primary"
+                onClick={() => openLive(liveHeroItem)}
+              >
+                ▶ Assistir ao vivo
+              </button>
+            </div>
+          </section>
+          <section className="dv-section">
+            <div className="dv-section-heading">
+              <div>
+                <h2>{tr("TV AO VIVO")}</h2>
+                <p>{tr("Assista às transmissões disponíveis.")}</p>
+              </div>
+            </div>
+            {liveChannelsLoading ? (
+              <p className="dv-message">Carregando canais ao vivo...</p>
+            ) : (
+              renderGrid(
+                [
+                  ...filteredLiveChannels,
+                  ...(!search &&
+                  !liveChannels.some(
+                    (item) => normalize(item.title) === "z nation"
+                  )
+                    ? [LIVE_SERIES]
+                    : [])
+                ],
+                "live"
+              )
+            )}
+          </section>
+
           </>
         )}
         {page === "explorar" && (
