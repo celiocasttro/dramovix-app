@@ -1850,7 +1850,7 @@ export default function App() {
         throw new Error("O servidor da playlist respondeu com HTTP " + response.status + ".");
       }
       const textContent = await response.text();
-      if (!textContent.replace(/^\\uFEFF/, "").trimStart().startsWith("#EXTM3U")) {
+      if (!textContent.replace(/^\uFEFF/, "").trimStart().startsWith("#EXTM3U")) {
         throw new Error("O endereço não retornou uma playlist M3U/M3U8 válida.");
       }
       const fileName = decodeURIComponent(parsedUrl.pathname.split("/").pop() || "playlist.m3u");
