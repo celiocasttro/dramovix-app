@@ -2466,8 +2466,10 @@ export default function App() {
           onClick={() => goToPage("filmes")}
           aria-label="DRAMOVIX início"
         >
-          <span className="dv-logo-word">DRAMOVIX</span>
-          <span className="dv-logo-credit">Desenvolvido por Célio Castro</span>
+          <span className="dv-logo-stack">
+            <span className="dv-logo-word">DRAMOVIX</span>
+            <span className="dv-logo-credit">Desenvolvido por Célio Castro</span>
+          </span>
         </button>
         <button
           className="dv-header-support"
