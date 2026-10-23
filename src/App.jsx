@@ -1841,7 +1841,14 @@ export default function App() {
     setLocalM3uError("");
     try {
       const response = await fetch("/api/playlist?url=" + encodeURIComponent(parsedUrl.href));
-      if (!response.ok) throw new Error("O servidor da playlist respondeu com erro (" + response.status + ").");
+      if (!response.ok) {
+        let message = "Não foi possível carregar a playlist (HTTP " + response.status + ").";
+        try {
+          const errorData = await response.json();
+          if (errorData?.error) message = errorData.error;
+        } catch {}
+        throw new Error(message);
+      }
       const textContent = await response.text();
       if (!textContent.trim().startsWith("#EXTM3U")) {
         throw new Error("O endereço não retornou uma playlist M3U/M3U8 válida.");
