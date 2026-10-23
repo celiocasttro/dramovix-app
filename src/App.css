@@ -1159,3 +1159,17 @@ button, input { -webkit-appearance: none; appearance: none; }
   .dv-iptv-selected-heading { align-items: stretch; flex-direction: column; }
   .dv-iptv-search-wrap { width: 100%; flex-basis: auto; }
 }
+
+
+/* Créditos públicos do projeto */
+.dv-footer { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.dv-footer-tagline { color: var(--text-muted); }
+.dv-footer-credit { color: #8f8f98; font-size: 11px; }
+.dv-footer-credit strong { color: #f1f1f1; font-weight: 700; }
+
+/* Opções de contribuição organizadas */
+.dv-donation-option { display: grid; gap: 8px; margin-top: 13px; text-align: left; }
+.dv-donation-option-title { color: #ff9da5; font-size: 10px; font-weight: 800; letter-spacing: 1.25px; }
+.dv-donation-option .dv-donation-payment-link { margin-bottom: 0; }
+.dv-donation-option .dv-donation-link-note { margin-bottom: 0; }
+.dv-donation-option .dv-donation-pix-card { margin-top: 0; }
