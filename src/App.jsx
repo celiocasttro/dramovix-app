@@ -264,6 +264,10 @@ export default function App() {
       "TV AO VIVO": "LIVE TV",
       Episódios: "Episodes",
       "Assistir filme": "Watch movie",
+      "Assistir desenho": "Watch cartoon",
+      "Assistir série": "Watch series",
+      "Assistir dorama": "Watch drama",
+      "Assistir anime": "Watch anime",
       "Assistir 1º Episódio": "Watch first episode",
       "Nenhum conteúdo encontrado": "No content found",
       "Carregando catálogo…": "Loading catalog…",
@@ -354,6 +358,10 @@ export default function App() {
       "TV AO VIVO": "TV EN VIVO",
       Episódios: "Episodios",
       "Assistir filme": "Ver película",
+      "Assistir desenho": "Ver dibujo",
+      "Assistir série": "Ver serie",
+      "Assistir dorama": "Ver dorama",
+      "Assistir anime": "Ver anime",
       "Assistir 1º Episódio": "Ver primer episodio",
       "Nenhum conteúdo encontrado": "No se encontró contenido",
       "Carregando catálogo…": "Cargando catálogo…",
@@ -2226,7 +2234,7 @@ export default function App() {
       </div>
     );
   }
-  function renderCard(item, type = "series") {
+  function renderCard(item, type = "series", thematicType = "") {
     const favoriteTypeLabel =
       type === "movie"
         ? tr("Filmes")
@@ -2256,7 +2264,10 @@ export default function App() {
         }
         return;
       }
-      return openSeries(item);
+      return openSeries({
+        ...item,
+        displayContentType: thematicType || getSecondaryCategory(item) || getContentType(item)
+      });
     };
     return (
       <article className="dv-card" key={item.id}>
@@ -2312,7 +2323,7 @@ export default function App() {
       </div>
     );
   }
-  function renderTaggedGrid(entries) {
+  function renderTaggedGrid(entries, thematicType) {
     if (loading) return <p className="dv-message">{tr("Carregando catálogo…")}</p>;
     if (!entries.length) {
       return (
@@ -2325,7 +2336,7 @@ export default function App() {
     }
     return (
       <div className="dv-grid">
-        {entries.map(({ item, type }) => renderCard(item, type))}
+        {entries.map(({ item, type }) => renderCard(item, type, thematicType))}
       </div>
     );
   }
@@ -3103,7 +3114,15 @@ export default function App() {
                     }
                     disabled={episodesLoading || !episodes.length}
                   >
-                    {"▶ " + tr("Assistir 1º Episódio")}
+                    {"▶ " + tr(
+                      selectedSeries.displayContentType === "desenhos"
+                        ? "Assistir desenho"
+                        : selectedSeries.displayContentType === "doramas"
+                          ? "Assistir dorama"
+                          : selectedSeries.displayContentType === "animes"
+                            ? "Assistir anime"
+                            : "Assistir série"
+                    )}
                   </button>
                   <button
                     className="dv-description-toggle"
@@ -3394,7 +3413,7 @@ export default function App() {
               </div>
             </div>
             {renderGenreFilters()}
-            {renderTaggedGrid(cartoons)}
+            {renderTaggedGrid(cartoons, "desenhos")}
           </section>
         )}
         {page === "animes" && (
@@ -3406,7 +3425,7 @@ export default function App() {
               </div>
             </div>
             {renderGenreFilters()}
-            {renderTaggedGrid(anime)}
+            {renderTaggedGrid(anime, "animes")}
           </section>
         )}
         {page === "doramas" && (
@@ -3418,7 +3437,7 @@ export default function App() {
               </div>
             </div>
             {renderGenreFilters()}
-            {renderTaggedGrid(doramas)}
+            {renderTaggedGrid(doramas, "doramas")}
           </section>
         )}
         {page === "tv" && (
