@@ -3331,7 +3331,8 @@ export default function App() {
         )}
       </main>
       <footer className="dv-footer">
-        DRAMOVIX · Sempre tem uma nova história.
+        <span className="dv-footer-tagline">DRAMOVIX · Sempre tem uma nova história.</span>
+        <span className="dv-footer-credit">Desenvolvido por <strong>Célio Castro</strong></span>
       </footer>
       {moreMenuOpen && (
         <div className="dv-more-menu-layer">
@@ -3638,16 +3639,22 @@ export default function App() {
             <p className="dv-donation-eyebrow">UMA MENSAGEM DE CORAÇÃO</p>
             <h2 id="dv-donation-title">Vamos manter essa história viva? ❤️</h2>
             <p className="dv-donation-message">O DRAMOVIX nasceu para reunir histórias e criar momentos de diversão. Se você gosta do projeto e quiser ajudar a mantê-lo vivo, sua contribuição será recebida com muito carinho. Apoiar é totalmente opcional: você continua livre para aproveitar o catálogo, sem assinatura ou obrigação de pagar.</p>
-            <a className="dv-donation-payment-link" href="https://nubank.com.br/cobrar/7m0g1/6ad6e05e-699f-43b8-8df8-2bafba9d9afd" target="_blank" rel="noopener noreferrer">💜 Quero apoiar pelo Pix</a>
-            <p className="dv-donation-link-note">O link abre a página de cobrança do Nubank ou direciona conforme as opções disponíveis no seu aparelho.</p>
-            <div className="dv-donation-pix-card">
-              <span className="dv-donation-pix-label">PIX COPIA E COLA · QUALQUER BANCO</span>
+            <div className="dv-donation-option">
+              <span className="dv-donation-option-title">OPÇÃO 1 · PIX PELO NUBANK</span>
+              <a className="dv-donation-payment-link" href="https://nubank.com.br/cobrar/7m0g1/6ad6e05e-699f-43b8-8df8-2bafba9d9afd" target="_blank" rel="noopener noreferrer">💜 Quero apoiar pelo Pix</a>
+              <p className="dv-donation-link-note">Abra o link para contribuir pelo Nubank, conforme as opções disponíveis na página.</p>
+            </div>
+            <div className="dv-donation-option">
+              <span className="dv-donation-option-title">OPÇÃO 2 · PIX EM QUALQUER BANCO</span>
+              <div className="dv-donation-pix-card">
+              <span className="dv-donation-pix-label">CÓDIGO PIX · COPIE E COLE</span>
               <strong className="dv-donation-pix-key">00020126360014BR.GOV.BCB.PIX0114+55479880061055204000053039865802BR5925Mauricelio da Silva Castr6009SAO PAULO62140510FzsqYa4XeW6304FEA9</strong>
               <button className="dv-donation-copy" type="button" onClick={async () => { try { await navigator.clipboard.writeText("00020126360014BR.GOV.BCB.PIX0114+55479880061055204000053039865802BR5925Mauricelio da Silva Castr6009SAO PAULO62140510FzsqYa4XeW6304FEA9"); setPixCopied(true); } catch { setPixCopied(false); } }}>
                 {pixCopied ? "✓ Chave Pix copiada!" : "▣ Copiar código Pix"}
               </button>
+              </div>
             </div>
-            <p className="dv-donation-instructions">A contribuição é livre. Se preferir transferir por chave Pix, copie a chave, abra o app do seu banco e informe o valor que desejar. Antes de confirmar, confira o nome do destinatário exibido pelo banco.</p>
+            <p className="dv-donation-instructions">Escolha uma das opções acima e informe o valor que desejar. A contribuição é voluntária. Antes de confirmar, confira o nome do destinatário exibido pelo banco.</p>
             <p className="dv-donation-thanks">Cada gesto de apoio ajuda essa história a continuar. Muito obrigado por estar aqui! 🍿❤️</p>
           </section>
         </div>
