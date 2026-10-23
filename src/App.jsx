@@ -1776,8 +1776,7 @@ export default function App() {
       const entries = [];
       let pending = null;
       const getAttribute = (line, name) => {
-        const escaped = name.replace(/[.*+?^$\{\}()|[\]\\]/g, "\\  async function openPlaylistCategory(category) {");
-        const match = line.match(new RegExp("(?:^|\\s)" + escaped + '="([^"]*)"', "i"));
+        const match = line.match(new RegExp("(?:^|\\s)" + name + '="([^"]*)"', "i"));
         return match?.[1]?.trim() || "";
       };
       for (const rawLine of lines) {
