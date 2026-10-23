@@ -1840,7 +1840,7 @@ export default function App() {
     setLocalM3uUrlLoading(true);
     setLocalM3uError("");
     try {
-      const response = await fetch(parsedUrl.href);
+      const response = await fetch("/api/playlist?url=" + encodeURIComponent(parsedUrl.href));
       if (!response.ok) throw new Error("O servidor da playlist respondeu com erro (" + response.status + ").");
       const textContent = await response.text();
       if (!textContent.trim().startsWith("#EXTM3U")) {
