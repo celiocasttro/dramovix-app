@@ -1821,6 +1821,7 @@ export default function App() {
   }
 
   const DEFAULT_M3U_PLAYLIST_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/master/Filmes-Series.m3u8";
+  const DEFAULT_M3U_PLAYLIST_2_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/7392d1208f91ebe359b5370f15492cb1dc862285/CanaisBR04.m3u8";
 
   async function loadLocalM3uFromUrl(url) {
     let parsedUrl;
@@ -1881,6 +1882,10 @@ export default function App() {
 
   async function loadDefaultM3uPlaylist() {
     await loadLocalM3uFromUrl(DEFAULT_M3U_PLAYLIST_URL);
+  }
+
+  async function loadDefaultM3uPlaylist2() {
+    await loadLocalM3uFromUrl(DEFAULT_M3U_PLAYLIST_2_URL);
   }
 
   async function openLocalM3uEntry(item) {
@@ -3404,6 +3409,15 @@ export default function App() {
                 {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo"}
               </button>
               <small>Carrega automaticamente a playlist completa de filmes e séries.</small>
+              <button
+                className="dv-button-primary dv-m3u-load-content"
+                type="button"
+                onClick={loadDefaultM3uPlaylist2}
+                disabled={localM3uUrlLoading}
+              >
+                {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 2"}
+              </button>
+              <small>Carrega automaticamente a lista de canais BR.</small>
             </div>
             {localM3uError && <div className="dv-message" role="alert">{localM3uError}</div>}
             {localM3uEntries.length > 0 && (
