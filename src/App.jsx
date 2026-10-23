@@ -198,6 +198,7 @@ export default function App() {
   const [playerOrientation, setPlayerOrientation] = useState("portrait");
   const [playerError, setPlayerError] = useState("");
   const [playerResolving, setPlayerResolving] = useState(false);
+  const [playerWaitSeconds, setPlayerWaitSeconds] = useState(0);
   const [showDescription, setShowDescription] = useState(false);
   const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false);
   // Solicitações de séries
@@ -235,6 +236,13 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("dramovix-language", language);
   }, [language]);
+  useEffect(() => {
+    if (!playerOpen || !playerResolving) return undefined;
+    const timer = window.setInterval(() => {
+      setPlayerWaitSeconds((seconds) => seconds + 1);
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [playerOpen, playerResolving]);
   const translations = {
     English: {
       Início: "Home",
@@ -854,6 +862,7 @@ export default function App() {
         void tryAlternatePlayer();
         return;
       }
+      setPlayerResolving(false);
       setPlayerError(
         "Não foi possível reproduzir este vídeo. O link pode ter expirado ou o servidor pode bloquear a reprodução."
       );
@@ -866,7 +875,10 @@ export default function App() {
       }
     };
     const handlePlaying = () => {
-      if (isCurrentPlayer()) setPlayerError("");
+      if (isCurrentPlayer()) {
+        setPlayerError("");
+        setPlayerResolving(false);
+      }
     };
     video.autoplay = true;
     video.preload = "auto";
@@ -1123,7 +1135,8 @@ export default function App() {
   }
   function openPlayer(episode, options = {}) {
     if (!episode) return;
-    setPlayerResolving(Boolean(options.resolving));
+    setPlayerResolving(true);
+    setPlayerWaitSeconds(0);
     advancingEpisodeRef.current = false;
     selectedEpisodeRef.current = episode;
     setSelectedEpisode(episode);
@@ -4058,7 +4071,7 @@ export default function App() {
                 <div className="dv-player-loading" role="status" aria-live="polite">
                   <span className="dv-player-spinner" aria-hidden="true" />
                   <strong>Preparando vídeo…</strong>
-                  <small>Aguardando o link final da transmissão.</small>
+                  <small>{playerWaitSeconds} s</small>
                 </div>
               )}
               <video
