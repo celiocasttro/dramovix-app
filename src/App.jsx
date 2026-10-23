@@ -1869,19 +1869,56 @@ export default function App() {
     }
   }
 
-  function openLocalM3uEntry(item) {
+  async function openLocalM3uEntry(item) {
     if (!item?.video_url) return;
     setSelectedSeries(null);
     setSelectedMovie(null);
-    // Os itens da playlist usam o mesmo caminho de reprodução direta dos filmes:
-    // não aplicar a conversão automática de URL Xtream para .m3u8.
+
+    // Igual à aba Filmes: primeiro resolve o endereço de origem no servidor
+    // e só depois entrega ao player o URL final de reprodução.
+    const requestGeneration = ++playerGenerationRef.current;
+    const title = item.title || "Vídeo da playlist";
     openPlayer({
       ...item,
+      title,
+      video_url: "",
       isMovie: true,
       isLive: false,
-      title: item.title || "Vídeo da playlist",
-      video_url: item.video_url
-    });
+      isResolving: true
+    }, { resolving: true });
+
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "resolve-movie-playback",
+        { body: { video_url: item.video_url } }
+      );
+
+      if (requestGeneration !== playerGenerationRef.current) return;
+      if (error || !data?.url) {
+        console.error("Falha ao resolver item da playlist:", error || data);
+        setPlayerResolving(false);
+        setPlayerError(
+          data?.error ||
+            "Não foi possível preparar este vídeo da playlist. Confira se o link é compatível com o resolvedor usado pela aba Filmes."
+        );
+        return;
+      }
+
+      openPlayer({
+        ...item,
+        title,
+        video_url: data.url,
+        isMovie: true,
+        isLive: false
+      });
+    } catch (error) {
+      if (requestGeneration !== playerGenerationRef.current) return;
+      console.error("Erro ao resolver item da playlist:", error);
+      setPlayerResolving(false);
+      setPlayerError(
+        "Não foi possível preparar o vídeo da playlist. Verifique a conexão e tente novamente."
+      );
+    }
   }
 
   async function openPlaylistCategory(category) {
