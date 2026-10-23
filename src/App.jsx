@@ -3414,7 +3414,7 @@ export default function App() {
               >
                 {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 1"}
               </button>
-              <small>Carrega automaticamente CanaisBR01.m3u8.</small>
+              <small>Carrega automaticamente a primeira lista de canais BR.</small>
               <button
                 className="dv-button-primary dv-m3u-load-content"
                 type="button"
@@ -3423,7 +3423,7 @@ export default function App() {
               >
                 {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 2"}
               </button>
-              <small>Carrega automaticamente CanaisBR02.m3u8.</small>
+              <small>Carrega automaticamente a segunda lista de canais BR.</small>
               <button
                 className="dv-button-primary dv-m3u-load-content"
                 type="button"
@@ -3432,7 +3432,7 @@ export default function App() {
               >
                 {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 3"}
               </button>
-              <small>Carrega automaticamente CanaisBR03.m3u8.</small>
+              <small>Carrega automaticamente a terceira lista de canais BR.</small>
               <button
                 className="dv-button-primary dv-m3u-load-content"
                 type="button"
@@ -3441,7 +3441,7 @@ export default function App() {
               >
                 {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 4"}
               </button>
-              <small>Carrega automaticamente CanaisBR04.m3u8.</small>
+              <small>Carrega automaticamente a quarta lista de canais BR.</small>
               <button
                 className="dv-button-primary dv-m3u-load-content"
                 type="button"
@@ -3450,7 +3450,7 @@ export default function App() {
               >
                 {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 5"}
               </button>
-              <small>Carrega automaticamente Canais.m3u8.</small>
+              <small>Carrega automaticamente a lista de canais.</small>
               <button
                 className="dv-button-primary dv-m3u-load-content"
                 type="button"
@@ -3459,7 +3459,7 @@ export default function App() {
               >
                 {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 6"}
               </button>
-              <small>Carrega automaticamente Filmes-Series.m3u8.</small>
+              <small>Carrega automaticamente a lista de filmes e séries.</small>
               <button
                 className="dv-button-primary dv-m3u-select"
                 type="button"
