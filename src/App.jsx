@@ -2624,6 +2624,21 @@ export default function App() {
                 ×
               </button>
             </div>
+            <div className="dv-profile-credit-box">
+              <span className="dv-profile-credit-kicker">SOBRE O APLICATIVO</span>
+              <strong>DRAMOVIX</strong>
+              <span>Desenvolvido por <b>Célio Castro</b></span>
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileOpen(false);
+                  setDonationOpen(true);
+                  setPixCopied(false);
+                }}
+              >
+                ♥ Apoiar o projeto
+              </button>
+            </div>
             {!user && (
               <div className="dv-profile-id">
                 <small>{tr("Seu ID de visitante")}</small>
