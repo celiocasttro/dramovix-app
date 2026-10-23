@@ -185,6 +185,12 @@ export default function App() {
   const [playlistLoading, setPlaylistLoading] = useState(false);
   const [playlistError, setPlaylistError] = useState("");
   const [playlistSearch, setPlaylistSearch] = useState("");
+  const [localM3uEntries, setLocalM3uEntries] = useState([]);
+  const [localM3uName, setLocalM3uName] = useState("");
+  const [localM3uError, setLocalM3uError] = useState("");
+  const [localM3uSearch, setLocalM3uSearch] = useState("");
+  const [localM3uCategory, setLocalM3uCategory] = useState("Todas");
+  const localM3uInputRef = useRef(null);
   const [episodesLoading, setEpisodesLoading] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerOrientation, setPlayerOrientation] = useState("portrait");
@@ -1753,6 +1759,77 @@ export default function App() {
       window.alert("Não foi possível excluir o comentário.");
     }
   }
+  async function handleLocalM3uFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setLocalM3uError("");
+    setLocalM3uEntries([]);
+    setLocalM3uSearch("");
+    setLocalM3uCategory("Todas");
+    try {
+      const textContent = await file.text();
+      if (!textContent.trim().startsWith("#EXTM3U")) {
+        throw new Error("Este arquivo não parece ser uma playlist M3U/M3U8 válida.");
+      }
+      const lines = textContent.replace(/^\uFEFF/, "").split(/\r?\n/);
+      const entries = [];
+      let pending = null;
+      const getAttribute = (line, name) => {
+        const escaped = name.replace(/[.*+?^$\{\}()|[\]\\]/g, "\\  async function openPlaylistCategory(category) {");
+        const match = line.match(new RegExp("(?:^|\\s)" + escaped + '="([^"]*)"', "i"));
+        return match?.[1]?.trim() || "";
+      };
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) continue;
+        if (line.startsWith("#EXTINF:")) {
+          const comma = line.indexOf(",");
+          const titleFromLine = comma >= 0 ? line.slice(comma + 1).trim() : "";
+          pending = {
+            title: titleFromLine || "Canal sem nome",
+            category: getAttribute(line, "group-title") || "Sem categoria",
+            logo: getAttribute(line, "tvg-logo"),
+            tvgId: getAttribute(line, "tvg-id")
+          };
+          continue;
+        }
+        if (line.startsWith("#")) continue;
+        if (pending) {
+          const title = pending.title || line.split("/").pop() || "Canal";
+          entries.push({
+            id: "local-m3u-" + entries.length + "-" + title.slice(0, 24),
+            title,
+            category: pending.category || "Sem categoria",
+            image: pending.logo || "",
+            video_url: line,
+            isLive: true
+          });
+          pending = null;
+        }
+      }
+      if (!entries.length) {
+        throw new Error("Não encontrei canais com links neste arquivo. Confira se ele contém linhas #EXTINF seguidas dos endereços.");
+      }
+      setLocalM3uEntries(entries);
+      setLocalM3uName(file.name);
+    } catch (error) {
+      setLocalM3uError(error?.message || "Não foi possível abrir esta playlist.");
+    }
+  }
+
+  function openLocalM3uEntry(item) {
+    if (!item?.video_url) return;
+    setSelectedSeries(null);
+    setSelectedMovie(null);
+    openPlayer({
+      ...item,
+      isLive: true,
+      title: item.title || "Canal IPTV",
+      video_url: item.video_url
+    });
+  }
+
   async function openPlaylistCategory(category) {
     setPlaylistSelectedCategory(category);
     setPlaylistItems([]);
@@ -3237,6 +3314,95 @@ export default function App() {
                 ],
                 "live"
               )
+            )}
+          </section>
+          <section className="dv-section dv-local-m3u">
+            <div className="dv-section-heading">
+              <div>
+                <h2>ABRIR PLAYLIST IPTV</h2>
+                <p>Selecione um arquivo M3U ou M3U8 do seu dispositivo para ver os canais e reproduzir por aqui. O arquivo é lido localmente, sem ser enviado ao servidor.</p>
+              </div>
+              <button
+                className="dv-button-primary dv-m3u-select"
+                type="button"
+                onClick={() => localM3uInputRef.current?.click()}
+              >
+                ＋ Selecionar arquivo
+              </button>
+              <input
+                ref={localM3uInputRef}
+                className="dv-hidden-file-input"
+                type="file"
+                accept=".m3u,.m3u8,audio/x-mpegurl,application/vnd.apple.mpegurl,text/plain"
+                onChange={handleLocalM3uFile}
+              />
+            </div>
+            {localM3uError && <div className="dv-message" role="alert">{localM3uError}</div>}
+            {localM3uEntries.length > 0 && (
+              <>
+                <div className="dv-m3u-toolbar">
+                  <div>
+                    <strong>{localM3uName}</strong>
+                    <span>{localM3uEntries.length.toLocaleString("pt-BR")} canais/listas encontrados</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="dv-see-all"
+                    onClick={() => {
+                      setLocalM3uEntries([]);
+                      setLocalM3uName("");
+                      setLocalM3uSearch("");
+                      setLocalM3uCategory("Todas");
+                      setLocalM3uError("");
+                    }}
+                  >
+                    Limpar lista
+                  </button>
+                </div>
+                <div className="dv-m3u-filters">
+                  <input
+                    type="search"
+                    value={localM3uSearch}
+                    onChange={(event) => setLocalM3uSearch(event.target.value)}
+                    placeholder="Buscar canal ou conteúdo..."
+                    aria-label="Buscar canal na playlist"
+                  />
+                  <select
+                    value={localM3uCategory}
+                    onChange={(event) => setLocalM3uCategory(event.target.value)}
+                    aria-label="Filtrar categoria da playlist"
+                  >
+                    <option value="Todas">Todas as categorias</option>
+                    {[...new Set(localM3uEntries.map((item) => item.category))].sort((x, y) => x.localeCompare(y, "pt-BR")).map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="dv-m3u-list">
+                  {localM3uEntries.filter((item) =>
+                    (!localM3uSearch.trim() || normalize(item.title).includes(normalize(localM3uSearch)) || normalize(item.category).includes(normalize(localM3uSearch))) &&
+                    (localM3uCategory === "Todas" || item.category === localM3uCategory)
+                  ).map((item) => (
+                    <button
+                      className="dv-m3u-item"
+                      type="button"
+                      key={item.id}
+                      onClick={() => openLocalM3uEntry(item)}
+                    >
+                      {item.image ? <img src={item.image} alt="" loading="lazy" onError={hideBrokenImage} /> : <span className="dv-m3u-placeholder">▶</span>}
+                      <span className="dv-m3u-item-text">
+                        <strong>{item.title}</strong>
+                        <small>{item.category}</small>
+                      </span>
+                      <span className="dv-m3u-play" aria-hidden="true">▶</span>
+                    </button>
+                  ))}
+                </div>
+                {!localM3uEntries.some((item) =>
+                  (!localM3uSearch.trim() || normalize(item.title).includes(normalize(localM3uSearch)) || normalize(item.category).includes(normalize(localM3uSearch))) &&
+                  (localM3uCategory === "Todas" || item.category === localM3uCategory)
+                ) && <div className="dv-empty"><h3>Nenhum canal encontrado</h3><p>Experimente outra busca ou categoria.</p></div>}
+              </>
             )}
           </section>
           </>
