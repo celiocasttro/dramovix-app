@@ -28,7 +28,9 @@ button, input { -webkit-appearance: none; appearance: none; }
 .dv-app { min-height: 100vh; padding-bottom: 90px; overflow-x: clip; background: #050505; color: #fff; font-family: 'DM Sans', sans-serif; }
 .dv-app button { transition: background .2s ease, color .2s ease, border-color .2s ease, transform .2s ease; }
 .dv-header { position: sticky; top: 0; z-index: 60; display: flex; align-items: center; gap: 14px; min-height: 66px; padding: 12px 22px; background: rgba(5,5,5,.96); border-bottom: 1px solid rgba(255,255,255,.05); backdrop-filter: blur(18px); }
-.dv-logo { flex-shrink: 0; padding: 0; border: 0; background: transparent; color: var(--red-primary); font-family: 'Outfit',sans-serif; font-size: 25px; font-weight: 800; letter-spacing: -1px; }
+.dv-logo { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; flex-shrink: 0; gap: 0; padding: 0; border: 0; background: transparent; color: var(--red-primary); font-family: 'Outfit',sans-serif; font-size: 25px; font-weight: 800; letter-spacing: -1px; line-height: 1.02; }
+.dv-logo-word { display: block; }
+.dv-logo-credit { display: block; margin-top: 3px; color: #8d8d8d; font-family: 'DM Sans',sans-serif; font-size: 8px; font-weight: 500; letter-spacing: .1px; line-height: 1.2; }
 .dv-menu-toggle { display: none; border: 0; background: transparent; color: #fff; font-size: 23px; }
 .dv-header-right-icons { display: flex; align-items: center; gap: 16px; margin-left: auto; }
 .dv-icon-btn { display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #fff; font-size: 23px; }
@@ -112,12 +114,6 @@ button, input { -webkit-appearance: none; appearance: none; }
 .dv-footer { display: flex; flex-direction: column; align-items: center; gap: 9px; margin-left: 205px; padding: 28px 16px 95px; border-top: 1px solid rgba(255,255,255,.05); color: var(--text-muted); text-align: center; font-size: 11px; }
 .dv-footer-donate { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; margin-top: 5px; padding: 9px 16px; border: 1px solid rgba(229,9,20,.5); border-radius: 999px; background: rgba(229,9,20,.12); color: #ff7b83; font-size: 12px; font-weight: 700; }
 .dv-footer-donate:hover { background: #e50914; color: #fff; }
-.dv-profile-credit-box { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; padding: 14px; border: 1px solid rgba(229,9,20,.38); border-radius: 12px; background: linear-gradient(145deg, rgba(229,9,20,.13), rgba(20,20,20,.96)); color: #f3f4f6; }
-.dv-profile-credit-kicker { color: #ff7b83; font-size: 9px; font-weight: 800; letter-spacing: 1.3px; }
-.dv-profile-credit-box > strong { color: #fff; font-size: 19px; letter-spacing: 1.4px; }
-.dv-profile-credit-box > span:not(.dv-profile-credit-kicker) { color: #bdbdbd; font-size: 12px; line-height: 1.5; }
-.dv-profile-credit-box > span b { color: #fff; }
-.dv-profile-credit-box > button { width: 100%; min-height: 38px; margin-top: 4px; border: 1px solid rgba(229,9,20,.55); border-radius: 8px; background: #e50914; color: #fff; font-size: 12px; font-weight: 800; cursor: pointer; }
 
 .dv-bottom-nav { position: fixed; bottom: 0; left: 205px; right: 0; z-index: 50; display: flex; justify-content: space-around; align-items: center; height: 60px; padding: 0 8px env(safe-area-inset-bottom); background: rgba(5,5,5,.98); border-top: 1px solid rgba(255,255,255,.1); backdrop-filter: blur(20px); }
 .dv-bottom-nav button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; height: 100%; border: 0; background: transparent; color: #9ca3af; font-size: 10px; }
