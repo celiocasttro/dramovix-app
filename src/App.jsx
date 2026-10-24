@@ -1791,9 +1791,9 @@ export default function App() {
       window.alert("Não foi possível excluir o comentário.");
     }
   }
-  async function handleLocalM3uFile(event) {
+  async function handleLocalM3uFile(event, playlistBaseUrl = "") {
     const file = event.target.files?.[0];
-    event.target.value = "";
+    if (event.target) event.target.value = "";
     if (!file) return;
     setLocalM3uError("");
     setLocalM3uEntries([]);
@@ -1801,47 +1801,70 @@ export default function App() {
     setLocalM3uCategory("Todas");
     try {
       const textContent = await file.text();
-      if (!textContent.trim().startsWith("#EXTM3U")) {
+      const normalizedText = textContent.replace(/^\uFEFF/, "").trimStart();
+      if (!normalizedText.startsWith("#EXTM3U")) {
         throw new Error("Este arquivo não parece ser uma playlist M3U/M3U8 válida.");
       }
-      const lines = textContent.replace(/^\uFEFF/, "").split(/\r?\n/);
+      const lines = normalizedText.split(/\r?\n/);
       const entries = [];
       let pending = null;
+      let currentGroup = "";
       const getAttribute = (line, name) => {
-        const match = line.match(new RegExp("(?:^|\\s)" + name + '="([^"]*)"', "i"));
-        return match?.[1]?.trim() || "";
+        const match = line.match(new RegExp("(?:^|\\s)" + name + "=(?:\"([^\"]*)\"|'([^']*)'|([^\\s,]*))", "i"));
+        return String(match?.[1] ?? match?.[2] ?? match?.[3] ?? "").trim();
+      };
+      const resolveMediaUrl = (rawUrl) => {
+        const candidate = rawUrl.trim();
+        if (!candidate) return "";
+        try {
+          return playlistBaseUrl ? new URL(candidate, playlistBaseUrl).href : candidate;
+        } catch {
+          return candidate;
+        }
       };
       for (const rawLine of lines) {
         const line = rawLine.trim();
         if (!line) continue;
-        if (line.startsWith("#EXTINF:")) {
+        if (/^#EXTGRP:/i.test(line)) {
+          currentGroup = line.slice(line.indexOf(":") + 1).trim();
+          continue;
+        }
+        if (/^#EXTINF:/i.test(line)) {
           const comma = line.indexOf(",");
           const titleFromLine = comma >= 0 ? line.slice(comma + 1).trim() : "";
           pending = {
-            title: titleFromLine || "Canal sem nome",
-            category: getAttribute(line, "group-title") || "Sem categoria",
+            title: titleFromLine || getAttribute(line, "tvg-name") || "Conteúdo sem nome",
+            category: getAttribute(line, "group-title") || currentGroup || "Sem categoria",
             logo: getAttribute(line, "tvg-logo"),
-            tvgId: getAttribute(line, "tvg-id")
+            tvgId: getAttribute(line, "tvg-id"),
+            userAgent: getAttribute(line, "user-agent"),
+            referrer: getAttribute(line, "http-referrer")
           };
           continue;
         }
         if (line.startsWith("#")) continue;
         if (pending) {
-          const title = pending.title || line.split("/").pop() || "Canal";
+          const title = pending.title || line.split("/").pop() || "Conteúdo";
+          const normalizedCategory = normalize(pending.category);
+          const normalizedTitle = normalize(title);
+          const isLive = /canal|ao vivo|iptv|televis|esporte|noticia|news|radio/.test(normalizedCategory + " " + normalizedTitle);
           entries.push({
             id: "local-m3u-" + entries.length + "-" + title.slice(0, 24),
             title,
             category: pending.category || "Sem categoria",
-            image: pending.logo || "",
-            video_url: line,
-            isMovie: true,
-            isLive: false
+            image: resolveMediaUrl(pending.logo),
+            video_url: resolveMediaUrl(line),
+            tvgId: pending.tvgId,
+            isMovie: !isLive,
+            isLive,
+            sourcePlaylist: playlistBaseUrl || file.name
           });
           pending = null;
+          currentGroup = "";
         }
       }
       if (!entries.length) {
-        throw new Error("Não encontrei canais com links neste arquivo. Confira se ele contém linhas #EXTINF seguidas dos endereços.");
+        throw new Error("Não encontrei itens com links nesta playlist. Confira se há linhas #EXTINF seguidas dos endereços.");
       }
       setLocalM3uEntries(entries);
       setLocalM3uName(file.name);
@@ -1890,7 +1913,7 @@ export default function App() {
       }
       const fileName = decodeURIComponent(parsedUrl.pathname.split("/").pop() || "playlist.m3u");
       const file = new File([textContent], fileName, { type: "audio/x-mpegurl" });
-      await handleLocalM3uFile({ target: { files: [file], value: "" } });
+      await handleLocalM3uFile({ target: { files: [file], value: "" } }, parsedUrl.href);
       setLocalM3uUrl(url);
     } catch (error) {
       const isCors = error?.message?.includes("Failed to fetch") || error?.name === "TypeError";
@@ -1938,56 +1961,22 @@ export default function App() {
     await loadLocalM3uFromUrl(DEFAULT_M3U_PLAYLIST_6_URL);
   }
 
-  async function openLocalM3uEntry(item) {
+  function openLocalM3uEntry(item) {
     if (!item?.video_url) return;
     setSelectedSeries(null);
     setSelectedMovie(null);
-
-    // Igual à aba Filmes: primeiro resolve o endereço de origem no servidor
-    // e só depois entrega ao player o URL final de reprodução.
-    const requestGeneration = ++playerGenerationRef.current;
-    const title = item.title || "Vídeo da playlist";
+    setSelectedEpisode(null);
+    const isLive = Boolean(item.isLive);
+    // Itens importados de M3U vão diretamente ao player com a URL original.
+    // Assim o resolvedor do catálogo não altera links IPTV, HLS ou MPEG-TS.
     openPlayer({
       ...item,
-      title,
-      video_url: "",
-      isMovie: true,
-      isLive: false,
-      isResolving: true
-    }, { resolving: true });
-
-    try {
-      const { data, error } = await supabase.functions.invoke(
-        "resolve-movie-playback",
-        { body: { video_url: item.video_url } }
-      );
-
-      if (requestGeneration !== playerGenerationRef.current) return;
-      if (error || !data?.url) {
-        console.error("Falha ao resolver item da playlist:", error || data);
-        setPlayerResolving(false);
-        setPlayerError(
-          data?.error ||
-            "Não foi possível preparar este vídeo da playlist. Confira se o link é compatível com o resolvedor usado pela aba Filmes."
-        );
-        return;
-      }
-
-      openPlayer({
-        ...item,
-        title,
-        video_url: data.url,
-        isMovie: true,
-        isLive: false
-      });
-    } catch (error) {
-      if (requestGeneration !== playerGenerationRef.current) return;
-      console.error("Erro ao resolver item da playlist:", error);
-      setPlayerResolving(false);
-      setPlayerError(
-        "Não foi possível preparar o vídeo da playlist. Verifique a conexão e tente novamente."
-      );
-    }
+      title: item.title || "Conteúdo da playlist",
+      video_url: item.video_url,
+      isMovie: !isLive,
+      isLive,
+      image: item.image || ""
+    });
   }
 
   async function openPlaylistCategory(category) {
