@@ -193,6 +193,9 @@ export default function App() {
   const [localM3uSearch, setLocalM3uSearch] = useState("");
   const [localM3uCategory, setLocalM3uCategory] = useState("Todas");
   const localM3uInputRef = useRef(null);
+  const [customVideoUrl, setCustomVideoUrl] = useState("");
+  const [customVideoTitle, setCustomVideoTitle] = useState("");
+  const [customVideoError, setCustomVideoError] = useState("");
   const [episodesLoading, setEpisodesLoading] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerOrientation, setPlayerOrientation] = useState("portrait");
@@ -1257,6 +1260,36 @@ export default function App() {
         "Não foi possível preparar o vídeo. Verifique sua conexão e tente novamente."
       );
     }
+  }
+  function playCustomVideo(event) {
+    event?.preventDefault();
+    setCustomVideoError("");
+    const rawUrl = customVideoUrl.trim();
+    if (!rawUrl) {
+      setCustomVideoError("Cole o link direto do vídeo para continuar.");
+      return;
+    }
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(rawUrl);
+    } catch {
+      setCustomVideoError("Informe uma URL válida começando com https:// ou http://.");
+      return;
+    }
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      setCustomVideoError("Use um link HTTP ou HTTPS.");
+      return;
+    }
+    const title = customVideoTitle.trim() || "Vídeo por URL";
+    setSelectedSeries(null);
+    setSelectedMovie(null);
+    setSelectedEpisode(null);
+    openPlayer({
+      id: `custom-url-${Date.now()}`,
+      title,
+      video_url: parsedUrl.toString(),
+      isMovie: true
+    });
   }
   function openLive(item) {
     setSelectedSeries(item);
@@ -2806,7 +2839,8 @@ export default function App() {
     ["desenhos", "🎨", "Desenhos"],
     ["animes", "🎌", "Anime"],
     ["doramas", "♡", "Doramas"],
-    ["tv", "◉", "Canais"]
+    ["tv", "◉", "Canais"],
+    ["url", "↗", "URL"]
   ];
   return (
     <div className="dv-app">
@@ -3399,6 +3433,29 @@ export default function App() {
               </div>
             </section>
           </>
+        )}
+        {page === "url" && (
+          <section className="dv-section dv-detail">
+            <div className="dv-section-heading">
+              <div>
+                <h2>Reproduzir por URL</h2>
+                <p>Cole um link direto de vídeo e reproduza no player do DRAMOVIX, como na aba Filmes.</p>
+              </div>
+            </div>
+            <form onSubmit={playCustomVideo} style={{ display: "grid", gap: 14, maxWidth: 720, padding: 20, border: "1px solid rgba(229,9,20,.3)", borderRadius: 12, background: "#0d0404" }}>
+              <label style={{ display: "grid", gap: 7, color: "#e5e7eb", fontSize: 13, fontWeight: 600 }}>
+                Nome do conteúdo (opcional)
+                <input value={customVideoTitle} onChange={(event) => setCustomVideoTitle(event.target.value)} placeholder="Ex.: Meu filme" style={{ width: "100%", minHeight: 44, padding: "11px 12px", color: "#fff", background: "#080808", border: "1px solid rgba(255,255,255,.16)", borderRadius: 8 }} />
+              </label>
+              <label style={{ display: "grid", gap: 7, color: "#e5e7eb", fontSize: 13, fontWeight: 600 }}>
+                URL direta do vídeo
+                <input type="url" value={customVideoUrl} onChange={(event) => { setCustomVideoUrl(event.target.value); setCustomVideoError(""); }} placeholder="https://servidor.com/video.m3u8" required style={{ width: "100%", minHeight: 44, padding: "11px 12px", color: "#fff", background: "#080808", border: "1px solid rgba(255,255,255,.16)", borderRadius: 8 }} />
+              </label>
+              <small style={{ color: "#9ca3af", lineHeight: 1.5 }}>Aceita links diretos de vídeo, como .m3u8 ou .mp4. Links de páginas web ou arquivos de playlist M3U que listam vários canais não são links diretos de reprodução.</small>
+              {customVideoError && <p role="alert" style={{ margin: 0, color: "#fca5a5", fontSize: 13 }}>{customVideoError}</p>}
+              <button className="dv-button-primary" type="submit" style={{ justifySelf: "start" }}>▶ Reproduzir vídeo</button>
+            </form>
+          </section>
         )}
         {page === "filmes-lista" && (
           <>
