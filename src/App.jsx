@@ -1879,6 +1879,7 @@ export default function App() {
   const DEFAULT_M3U_PLAYLIST_4_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/7392d1208f91ebe359b5370f15492cb1dc862285/CanaisBR04.m3u8";
   const DEFAULT_M3U_PLAYLIST_5_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/master/Canais.m3u8";
   const DEFAULT_M3U_PLAYLIST_6_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/master/Filmes-Series.m3u8";
+  const DEFAULT_M3U_PLAYLIST_7_URL = "https://raw.githubusercontent.com/celiocasttro/dramovix-app/main/public/catalogo/filmesseries/CanaisBR03.m3u8";
 
   async function loadLocalM3uFromUrl(url) {
     let parsedUrl;
@@ -1959,6 +1960,10 @@ export default function App() {
 
   async function loadDefaultM3uPlaylist6() {
     await loadLocalM3uFromUrl(DEFAULT_M3U_PLAYLIST_6_URL);
+  }
+
+  async function loadDefaultM3uPlaylist7() {
+    await loadLocalM3uFromUrl(DEFAULT_M3U_PLAYLIST_7_URL);
   }
 
   function openLocalM3uEntry(item) {
@@ -3560,6 +3565,15 @@ export default function App() {
                 {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 6"}
               </button>
               <small>Carrega automaticamente a lista de filmes e séries.</small>
+              <button
+                className="dv-button-primary dv-m3u-load-content"
+                type="button"
+                onClick={loadDefaultM3uPlaylist7}
+                disabled={localM3uUrlLoading}
+              >
+                {localM3uUrlLoading ? "Carregando conteúdo..." : "▶ Carregar conteúdo 7"}
+              </button>
+              <small>Testa a playlist CanaisBR03 hospedada no repositório DRAMOVIX, usando o link direto.</small>
               <button
                 className="dv-button-primary dv-m3u-select"
                 type="button"
