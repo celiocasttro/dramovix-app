@@ -188,7 +188,7 @@ export default function App() {
   const [localM3uEntries, setLocalM3uEntries] = useState([]);
   const [localM3uName, setLocalM3uName] = useState("");
   const [localM3uError, setLocalM3uError] = useState("");
-  const [localM3uUrl, setLocalM3uUrl] = useState("");
+  const [localM3uUrl, setLocalM3uUrl] = useState("https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/master/Filmes-Series.m3u8");
   const [localM3uUrlLoading, setLocalM3uUrlLoading] = useState(false);
   const [localM3uSearch, setLocalM3uSearch] = useState("");
   const [localM3uCategory, setLocalM3uCategory] = useState("Todas");
