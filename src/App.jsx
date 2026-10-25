@@ -830,10 +830,13 @@ export default function App() {
         if (!mpegts?.isSupported?.() || !mpegts?.createPlayer) {
           throw new Error("Este navegador não oferece suporte a este formato de transmissão.");
         }
+        // Alguns servidores Xtream exigem a extensão .ts no ID do canal.
+        // O primeiro teste usa .m3u8; se falhar, o player MPEG-TS tenta explicitamente .ts.
+        const mpegTsUrl = isLiveXtreamUrl ? `${originalUrl}.ts` : originalUrl;
         alternatePlayer = mpegts.createPlayer({
           type: "mpegts",
           isLive: Boolean(selectedEpisode.isLive || selectedSeries?.isLive),
-          url: originalUrl
+          url: mpegTsUrl
         }, {
           enableWorker: true,
           enableStashBuffer: true,
