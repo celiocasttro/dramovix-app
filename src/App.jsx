@@ -1851,7 +1851,7 @@ export default function App() {
             const title = pending.title || line.split("/").pop() || "Conteúdo";
             const normalizedCategory = normalize(pending.category);
             const normalizedTitle = normalize(title);
-            const isLive = /canal|ao vivo|iptv|televis|esporte|noticia|news|radio/.test(normalizedCategory + " " + normalizedTitle);
+            const isLive = /canal|canais|ao vivo|iptv|televis|esporte|noticia|news|radio/.test(normalizedCategory + " " + normalizedTitle);
             entries.push({
               id: "local-m3u-" + entries.length + "-" + title.slice(0, 24),
               title,
