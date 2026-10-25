@@ -888,6 +888,8 @@ export default function App() {
     video.addEventListener("canplay", scheduleAutoplay);
     video.addEventListener("playing", handlePlaying);
     const isHls = /\.m3u8(?:$|[?#])/i.test(url);
+    const isDash = /\.mpd(?:$|[?#])/i.test(originalUrl);
+    const isTransportStream = /\.ts(?:$|[?#])/i.test(originalUrl) || isLiveXtreamUrl;
     const nativeHlsSupported = Boolean(
       video.canPlayType("application/vnd.apple.mpegurl")
     );
@@ -950,6 +952,9 @@ export default function App() {
         }
       });
       hls.attachMedia(video);
+    } else if (isDash || isTransportStream) {
+      // Não entregar DASH/MPEG-TS primeiro ao <video> nativo: selecionar o player compatível.
+      void tryAlternatePlayer();
     } else if (!isHls || nativeHlsSupported) {
       video.src = url;
       video.load();
