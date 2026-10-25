@@ -1802,19 +1802,8 @@ export default function App() {
     try {
       const textContent = await file.text();
       const normalizedText = textContent.replace(/^\uFEFF/, "").trimStart();
-      if (!normalizedText.startsWith("#EXTM3U")) {
-        throw new Error("Este arquivo não parece ser uma playlist M3U/M3U8 válida.");
-      }
-      const lines = normalizedText.split(/\r?\n/);
-      const entries = [];
-      let pending = null;
-      let currentGroup = "";
-      const getAttribute = (line, name) => {
-        const match = line.match(new RegExp("(?:^|\\s)" + name + "=(?:\"([^\"]*)\"|'([^']*)'|([^\\s,]*))", "i"));
-        return String(match?.[1] ?? match?.[2] ?? match?.[3] ?? "").trim();
-      };
       const resolveMediaUrl = (rawUrl) => {
-        const candidate = rawUrl.trim();
+        const candidate = String(rawUrl || "").trim();
         if (!candidate) return "";
         try {
           return playlistBaseUrl ? new URL(candidate, playlistBaseUrl).href : candidate;
@@ -1822,57 +1811,135 @@ export default function App() {
           return candidate;
         }
       };
-      for (const rawLine of lines) {
-        const line = rawLine.trim();
-        if (!line) continue;
-        if (/^#EXTGRP:/i.test(line)) {
-          currentGroup = line.slice(line.indexOf(":") + 1).trim();
-          continue;
+      let entries = [];
+
+      if (normalizedText.startsWith("#EXTM3U")) {
+        const lines = normalizedText.split(/\r?\n/);
+        let pending = null;
+        let currentGroup = "";
+        const getAttribute = (line, name) => {
+          const match = line.match(new RegExp("(?:^|\\s)" + name + "=(?:\"([^\"]*)\"|'([^']*)'|([^\\s,]*))", "i"));
+          return String(match?.[1] ?? match?.[2] ?? match?.[3] ?? "").trim();
+        };
+        for (const rawLine of lines) {
+          const line = rawLine.trim();
+          if (!line) continue;
+          if (/^#EXTGRP:/i.test(line)) {
+            currentGroup = line.slice(line.indexOf(":") + 1).trim();
+            continue;
+          }
+          if (/^#EXTINF:/i.test(line)) {
+            const comma = line.indexOf(",");
+            const titleFromLine = comma >= 0 ? line.slice(comma + 1).trim() : "";
+            pending = {
+              title: titleFromLine || getAttribute(line, "tvg-name") || "Conteúdo sem nome",
+              category: getAttribute(line, "group-title") || currentGroup || "Sem categoria",
+              logo: getAttribute(line, "tvg-logo"),
+              tvgId: getAttribute(line, "tvg-id"),
+              userAgent: getAttribute(line, "user-agent"),
+              referrer: getAttribute(line, "http-referrer")
+            };
+            continue;
+          }
+          if (line.startsWith("#")) continue;
+          if (pending) {
+            const title = pending.title || line.split("/").pop() || "Conteúdo";
+            const normalizedCategory = normalize(pending.category);
+            const normalizedTitle = normalize(title);
+            const isLive = /canal|ao vivo|iptv|televis|esporte|noticia|news|radio/.test(normalizedCategory + " " + normalizedTitle);
+            entries.push({
+              id: "local-m3u-" + entries.length + "-" + title.slice(0, 24),
+              title,
+              category: pending.category || "Sem categoria",
+              image: resolveMediaUrl(pending.logo),
+              video_url: resolveMediaUrl(line),
+              tvgId: pending.tvgId,
+              userAgent: pending.userAgent,
+              referrer: pending.referrer,
+              isMovie: !isLive,
+              isLive,
+              sourcePlaylist: playlistBaseUrl || file.name
+            });
+            pending = null;
+            currentGroup = "";
+          }
         }
-        if (/^#EXTINF:/i.test(line)) {
-          const comma = line.indexOf(",");
-          const titleFromLine = comma >= 0 ? line.slice(comma + 1).trim() : "";
-          pending = {
-            title: titleFromLine || getAttribute(line, "tvg-name") || "Conteúdo sem nome",
-            category: getAttribute(line, "group-title") || currentGroup || "Sem categoria",
-            logo: getAttribute(line, "tvg-logo"),
-            tvgId: getAttribute(line, "tvg-id"),
-            userAgent: getAttribute(line, "user-agent"),
-            referrer: getAttribute(line, "http-referrer")
-          };
-          continue;
-        }
-        if (line.startsWith("#")) continue;
-        if (pending) {
-          const title = pending.title || line.split("/").pop() || "Conteúdo";
-          const normalizedCategory = normalize(pending.category);
+      } else if (normalizedText.startsWith("{") || normalizedText.startsWith("[")) {
+        const parsed = JSON.parse(normalizedText);
+        const itemKeys = ["items", "channels", "streams", "results", "playlist", "entries", "movies", "series", "live", "data"];
+        const findItems = (value, depth = 0) => {
+          if (Array.isArray(value)) return value;
+          if (!value || typeof value !== "object" || depth > 4) return [];
+          for (const key of itemKeys) {
+            if (Array.isArray(value[key])) return value[key];
+          }
+          for (const key of itemKeys) {
+            if (value[key] && typeof value[key] === "object") {
+              const nested = findItems(value[key], depth + 1);
+              if (nested.length) return nested;
+            }
+          }
+          return [];
+        };
+        const rawItems = findItems(parsed);
+        entries = rawItems.map((item, index) => {
+          if (typeof item === "string") {
+            return {
+              id: "local-json-" + index,
+              title: item.split("/").pop() || "Conteúdo " + (index + 1),
+              category: "Sem categoria",
+              image: "",
+              video_url: resolveMediaUrl(item),
+              isMovie: true,
+              isLive: false,
+              sourcePlaylist: playlistBaseUrl || file.name
+            };
+          }
+          if (!item || typeof item !== "object") return null;
+          const rawUrl = item.video_url || item.videoUrl || item.stream_url || item.streamUrl ||
+            item.playback_url || item.playbackUrl || item.url || item.link || item.file ||
+            item.uri || (typeof item.stream === "string" ? item.stream : "");
+          if (!rawUrl) return null;
+          const title = String(item.title || item.name || item.tvg_name || item.label ||
+            item.filename || ("Conteúdo " + (index + 1)));
+          const category = String(item.category || item.group || item.group_title ||
+            item.groupTitle || item.genre || item.type || "Sem categoria");
+          const normalizedKind = normalize(String(item.type || item.kind || item.content_type || ""));
+          const normalizedCategory = normalize(category);
           const normalizedTitle = normalize(title);
-          const isLive = /canal|ao vivo|iptv|televis|esporte|noticia|news|radio/.test(normalizedCategory + " " + normalizedTitle);
-          entries.push({
-            id: "local-m3u-" + entries.length + "-" + title.slice(0, 24),
+          const isLive = item.isLive === true || item.is_live === true ||
+            /^(live|channel|tv|radio)$/.test(normalizedKind) ||
+            /canal|ao vivo|iptv|televis|esporte|noticia|news|radio/.test(normalizedCategory + " " + normalizedTitle);
+          return {
+            id: String(item.id ?? ("local-json-" + index)),
             title,
-            category: pending.category || "Sem categoria",
-            image: resolveMediaUrl(pending.logo),
-            video_url: resolveMediaUrl(line),
-            tvgId: pending.tvgId,
-            isMovie: !isLive,
+            category,
+            image: resolveMediaUrl(item.image || item.logo || item.cover || item.cover_url ||
+              item.coverUrl || item.poster || item.icon || item.tvg_logo || ""),
+            video_url: resolveMediaUrl(rawUrl),
+            tvgId: item.tvg_id || item.tvgId || "",
+            isMovie: item.isMovie === true || item.is_movie === true ? true : !isLive,
             isLive,
             sourcePlaylist: playlistBaseUrl || file.name
-          });
-          pending = null;
-          currentGroup = "";
-        }
+          };
+        }).filter((item) => item && item.video_url);
+      } else {
+        throw new Error("Formato não reconhecido. Envie uma playlist M3U/M3U8 ou JSON com URLs de reprodução.");
       }
+
       if (!entries.length) {
-        throw new Error("Não encontrei itens com links nesta playlist. Confira se há linhas #EXTINF seguidas dos endereços.");
+        throw new Error("Não encontrei itens com links de vídeo nesta playlist. Verifique se o arquivo contém URLs em formato M3U/M3U8 ou JSON.");
       }
       setLocalM3uEntries(entries);
       setLocalM3uName(file.name);
     } catch (error) {
-      setLocalM3uError(error?.message || "Não foi possível abrir esta playlist.");
+      setLocalM3uError(
+        error instanceof SyntaxError
+          ? "O arquivo JSON está inválido ou incompleto."
+          : error?.message || "Não foi possível abrir esta playlist."
+      );
     }
   }
-
   const DEFAULT_M3U_PLAYLIST_1_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/7392d1208f91ebe359b5370f15492cb1dc862285/CanaisBR01.m3u8";
   const DEFAULT_M3U_PLAYLIST_2_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/master/CanaisBR02.m3u8";
   const DEFAULT_M3U_PLAYLIST_3_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/master/CanaisBR03.m3u8";
@@ -1909,11 +1976,14 @@ export default function App() {
         throw new Error("O servidor da playlist respondeu com HTTP " + response.status + ".");
       }
       const textContent = await response.text();
-      if (!textContent.replace(/^\uFEFF/, "").trimStart().startsWith("#EXTM3U")) {
-        throw new Error("O endereço não retornou uma playlist M3U/M3U8 válida.");
+      const normalizedContent = textContent.replace(/^\uFEFF/, "").trimStart();
+      const isM3u = normalizedContent.startsWith("#EXTM3U");
+      const isJson = normalizedContent.startsWith("{") || normalizedContent.startsWith("[");
+      if (!isM3u && !isJson) {
+        throw new Error("O endereço não retornou uma playlist M3U/M3U8 ou JSON reconhecida.");
       }
-      const fileName = decodeURIComponent(parsedUrl.pathname.split("/").pop() || "playlist.m3u");
-      const file = new File([textContent], fileName, { type: "audio/x-mpegurl" });
+      const fileName = decodeURIComponent(parsedUrl.pathname.split("/").pop() || (isJson ? "playlist.json" : "playlist.m3u"));
+      const file = new File([textContent], fileName, { type: isJson ? "application/json" : "audio/x-mpegurl" });
       await handleLocalM3uFile({ target: { files: [file], value: "" } }, parsedUrl.href);
       setLocalM3uUrl(url);
     } catch (error) {
@@ -3585,7 +3655,7 @@ export default function App() {
                 ref={localM3uInputRef}
                 className="dv-hidden-file-input"
                 type="file"
-                accept=".m3u,.m3u8,audio/x-mpegurl,application/vnd.apple.mpegurl,text/plain"
+                accept=".m3u,.m3u8,.json,audio/x-mpegurl,application/vnd.apple.mpegurl,application/json,text/plain"
                 onChange={handleLocalM3uFile}
               />
             </div>
