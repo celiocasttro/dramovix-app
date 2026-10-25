@@ -842,11 +842,52 @@ export default function App() {
           enableStashBuffer: true,
           stashInitialSize: 384
         });
-        alternatePlayer.attachMediaElement(video);
-        alternatePlayer.load();
-        const playResult = alternatePlayer.play();
-        if (playResult?.catch) playResult.catch(() => {});
-        setPlayerError("");
+        let mpegTsAttempt = 0;
+        const mpegTsCandidates = isLiveXtreamUrl
+          ? [`${originalUrl}.ts`, originalUrl]
+          : [originalUrl];
+        const startMpegTsAttempt = (index) => {
+          if (!isCurrentPlayer()) return;
+          mpegTsAttempt = index;
+          try {
+            if (alternatePlayer) {
+              alternatePlayer.pause?.();
+              alternatePlayer.unload?.();
+              alternatePlayer.detachMediaElement?.();
+              alternatePlayer.destroy?.();
+            }
+          } catch (cleanupError) {
+            console.warn("Falha ao reiniciar o player MPEG-TS:", cleanupError);
+          }
+          const candidateUrl = mpegTsCandidates[index];
+          alternatePlayer = mpegts.createPlayer({
+            type: "mpegts",
+            isLive: Boolean(selectedEpisode.isLive || selectedSeries?.isLive),
+            url: candidateUrl
+          }, {
+            enableWorker: true,
+            enableStashBuffer: true,
+            stashInitialSize: 384
+          });
+          alternatePlayer.on(mpegts.Events.ERROR, (errorType, errorDetail, errorInfo) => {
+            console.warn("Falha na tentativa MPEG-TS", index + 1, candidateUrl, errorType, errorDetail, errorInfo);
+            if (!isCurrentPlayer()) return;
+            if (index + 1 < mpegTsCandidates.length) {
+              startMpegTsAttempt(index + 1);
+            } else {
+              setPlayerResolving(false);
+              setPlayerError("Não foi possível reproduzir após 5 tentativas. O servidor pode bloquear a reprodução externa ou o link pode estar indisponível.");
+            }
+          });
+          alternatePlayer.attachMediaElement(video);
+          alternatePlayer.load();
+          const playResult = alternatePlayer.play();
+          if (playResult?.catch) playResult.catch((error) => {
+            console.warn("Falha ao iniciar MPEG-TS:", error);
+          });
+          setPlayerError("");
+        };
+        startMpegTsAttempt(0);
         return true;
       } catch (error) {
         console.warn("Suporte alternativo IPTV não conseguiu iniciar:", error);
