@@ -748,6 +748,7 @@ export default function App() {
     let liveRawFallbackAttempted = false;
     let alternatePlayerAttempted = false;
     let alternatePlayer = null;
+    let mpegtsAttempt = 0;
     selectedEpisodeRef.current = selectedEpisode;
     advancingEpisodeRef.current = false;
     setPlayerError("");
@@ -830,14 +831,20 @@ export default function App() {
         if (!mpegts?.isSupported?.() || !mpegts?.createPlayer) {
           throw new Error("Este navegador não oferece suporte a este formato de transmissão.");
         }
-        // Tenta primeiro o endereço EXATO da playlist, pois ele já funciona em players como o VLC.
-        // Só acrescenta .ts como alternativa, sem presumir que .m3u8 exista no servidor.
-        const mpegTsCandidates = isLiveXtreamUrl
-          ? [originalUrl, `${originalUrl}.ts`]
-          : [originalUrl];
+        // Faz até cinco tentativas reais com o endereço original primeiro,
+        // variando a configuração do demuxer antes de tentar a extensão .ts.
+        const attempts = [
+          { url: originalUrl, config: { enableWorker: true, enableStashBuffer: true, stashInitialSize: 384 } },
+          { url: originalUrl, config: { enableWorker: false, enableStashBuffer: true, stashInitialSize: 512 } },
+          { url: originalUrl, config: { enableWorker: true, enableStashBuffer: false, liveBufferLatencyChasing: true } },
+          ...(isLiveXtreamUrl ? [
+            { url: `${originalUrl}.ts`, config: { enableWorker: true, enableStashBuffer: true, stashInitialSize: 384 } },
+            { url: `${originalUrl}.ts`, config: { enableWorker: false, enableStashBuffer: false, liveBufferLatencyChasing: false } }
+          ] : [])
+        ];
         const startMpegTsAttempt = (index) => {
           if (!isCurrentPlayer()) return;
-          mpegTsAttempt = index;
+          mpegtsAttempt = index;
           try {
             if (alternatePlayer) {
               alternatePlayer.pause?.();
@@ -848,24 +855,25 @@ export default function App() {
           } catch (cleanupError) {
             console.warn("Falha ao reiniciar o player MPEG-TS:", cleanupError);
           }
-          const candidateUrl = mpegTsCandidates[index];
+          const attempt = attempts[index];
+          if (!attempt) {
+            setPlayerResolving(false);
+            setPlayerError("Não foi possível reproduzir este canal após cinco tentativas. O navegador ou o servidor pode não permitir esse tipo de transmissão.");
+            return;
+          }
           alternatePlayer = mpegts.createPlayer({
             type: "mpegts",
             isLive: Boolean(selectedEpisode.isLive || selectedSeries?.isLive),
-            url: candidateUrl
-          }, {
-            enableWorker: true,
-            enableStashBuffer: true,
-            stashInitialSize: 384
-          });
+            url: attempt.url
+          }, attempt.config);
           alternatePlayer.on(mpegts.Events.ERROR, (errorType, errorDetail, errorInfo) => {
-            console.warn("Falha na tentativa MPEG-TS", index + 1, candidateUrl, errorType, errorDetail, errorInfo);
+            console.warn("Falha na tentativa MPEG-TS", index + 1, attempt.url, errorType, errorDetail, errorInfo);
             if (!isCurrentPlayer()) return;
-            if (index + 1 < mpegTsCandidates.length) {
+            if (index + 1 < attempts.length) {
               startMpegTsAttempt(index + 1);
             } else {
               setPlayerResolving(false);
-              setPlayerError("Não foi possível reproduzir após 5 tentativas. O servidor pode bloquear a reprodução externa ou o link pode estar indisponível.");
+              setPlayerError("Não foi possível reproduzir este canal após cinco tentativas. O servidor pode bloquear a reprodução no navegador (CORS) ou o formato pode não ser compatível.");
             }
           });
           alternatePlayer.attachMediaElement(video);
