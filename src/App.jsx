@@ -734,7 +734,7 @@ export default function App() {
     const isLiveXtreamUrl = Boolean(
       selectedEpisode.isLive && /\/\d+$/.test(originalUrl)
     );
-    const url = isLiveXtreamUrl ? `${originalUrl}.m3u8` : originalUrl;
+    const url = originalUrl; // Para canais Xtream, testar primeiro o endereço exato fornecido pela playlist.
     setPlayerOrientation(
       selectedEpisode.isMovie || selectedEpisode.isLive || selectedSeries?.isLive
         ? "landscape"
@@ -830,21 +830,10 @@ export default function App() {
         if (!mpegts?.isSupported?.() || !mpegts?.createPlayer) {
           throw new Error("Este navegador não oferece suporte a este formato de transmissão.");
         }
-        // Alguns servidores Xtream exigem a extensão .ts no ID do canal.
-        // O primeiro teste usa .m3u8; se falhar, o player MPEG-TS tenta explicitamente .ts.
-        const mpegTsUrl = isLiveXtreamUrl ? `${originalUrl}.ts` : originalUrl;
-        alternatePlayer = mpegts.createPlayer({
-          type: "mpegts",
-          isLive: Boolean(selectedEpisode.isLive || selectedSeries?.isLive),
-          url: mpegTsUrl
-        }, {
-          enableWorker: true,
-          enableStashBuffer: true,
-          stashInitialSize: 384
-        });
-        let mpegTsAttempt = 0;
+        // Tenta primeiro o endereço EXATO da playlist, pois ele já funciona em players como o VLC.
+        // Só acrescenta .ts como alternativa, sem presumir que .m3u8 exista no servidor.
         const mpegTsCandidates = isLiveXtreamUrl
-          ? [`${originalUrl}.ts`, originalUrl]
+          ? [originalUrl, `${originalUrl}.ts`]
           : [originalUrl];
         const startMpegTsAttempt = (index) => {
           if (!isCurrentPlayer()) return;
