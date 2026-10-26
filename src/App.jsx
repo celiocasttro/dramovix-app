@@ -902,8 +902,22 @@ export default function App() {
             if (!isCurrentPlayer()) return;
             const currentTime = video.currentTime || 0;
             const isAdvancing = currentTime > mpegtsLastTime + 0.25;
-            const hasStarted = video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
-            if (isAdvancing || hasStarted) return;
+            // readyState sozinho não garante reprodução: Safari pode manter
+            // dados em buffer e continuar exibindo o spinner sem avançar o vídeo.
+            if (isAdvancing) {
+              mpegtsLastTime = currentTime;
+              mpegtsWatchdog = window.setTimeout(() => {
+                if (!isCurrentPlayer()) return;
+                if ((video.currentTime || 0) > mpegtsLastTime + 0.25) return;
+                console.warn("A transmissão MPEG-TS parou de avançar", index + 1);
+                if (index + 1 < attempts.length) startMpegTsAttempt(index + 1);
+                else {
+                  setPlayerResolving(false);
+                  setPlayerError("A transmissão conectou, mas não avançou no Safari após cinco tentativas. O servidor pode exigir um reprodutor nativo como VLC ou bloquear reprodução em navegadores.");
+                }
+              }, 18000);
+              return;
+            }
             console.warn("Tempo esgotado na tentativa MPEG-TS", index + 1);
             if (index + 1 < attempts.length) {
               startMpegTsAttempt(index + 1);
