@@ -749,6 +749,14 @@ export default function App() {
     let alternatePlayerAttempted = false;
     let alternatePlayer = null;
     let mpegtsAttempt = 0;
+    let mpegtsWatchdog = null;
+    let mpegtsLastTime = 0;
+    const clearMpegTsWatchdog = () => {
+      if (mpegtsWatchdog !== null) {
+        window.clearTimeout(mpegtsWatchdog);
+        mpegtsWatchdog = null;
+      }
+    };
     selectedEpisodeRef.current = selectedEpisode;
     advancingEpisodeRef.current = false;
     setPlayerError("");
@@ -848,6 +856,8 @@ export default function App() {
         const startMpegTsAttempt = (index) => {
           if (!isCurrentPlayer()) return;
           mpegtsAttempt = index;
+          clearMpegTsWatchdog();
+          mpegtsLastTime = video.currentTime || 0;
           try {
             if (alternatePlayer) {
               alternatePlayer.pause?.();
@@ -885,6 +895,23 @@ export default function App() {
           if (playResult?.catch) playResult.catch((error) => {
             console.warn("Falha ao iniciar MPEG-TS:", error);
           });
+          // Safari pode deixar o indicador girando sem emitir ERROR. Se o vídeo
+          // não começar a avançar, passa para a próxima configuração em vez de
+          // manter o canal preso indefinidamente no carregamento.
+          mpegtsWatchdog = window.setTimeout(() => {
+            if (!isCurrentPlayer()) return;
+            const currentTime = video.currentTime || 0;
+            const isAdvancing = currentTime > mpegtsLastTime + 0.25;
+            const hasStarted = video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
+            if (isAdvancing || hasStarted) return;
+            console.warn("Tempo esgotado na tentativa MPEG-TS", index + 1);
+            if (index + 1 < attempts.length) {
+              startMpegTsAttempt(index + 1);
+            } else {
+              setPlayerResolving(false);
+              setPlayerError("O canal não iniciou após cinco tentativas. O Safari pode não aceitar o formato desta transmissão ou o servidor pode bloquear a reprodução no navegador.");
+            }
+          }, 18000);
           setPlayerError("");
         };
         startMpegTsAttempt(0);
@@ -920,8 +947,15 @@ export default function App() {
     };
     const handlePlaying = () => {
       if (isCurrentPlayer()) {
+        clearMpegTsWatchdog();
         setPlayerError("");
         setPlayerResolving(false);
+      }
+    };
+    const handleTimeUpdate = () => {
+      if (isCurrentPlayer() && video.currentTime > mpegtsLastTime + 0.25) {
+        mpegtsLastTime = video.currentTime;
+        clearMpegTsWatchdog();
       }
     };
     video.autoplay = true;
@@ -931,6 +965,7 @@ export default function App() {
     video.addEventListener("loadedmetadata", scheduleAutoplay);
     video.addEventListener("canplay", scheduleAutoplay);
     video.addEventListener("playing", handlePlaying);
+    video.addEventListener("timeupdate", handleTimeUpdate);
     const isHls = /\.m3u8(?:$|[?#])/i.test(url);
     const isDash = /\.mpd(?:$|[?#])/i.test(originalUrl);
     const isTransportStream = /\.ts(?:$|[?#])/i.test(originalUrl) || isLiveXtreamUrl;
@@ -1014,6 +1049,8 @@ export default function App() {
       video.removeEventListener("loadedmetadata", scheduleAutoplay);
       video.removeEventListener("canplay", scheduleAutoplay);
       video.removeEventListener("playing", handlePlaying);
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+      clearMpegTsWatchdog();
       if (hls) {
         hls.destroy();
         if (hlsRef.current === hls) {
