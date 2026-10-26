@@ -824,12 +824,15 @@ export default function App() {
           return true;
         }
         const mpegts = await loadPlayerLibrary(
-          "https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js",
+          "https://cdn.jsdelivr.net/npm/mpegts.js@1.8.1/dist/mpegts.js",
           "mpegts"
         );
         if (!isCurrentPlayer()) return true;
-        if (!mpegts?.isSupported?.() || !mpegts?.createPlayer) {
-          throw new Error("Este navegador não oferece suporte a este formato de transmissão.");
+        const mpegtsFeatures = mpegts?.getFeatureList?.();
+        const liveMpegTsSupported =
+          mpegtsFeatures?.mseLivePlayback ?? mpegts?.isSupported?.();
+        if (!liveMpegTsSupported || !mpegts?.createPlayer) {
+          throw new Error("Este navegador não oferece suporte à reprodução MPEG-TS ao vivo. No iPhone, isso depende da versão do iOS/Safari e do suporte a Managed Media Source.");
         }
         // Faz até cinco tentativas reais com o endereço original primeiro,
         // variando a configuração do demuxer antes de tentar a extensão .ts.
