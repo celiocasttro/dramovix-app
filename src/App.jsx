@@ -750,6 +750,7 @@ export default function App() {
     let alternatePlayer = null;
     let mpegtsAttempt = 0;
     let mpegtsWatchdog = null;
+    let nativeHlsWatchdog = null;
     let mpegtsLastTime = 0;
     const clearMpegTsWatchdog = () => {
       if (mpegtsWatchdog !== null) {
@@ -960,6 +961,10 @@ export default function App() {
     const handlePlaying = () => {
       if (isCurrentPlayer()) {
         clearMpegTsWatchdog();
+        if (nativeHlsWatchdog !== null) {
+          window.clearTimeout(nativeHlsWatchdog);
+          nativeHlsWatchdog = null;
+        }
         setPlayerError("");
         setPlayerResolving(false);
       }
@@ -992,6 +997,45 @@ export default function App() {
       video.src = url;
       video.load();
       scheduleAutoplay();
+      // Alguns servidores deixam o HLS nativo do Safari preso no carregamento
+      // sem emitir erro. Após 25 s, tenta HLS.js antes de desistir.
+      nativeHlsWatchdog = window.setTimeout(() => {
+        nativeHlsWatchdog = null;
+        if (!isCurrentPlayer() || video.currentTime > 0 || !video.paused) return;
+        if (!Hls.isSupported()) {
+          setPlayerResolving(false);
+          setPlayerError("O canal HLS não iniciou no Safari. O servidor pode estar indisponível ou bloquear a reprodução no navegador.");
+          return;
+        }
+        console.warn("HLS nativo não iniciou; tentando HLS.js como alternativa.");
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
+        hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: false,
+          backBufferLength: 30,
+          manifestLoadingTimeOut: 20000,
+          levelLoadingTimeOut: 20000,
+          fragLoadingTimeOut: 30000
+        });
+        hlsRef.current = hls;
+        hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+          if (isCurrentPlayer()) hls.loadSource(url);
+        });
+        hls.on(Hls.Events.MANIFEST_PARSED, scheduleAutoplay);
+        hls.on(Hls.Events.ERROR, (_event, data) => {
+          if (!isCurrentPlayer() || !data.fatal) return;
+          setPlayerResolving(false);
+          setPlayerError("O canal não iniciou. O servidor pode bloquear o acesso pelo navegador (CORS) ou a transmissão pode estar indisponível.");
+          if (hls) {
+            hls.destroy();
+            if (hlsRef.current === hls) hlsRef.current = null;
+            hls = null;
+          }
+        });
+        hls.attachMedia(video);
+      }, 25000);
     } else if (isHls && Hls.isSupported()) {
       hls = new Hls({
         enableWorker: true,
@@ -1056,6 +1100,10 @@ export default function App() {
     return () => {
       cancelled = true;
       window.clearTimeout(autoplayTimer);
+      if (nativeHlsWatchdog !== null) {
+        window.clearTimeout(nativeHlsWatchdog);
+        nativeHlsWatchdog = null;
+      }
       video.removeEventListener("error", handleVideoError);
       video.removeEventListener("loadedmetadata", handleVideoMetadata);
       video.removeEventListener("loadedmetadata", scheduleAutoplay);
