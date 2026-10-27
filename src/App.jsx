@@ -842,16 +842,14 @@ export default function App() {
         if (!liveMpegTsSupported || !mpegts?.createPlayer) {
           throw new Error("Este navegador não oferece suporte à reprodução MPEG-TS ao vivo. No iPhone, isso depende da versão do iOS/Safari e do suporte a Managed Media Source.");
         }
-        // Faz até cinco tentativas reais com o endereço original primeiro,
-        // variando a configuração do demuxer antes de tentar a extensão .ts.
+        // Faz cinco tentativas distintas para links MPEG-TS. Para links Xtream
+        // sem extensão, testa primeiro o endereço exato e só depois o sufixo .ts.
         const attempts = [
           { url: originalUrl, config: { enableWorker: true, enableStashBuffer: true, stashInitialSize: 384 } },
           { url: originalUrl, config: { enableWorker: false, enableStashBuffer: true, stashInitialSize: 512 } },
           { url: originalUrl, config: { enableWorker: true, enableStashBuffer: false, liveBufferLatencyChasing: true } },
-          ...(isLiveXtreamUrl ? [
-            { url: `${originalUrl}.ts`, config: { enableWorker: true, enableStashBuffer: true, stashInitialSize: 384 } },
-            { url: `${originalUrl}.ts`, config: { enableWorker: false, enableStashBuffer: false, liveBufferLatencyChasing: false } }
-          ] : [])
+          { url: isLiveXtreamUrl ? `${originalUrl}.ts` : originalUrl, config: { enableWorker: false, enableStashBuffer: false, liveBufferLatencyChasing: false } },
+          { url: isLiveXtreamUrl ? `${originalUrl}.ts` : originalUrl, config: { enableWorker: true, enableStashBuffer: true, stashInitialSize: 1024, liveBufferLatencyChasing: true } }
         ];
         const startMpegTsAttempt = (index) => {
           if (!isCurrentPlayer()) return;
@@ -2048,10 +2046,37 @@ export default function App() {
   const DEFAULT_M3U_PLAYLIST_6_URL = "https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/master/Filmes-Series.m3u8";
   const DEFAULT_M3U_PLAYLIST_7_URL = "https://raw.githubusercontent.com/celiocasttro/dramovix-app/main/public/catalogo/filmesseries/CanaisBR03.m3u8";
 
+  function normalizePlaylistUrl(inputUrl) {
+    const trimmedUrl = String(inputUrl || "").trim();
+    try {
+      const parsed = new URL(trimmedUrl);
+      // Links de arquivo do GitHub (/blob/) apontam para uma página HTML,
+      // não para o conteúdo da playlist. Converte automaticamente para raw.
+      if (
+        parsed.hostname.toLowerCase() === "github.com" &&
+        parsed.pathname.split("/").includes("blob")
+      ) {
+        const parts = parsed.pathname.split("/").filter(Boolean);
+        const blobIndex = parts.indexOf("blob");
+        if (parts.length > blobIndex + 2) {
+          const owner = parts[0];
+          const repository = parts[1];
+          const ref = parts[blobIndex + 1];
+          const filePath = parts.slice(blobIndex + 2).join("/");
+          return `https://raw.githubusercontent.com/${owner}/${repository}/${ref}/${filePath}`;
+        }
+      }
+      return parsed.href;
+    } catch {
+      return trimmedUrl;
+    }
+  }
+
   async function loadLocalM3uFromUrl(url) {
     let parsedUrl;
+    const normalizedUrl = normalizePlaylistUrl(url);
     try {
-      parsedUrl = new URL(url);
+      parsedUrl = new URL(normalizedUrl);
     } catch {
       setLocalM3uError("O endereço configurado da playlist é inválido.");
       return;
@@ -2085,7 +2110,7 @@ export default function App() {
       const fileName = decodeURIComponent(parsedUrl.pathname.split("/").pop() || (isJson ? "playlist.json" : "playlist.m3u"));
       const file = new File([textContent], fileName, { type: isJson ? "application/json" : "audio/x-mpegurl" });
       await handleLocalM3uFile({ target: { files: [file], value: "" } }, parsedUrl.href);
-      setLocalM3uUrl(url);
+      setLocalM3uUrl(parsedUrl.href);
     } catch (error) {
       const isCors = error?.message?.includes("Failed to fetch") || error?.name === "TypeError";
       setLocalM3uError(
