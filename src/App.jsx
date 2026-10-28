@@ -528,6 +528,7 @@ export default function App() {
             title: item.title || "Sem título",
             category: item.genre || "Série",
             genre: item.genre || "",
+            platform: item.platform || "",
             content_type: item.content_type || "",
             description: item.description || "",
             image: item.cover_url || "",
@@ -1150,14 +1151,15 @@ export default function App() {
     "Mistério",
     "Ficção Científica"
   ];
+  const platformCategories = [...new Set(series.map((item) => item.platform).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
   const filteredSeries = series
     .filter(matchesSearch)
     .filter(
       (item) =>
         genreFilter === "Todas" ||
-        normalize(item.genre || item.category).includes(
-          normalize(genreFilter)
-        ) ||
+        normalize(item.platform) === normalize(genreFilter) ||
+        normalize(item.genre || item.category).includes(normalize(genreFilter)) ||
         normalize(item.title).includes(normalize(genreFilter))
     );
   const filteredMovies = movies
@@ -2468,7 +2470,7 @@ export default function App() {
   function renderGenreFilters() {
     return (
       <div className="dv-genre-filters">
-        {genreCategories.map((category) => (
+        {[...genreCategories, ...(page === "series" ? platformCategories.filter((platform) => !genreCategories.some((category) => normalize(category) === normalize(platform))) : [])].map((category) => (
           <button
             key={category}
             className={genreFilter === category ? "active" : ""}
