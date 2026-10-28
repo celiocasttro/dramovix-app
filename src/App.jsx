@@ -1152,6 +1152,7 @@ export default function App() {
     "Mistério",
     "Ficção Científica"
   ];
+  // Na aba SÉRIES, os filtros são exclusivamente plataformas.
   const platformCategories = [...new Set(series.map((item) => item.platform).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b, "pt-BR"));
   const filteredSeries = series
@@ -1159,9 +1160,7 @@ export default function App() {
     .filter(
       (item) =>
         genreFilter === "Todas" ||
-        normalize(item.platform) === normalize(genreFilter) ||
-        normalize(item.genre || item.category).includes(normalize(genreFilter)) ||
-        normalize(item.title).includes(normalize(genreFilter))
+        normalize(item.platform) === normalize(genreFilter)
     );
   const filteredMovies = movies
     .filter(matchesSearch)
@@ -2469,9 +2468,12 @@ export default function App() {
   }
 
   function renderGenreFilters() {
+    const categories = page === "series"
+      ? ["Todas", ...platformCategories]
+      : genreCategories;
     return (
       <div className="dv-genre-filters">
-        {[...genreCategories, ...(page === "series" ? platformCategories.filter((platform) => !genreCategories.some((category) => normalize(category) === normalize(platform))) : [])].map((category) => (
+        {categories.map((category) => (
           <button
             key={category}
             className={genreFilter === category ? "active" : ""}
