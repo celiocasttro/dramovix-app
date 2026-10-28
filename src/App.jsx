@@ -43,6 +43,7 @@ function getContentType(item) {
     if (explicitType.includes("filme")) return "filmes";
     if (explicitType.includes("serie")) return "series";
   }
+  if (item.platform) return "series";
   if (
     genre.includes("dorama") ||
     genre.includes("k-drama") ||
